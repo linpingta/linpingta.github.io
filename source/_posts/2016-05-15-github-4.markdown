@@ -1,0 +1,135 @@
+---
+layout: post
+title: "Github博客--Octopress功能分析"
+date: 2016-05-15 16:44:34 +0800
+comments: true
+categories: [Github] 
+keywords: 
+description: 
+---
+
+用Octopress搭建技术博客是一个很省事的方案，在完成基本环境的配置外，写新博客只需要几项命令操作：
+
+	1. rake new_post['title']  : 创建title名称的新博客
+	2. rake generate ：生成博客列表
+	3. rake preview ：本地预览博客
+	4. rake deploy ：将本地博客部署到remote端
+的确很简单。。但是再看看Octopress的本地目录：
+
+	---octopress
+		---.theme
+			--classic
+			--other_template
+		---_deploy
+		---plugin
+		---public
+		---sass
+		---source
+			--_includes
+				--head.html
+				--header.html
+				--...
+				--asides
+				--custom
+				--post
+			--_layouts
+			--_posts
+				-- new post1
+				-- new post2
+			--archives
+			--assets
+			--blogs
+			--fonts
+			--images
+			--javascript
+			--stylesheets
+			--CNAME
+			--404.markdown
+			--atom.xml
+			--index.html
+			--robot.txt
+		---Rakefile
+		---_config.yml
+好吧，我只是列举了一些比较主要的文件，可以说，Octopress的目录文件又多，深度又深，虽然简单的几个rake命令可以完成博客部署功能，但是。。这些目录究竟是什么意思，rake命令究竟执行了什么操作，希望在这篇博客里能够对Octopress的操作做更多说明：
+
+1.Octopress和Jekyll的区别
+Octopress是基于Jekyll开发的，可以认为是后者的高层定制。
+
+2.Octopress本地目录结构
+(1) _config.yml ：模板语言中模板变量的定义位置
+
+	基本配置
+	url: http://linpingta.github.io
+	title: 褚桐 博客
+	subtitle: 谁似临平山上塔，亭亭，迎客西来送客行
+	author: 褚桐
+	simple_search: http://google.com/search
+	description: Python 移动&海外广告
+
+	附加配置
+	# 定义GA信息
+	# Google Analytics
+	google_analytics_tracking_id: UA-75323645-1
+
+	# 定义Disqus评论信息
+	# Disqus Comments
+	disqus_short_name: linpingta
+	disqus_show_comment_count: true
+(2) Rakefile：所有rake命令的定义位置，例如常用的rake generate，实际执行的操作是：
+
+	desc "Generate jekyll site"
+	task :generate do
+	  raise "### You haven't set anything up yet. First run `rake install` to set up an Octopress theme." unless File.directory?(source_dir)
+	  puts "## Generating Site with Jekyll"
+	  system "compass compile --css-dir #{source_dir}/stylesheets"
+	  system "jekyll"
+	end
+并没有仔细研究过其中函数的含义，但是在定义keyword和description的时候，可能需要编辑Rakefile。
+
+(3)目录和文件
+.themes：Octopress中定义的主题，默认主题是.themes/classic，其它添加的主题也会放在.themes/xxx中。
+对于每个主题，都包含sass和source两个文件夹，前者定义的是样式(style)，后者定义的是主题(theme)。
+
+_deploy：Octopress编译生成的文件目录，用于push到Github上。
+
+public：Octopress的本地目录，在执行rake deploy的时候，会被public内容复制到_deploy目录，rake deploy：
+
+	## Copying public to _deploy
+	cp -r public/. _deploy
+	cd _deploy
+	
+	...
+	commit
+
+sass/source：Octopress的默认目录，前者定义的是样式(style)，后者定义的是主题(theme)。在执行rake generate的时候，会把source和sass的内容拷贝到public目录中。
+
+(4)source和sass目录内部说明
+source/\_posts：文章定义位置，在执行rake new\_post['']的时候，会在此位置生成文章。
+source/\_includes：网站html格式定义
+
+		source/\_includes/xxx.html
+		source/\_includes/custom/xxx.html
+后者是对前者内容的override，比如navigation.html，
+\_include/navigation.html:
+
+		<ul class="subscription" data-subscription="rss{% if site.subscribe_email %} email{% endif %}">
+	  <li><a href="{{ site.subscribe_rss }}" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+	  {% if site.subscribe_email %}
+	    <li><a href="{{ site.subscribe_email }}" rel="subscribe-email" title="subscribe via email">Email</a></li>
+	  {% endif %}
+	</ul>
+	  {% if site.simple_search %}
+	<form action="{{ site.simple_search }}" method="get">
+	  <fieldset role="search">
+	    <input type="hidden" name="q" value="site:{{ site.url | shorthand_url }}" />
+	    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+	  </fieldset>
+	</form>
+	  {% endif %}
+	{% include custom/navigation.html %}
+\_include/custom/navigation.html:
+
+	<ul class="main-navigation">
+	  <li><a href="{{ root_url }}/blog/archives">博客</a></li>
+	</ul>
+希望通过这篇文章能够对Octopress的工作过程更多说明，这样不会被它繁复的目录结构吓到。

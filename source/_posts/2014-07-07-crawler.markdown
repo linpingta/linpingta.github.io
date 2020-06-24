@@ -1,0 +1,56 @@
+---
+layout: post
+title: "爬虫"
+date: 2014-07-07 23:49:51 +0800
+comments: true
+categories: [Github Project]
+---
+
+爬虫
+-----
+
+   我分析系统的数据源来自58的租房版块和链家的租房信息，实际上也对我爱我家的租房信息做了
+   简单爬取，但是因为这些数据源的爬虫从技术角度并没有革新（不存在AJAX动态加载的数据），
+   过多的数据源只是工程量上的重复（加载哪个div中的数据），因此并没有做过多的扩展。
+   
+   我采用Java的[crawler4j]()作为爬虫框架，[jsoup](http://jsoup.org/)作为html解析工具。
+   因为这些网站比较规则，同时我也是入门级的爬虫学习者，因此关于爬虫和html解析本身并没
+   有很多可以说明的东西，基本上照着API文档去做就可以了。
+   
+   爬虫数据必须按照数据库中的规范导入数据库，因此我的url解析包含以下两个模块：
+   
+   1. html parser
+   2. database store
+
+   二者通过dict联系
+      
+    参考58数据：
+    Count: 1 max_floor 3
+    Count: 2 greent_rate
+    Count: 3 open_company
+    Count: 4 pay_num 1
+    Count: 5 service_company
+    Count: 6 direction 南
+    Count: 7 space_num 1
+    Count: 8 info_source 58
+    Count: 9 city 北京
+    Count: 10 size 20
+    Count: 11 curr_floor 2
+    Count: 12 open_time 0000-00-00
+    Count: 13 loan_num 1
+    Count: 14 wash_num 1
+    Count: 15 agent_tel
+    Count: 16 Price 500
+    Count: 17 houseDetailDesc 暖气热18度土桥地铁张家湾中心小学高档公寓独立卫浴出租
+    Count: 18 local 梨园
+    Count: 19 district 通州
+    Count: 20 agent_name
+    Count: 21 room_num 1
+    Count: 22 local_detail 芳草园
+
+   详细代码可参考[这里](https://github.com/linpingta/58RentInfoCrawler)
+   
+当时随手写下的一些遇到的问题:
+	
+![S1](/images/2014/07/table1.png)
+![S2](/images/2014/07/table2.png)

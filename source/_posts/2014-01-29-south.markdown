@@ -1,0 +1,42 @@
+---
+layout: post
+title: "South"
+date: 2014-01-29 00:57:57 +0800
+comments: true
+categories: [Django,South]
+---
+
+Django数据迁移
+===
+
+South组件
+
+在使用Django model模块时，遇到的一个问题是，可能我们开始设计的ORM随着开发和功能变化不再
+符合要求，需要增加，删除或者更新字段，此时如果直接修改models.py的字段是不够的，因为会提示
+column相关的error，South的主要作用就是实现这种model结构变化后的数据库更新。
+
+south托管app的数据库后，再执行manage.py syncdb不会处理该app中的model，migrate命令负责
+对于托管的app进行数据库更新。
+
+south的使用可以分为两大类：
+
+1. models中有定义（或者没有），但数据库中没有相应的表定义
+    
+
+    # 初始化，创建migration目录
+    # 此操作会在数据库中创建app的models中定义的表，同时创建south_migrationhistory表
+    # 另外会在app的目录下创建一个migration的目录
+    manage.py shcemamigration appname --initial
+
+    # 如果models发生了变化，进行更新
+    manage.py schemamigration appname --auto 
+    managy.py migrate appname # 实际更新数据库
+
+2. models和数据库中均已有了定义
+
+
+    # 此时不同于1，需要先将有表定义的数据库转为migration托管的状态
+    manage.py syncdb # 在数据库中创建south_migrationhistory
+    managy.py convert_to_south appname # 在app的目录下创建migration的目录创建表
+    
+    # 如果modesl发生了变化，和1的更新操作一致

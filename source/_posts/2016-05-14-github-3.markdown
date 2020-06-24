@@ -1,0 +1,63 @@
+---
+layout: post
+title: "如何设置Github博客(三) 主题"
+date: 2016-05-14 15:25:55 +0800
+comments: true
+categories: [Github] 
+keywords: Github Blog, GA, SEO, CNAME
+description: Github Blog, GA, SEO, CNAME
+---
+
+在建立Github博客后，通过xxx.github.io可以访问相应的博客目录。通过CNAME设置，我们把xxx.github.io绑定到指定的域名，然后我们又为博客添加了搜索引擎优化，数据统计支持，评论支持。。。当我们可以开心访问自己的博客时，未免还有一点小缺憾：博客的主题过于常见（想想大家都在用Octopress的默认主题），那么如何定制自己博客的主题，让自己的博客有所与众不同？
+
+方法一. 添加Octopress[第三方主题](https://github.com/imathis/octopress/wiki/3rd-Party-Octopress-Themes)
+
+在上述网页中，找到希望的主题，然后按如下方法添加主题：
+
+	$ cd octopress
+	$ git submodule add GIT_URL .themes/THEME_NAME
+	$ rake install['THEME_NAME']
+	$ rake generate
+Octopress默认会创建.theme文件夹，用于存储网站使用的主题。默认主题，即其中的.theme/classic的子文件夹。加载第三方模板，实际上就是把指定的模板拷贝到.theme/NEWTHEME文件夹中。
+
+方法二.配置Octopress[默认主题](http://octopress.org/docs/theme/)
+
+1.定制主题
+编辑source/\_includes/custom中的内容，其中的每个html都可以视为对上层目录对应html文件内容的override编辑。例如_include/navigation.html：
+
+	<ul class="subscription" data-subscription="rss{% if site.subscribe_email %} email{% endif %}">
+	  <li><a href="{{ site.subscribe_rss }}" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+	  {% if site.subscribe_email %}
+	    <li><a href="{{ site.subscribe_email }}" rel="subscribe-email" title="subscribe via email">Email</a></li>
+	  {% endif %}
+	</ul>
+	  {% if site.simple_search %}
+	<form action="{{ site.simple_search }}" method="get">
+	  <fieldset role="search">
+	    <input type="hidden" name="q" value="site:{{ site.url | shorthand_url }}" />
+	    <input class="search" type="text" name="q" results="0" placeholder="	"/>
+	  </fieldset>
+	</form>
+	  {% endif %}
+	{% include custom/navigation.html %}
+其中最后一句包含custom中的navigation.html，编辑该文件，定义导航栏中只有archives一项：
+
+	<ul class="main-navigation">
+	  <li><a href="{{ root_url }}/blog/archives">博客</a></li>
+	</ul>
+
+
+2.更改样式
+(1)更改layout布局
+编辑sass/custom/\_layout.scss，它继承自sass/base/\_layout.scss，其中包含!default的变量都可以在custom中进行override编辑。
+
+(2)更改color颜色
+编辑sass/custom/_colors.scss，其中定义了很多设置变量，比如：
+
+	//$header-bg: #263347; 
+默认状态是注释的，可以取消后观察header背景的变化，也可以定义自己的header-bg，例如：
+
+	$header-bg: #004d32
+将背景色更新为深绿色。
+
+方法一可以认为是一种更深层次的定制，方法二可以认为是如何创建方法一中模板的方法说明，前者的优点在于更大的变化，但问题在于很多模板已经不再维护和更新了，所以后续处理会复杂。

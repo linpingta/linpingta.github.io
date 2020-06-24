@@ -1,0 +1,101 @@
+---
+layout: post
+title: "如何设置Github博客(二)  域名/GA/SEO"
+date: 2016-03-19 20:21:06 +0800
+comments: true
+categories: [Github] 
+keywords: Github Blog, GA, SEO, CNAME
+description: set Github blog's GA SEO and CNAME
+---
+
+
+虽然本篇的题目是“如何设置Github博客(二)”，但是它距“如何设置Github博客”已经有两年多的时间，所以不能指望它们的文字风格有太多相似性。这篇博客的初衷，主要是经过了这样长的时间和断断续续的写作，我又想给自己的博客添加一些基础的功能，顺手把相关的内容做下记录和总结。
+
+一. 域名
+Github博客默认使用的域名是"xxx.github.io"（比如我的就是[linpingta.github.io](linpingta.github.io)，对于访问而言这是足够的（你不用care服务器的设置，管理和安全，这也是Github博客相比WP或者自建博客的一些优点，当然WP仍然是主流哈），但有时候你希望有一些有特色的域名，毕竟xiaozhang.github.io, xiaowang.github.io实在不容易让别人记住你，那么这时候就需要对Github博客做一些域名上的设置了。
+
+设置步骤如下：
+1. 首先你得有个域名。这方面相关的推荐很多，国外似乎比较常用到[godaddy](https://tw.godaddy.com/offers/default.aspx?tmskey=1dom_03&isc=gofhltw01&countrview=1&currencytype=TWD&mkwid=shlvVob7r_pcrid_101432078566_pkw_godaddy_pmt_e_pdv_c&cvosrc=ppc.google.godaddy&cvo_crid=101432078566&matchtype=e&gclid=CjwKEAjw8bO3BRDp0bP_vL-7_lASJACL_d6wJhQqBcJzWvIivpatDyjppUcTvkNPm9TUCXLQBOll0xoC_2Xw_wcB)，国内比较常用的是万网。因为我先在阿里云上买了一个云主机，所以就选择了从阿里处（似乎就是万网）购买域名linpingta.cn。
+关于域名怎么选，云服务器用哪家，网上的资料和争论都很多，这方面我比较小白，只是说下我怎么做，重点的是，最终你有了个域名。
+2. 关联域名到Github主页
+如果你的域名是一级域名，比如 linpingta.cn，那么在域名服务商处（即阿里云），增加一条A record，让它指向192.30.252.153或者192.30.252.154 （应该是Github的服务器）
+如果你的域名是二级域名，比如 blog.linpingta.cn，那么在域名服务商处，增加一条CNAME record，让你的域名指向xxx.github.io (我这里就是linpingta.github.io)
+3. octopress中设置
+在source目录下增加一个名为CNAME的文件，里面只有一行，就是你的域名，比如我的内容是linpingta.cn
+
+以上设置完毕后，应该可以通过新域名访问xxx.github.io中的内容
+
+二. SEO与GA
+关于GA的内容，我想这篇[博客](http://812lcl.com/blog/2013/10/29/octopresstian-jia-tong-ji-yu-seo/)介绍已经很详细了，这方面我只想补充四个字：亲测可用
+
+关于SEO，同样可以参考上面的文章，我只补充一些操作的说明：
+
+1. 为何要替换source/_includes/head.html内容？
+
+由其源码可知，octopress实际使用的是一种模板语言，如果设置了page的keywords，那么就添加keywords关键字用于SEO，否则会默认使用前150个字符作为keywords。
+
+    {\% if page.keywords %}<meta name="keywords" content="{{ page.keywords }}">...
+
+经过修改后，keywords的设置实际上变成了如果没有设置page.keywords
+(就是下面第2个问题中要填写的内容)，那么就会使用site.keywords，那么site.keywords又在哪里呢？可以通过对_config.yml文件的定义实现：
+
+    # add site keyword/description
+    keywords: python, Facebook Ad, C++, linux
+    description: Chutong's Blog for Python and Programming Ads, as well as other related
+
+从这个角度看，octopress或者说jekell使用的模板和Django的模板很像，你可以通过向_config.yml中添加site级别的模板定义，也可以通过每个新博客添加page级别的模板定义。
+
+2.如何为新博客增加keyword和description两项默认值？
+
+默认情况下，当运行rake new_post['your-blog']时，会产生包含如下内容的your-blog.markdown文件：
+
+    ---
+    layout: post
+    title: "your-blog"
+	date: 2016-03-19 13:21:24 +0800
+	comments: true
+	categories: 
+    ---
+我们需要做的是于上述字段类似，添加keywords和description两个字段：
+
+	---
+	layout: post
+	title: "your-blog"
+	date: 2016-03-19 20:16:57 +0800
+	comments: true
+	categories: [python] 
+	keywords: 
+	description: 
+	---
+
+当然我们可以每次取添加这两个字段，但是更好的方案是在rake new_post后自动生成，这样做我们需要修改octopress根目录下的Rakefile文件，在下面：
+
+      puts "Creating new post: #{filename}"
+	  open(filename, 'w') do |post|
+	    post.puts "---"
+	    post.puts "layout: post"
+	    post.puts "title: \"#{title.gsub(/&/,'&amp;')}\""
+	    post.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M:%S %z')}"
+	    post.puts "comments: true"
+	    post.puts "categories: [python] "
+		post.puts "keywords: "
+	    post.puts "description: "
+	    post.puts "---"
+	  end
+
+和下面：
+
+	   open(file, 'w') do |page|
+	      page.puts "---"
+	      page.puts "layout: page"
+	      page.puts "title: \"#{title}\""
+	      page.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M')}"
+	      page.puts "comments: true"
+		  page.puts "keywords: "
+	      page.puts "description: "
+	      page.puts "sharing: true"
+	      page.puts "footer: true"
+	      page.puts "---"
+	    end
+
+增加相应关键字就ok了。

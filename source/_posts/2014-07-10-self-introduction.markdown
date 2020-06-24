@@ -1,0 +1,92 @@
+---
+layout: post
+title: "个人简历"
+date: 2014-07-10 01:13:31 +0800
+comments: true
+categories: [Introduction]
+---
+
+
+个人信息
+
+    褚桐       邮箱：linpingta@163.com          手机：136 2107 0147  
+
+教育经历
+
+    本科：     清华大学电子工程系 						2006.9 – 2010.7
+    研究生：    清华大学电子工程系图像建模仿真方向	       2010.9 – 2013.7
+    
+
+相关技能
+
+	熟练掌握C++，独立设计实现过软件应用(约2w行)，也参与过公司产品级软件开发，对OpenGL/MFC/Qt较为熟悉
+	热爱Python，掌握Django并应用进行过一些小型应用和原型的开发
+	熟练掌握数据结构，掌握模式识别算法，在图像分割和跟踪方面有实践应用
+	对BI/DW的概念，尤其BI层应用开发架构有一定理解
+	具有一定的金融和统计知识，掌握SAS，通过CFA 1级及证券从业资格考试
+	应用C# /ASP.NET/Matlab进行过项目开发，对前端技术(主要基于Django的交互)和Java(爬虫)有一定了解
+
+
+工作经历
+
+    Microstrategy  软件工程师                              2013.8   至今
+    作为SQL Engine Team的成员，负责将用户定义在元数据中定义的概念关系转换为SQL语句，采用C++改进公司产品，主要工作内容包括：
+    1.	SQL Optimization，负责Transformation逻辑的实现，改变查询结构，减少访问事实表(大表)次数，对特定类型查询提升执行效率约1倍
+    2.	参与In-memory Cube生成逻辑，主要负责对SQL并行执行支持和Cube数据支持
+    3.	实现placeholder(占位符)逻辑，加强对FreeformSQL的支持
+
+实习经历
+
+* 网易游戏公司暑期[实习](https://github.com/linpingta/Document/blob/master/%E5%AF%BC%E8%A1%A8%E6%BC%94%E7%A4%BA_%E8%A4%9A%E6%A1%90.ppt)  软件工程师                          2012.7 – 2012.8                      
+    1.针对倒表检查周期较长的问题，改进Python导表程序，实现多进程导表，提高倒表执行效率
+    2.基于1，开发Excel倒表检查插件并将原先的本地检查更新为C/S结构检查(ASP.NET)，供策划人员使用
+    
+* OopsData公司[实习](https://github.com/linpingta/Document/blob/master/%E6%96%87%E6%A1%A3%E8%81%9A%E7%B1%BB%E9%A2%84%E5%A4%84%E7%90%86%E9%98%B6%E6%AE%B5%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E.doc)          研发工程师                        2012.5 -  2012.6                     
+    开发搜索结果聚类应用(类carrot2)，采用Java爬取百度新闻搜索结果，ICTCLAS分词，搜狗字典提取同义词和去除无效词，TF-IDF做特征词提取，并基于特征词
+    进行文本聚类
+    
+* 穆迪公司              软件工程师                         2011.3 -  2011.6
+    就职于Customization组，负责根据用户需求对公司产品定制
+    1.采用ASP.NET开发WebService，实现商业房地产模型的用户定制
+    2.定制公司内部产品，开发Scroecard模型供内部人员使用
+
+科研经历
+
+* 研究生项目   舰船红外成像跟踪                         2012.5 – 2012.12
+    	针对红外成像下有人为干扰的舰船目标进行跟踪，采用mean-shift算法和目标特征识别相结合的方法，对跟踪算法的成功率进行了一定提高。
+    
+* 研究生项目   [空中红外仿真对抗系统](http://linpingta.github.io/blog/2014/07/01/simulation-structure/)                      2011.2 – 2012.3
+    	采用C++设计并实现模块化可扩展的仿真对抗平台，构建点源探测器的工作模型，实现并改进现有跟踪算法，并提供对抗策略的数据分析基础。
+    	独力完成整个系统的需求分析，数学建模，软件开发，采用OpenGL进行动画渲染，项目顺利通过验收。
+    
+* 研究生项目	   多干扰目标仿真系统建模				2009.12 - 2010.6 
+      采用C++/CLI和VHDL构建软硬件数据通信模块，设计数据传输格式，实现[软件编码](https://github.com/linpingta/Document/blob/master/5715_%E6%88%AA%E5%9B%BE1.bmp)和硬件解码，为识别算法提供数据基础。
+
+个人项目经历
+
+* [租房信息分析](http://linpingta.github.io/blog/categories/rent-analysis/ )                                         近期
+    	采用crawler4j爬取58和链家租房信息，设计数据存储结构并采用Kettle进行ODS到WH的数据格式转换，基于WH中数据进行可视化展现(d3.js)和简单分析(pandas) 
+    
+* 清华大学第十一届队式程序设计大赛[设计](https://github.com/linpingta/Document/blob/master/%E7%AC%AC%E5%8D%81%E4%B8%80%E5%B1%8A%E9%98%9F%E5%BC%8F%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1%E5%A4%A7%E8%B5%9B%E8%A7%84%E5%88%99%E8%AF%B4%E6%98%8E.pdf)                 2009.10 - 2009.12
+    游戏AI对抗，主要采用状态机设计对抗策略，最终获得第四名
+    
+* 清华大学第二届医疗仪器创新设计大赛                   2009.4 – 2009.5
+    采用水平集算法做MRI肿瘤分割
+
+英语  CET—4：579 	   CET—6：553		TOEFL：100
+
+我的博客    http://linpingta.github.io/
+
+Github账号  http://github.com/linpingta
+    
+* [my-blog-redis](https://github.com/linpingta/my-blog-redis):  Django博客
+* [58RentInfoCrawler](https://github.com/linpingta/58RentInfoCrawler): 租房信息分析爬虫部分代码
+* [newsmth_ExcelConvertor](https://github.com/linpingta/newsmth_ExcelConvertor): 水木私活，爬虫结果到指定csv的转换 [说明](http://linpingta.github.io/blog/2014/07/11/excel-convertor/)
+* [WeiqiGeneration](https://github.com/linpingta/WeiqiGeneration): 一个识别围棋棋谱的小应用 [说明](http://linpingta.github.io/blog/2014/07/11/weiqi-generation/)
+
+stackoverflow账号 http://stackoverflow.com/users/2279150/linpingta
+
+社会活动
+
+    电子系研究生团委组织部部长                          2011-2012
+    电子系硬件部 组织第九届清华硬件设计大赛               2007-2008

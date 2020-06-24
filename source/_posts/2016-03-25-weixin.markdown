@@ -1,0 +1,98 @@
+---
+layout: post
+title: "微信公众平台--订阅号开发初探"
+date: 2016-03-25 23:37:37 +0800
+comments: true
+categories: [Weixin] 
+keywords: 微信开发
+description: 
+---
+
+
+背景
+本来的计划是希望将一些爬虫聚合的数据通过微信作为出口推送给相关的用户，公司多少也有点类似的需求，因此今天花了一点时间做了相关调研。
+
+1.基础概念
+	1.1 开放平台 vs 公众平台
+
+这里有必要阐述微信两种平台的不同之处，因为尽管从名称上看，技术人员应该选择开放平台作为开发基础，但网上大多数微信开发的入门文章都是基于公众平台的开发（我猜想与开放平台推出时间较晚有关）。
+
+开发平台：针对App开发者，主要用于App内容向微信的分享
+公众平台：微信本身的订阅号和服务号之类开放，以及部分html5开放
+
+理解比较粗浅，但重点是，开放平台(https://open.weixin.qq.com) 不同于公众平台(https://mp.weixin.qq.com)。
+
+1.2 服务号 vs 订阅号
+微信公众平台本身提供订阅号和服务号两种类型的公众号，具体功能上，订阅号强调于单方面的信息输出，允许每天一次的向用户推送消息，服务号强调于用户交互，并不会有太多的群发机会，而是更多根据用户输入做反馈交互。
+
+2.注册订阅号
+
+这里我选择的是订阅号，原因有二：
+	(1) 如“背景”所言，我希望向用户定期做消息推送，并没有想太多交互方面的内容（并不排除会有）
+	(2) 好像个人只能申请订阅号
+
+创建订阅号的步骤按照[网站](https://mp.weixin.qq.com/cgi-bin/readtemplate?t=register/step1_tmpl&lang=zh_CN)提示步骤执行即可，几点注意：
+    (1) 每个邮箱仅能申请一种帐号：公众号或企业号
+    (2) 选择订阅号或者服务号后不可修改
+    (3) 如果选择非个人类别的订阅号，比如企业政府，那么需要提供各种相关资质（比如营业执照），好吧这里我只能选个人
+
+我注册了一个围棋相关的账号，看到这里可以考虑关注下试试~
+![enter image description here](https://mp.weixin.qq.com/misc/getqrcode?fakeid=2399977679&token=1326491733&style=1)
+
+注册完账号后，你就可以在订阅号的后台看到这个账号的基础信息，基本的功能包括：
+    (1) 群发消息 （每天一条）
+    (2) 自动回复
+    (3) 自定义菜单
+    注意第(2)和(3)项在开发者模式下失效。
+    
+3.订阅号接入后端服务器
+
+实话说，如果你只是想有一个订阅号，然后去使用它，那么并不需要写什么代码，大多数账号也是在这种状态下维护的。
+
+那么如果你想接入开发者后台去做一些自动的操作，这时候才涉及到程序开发。
+
+基础内容首先参考[微信接入文档](https://mp.weixin.qq.com/wiki/17/2d4265491f12608cd170a95559800f2d.html)，它对认证相关说明已经比较清楚了，这里只强调一个概念，再附上一段认证的python/Django代码（毕竟官方的认证样例是php的）。
+
+概念一：从架构上说，用户在微信客户端的操作会先发到腾讯服务器，然后再由腾讯服务器发送到你指定的url，同时你的处理（比如用户回复）也会经过腾讯服务器返回给用户。因此接入文档要求你有一个url，80端口有效，用户接收腾讯服务器发来的认证请求，并通过返回值让腾讯服务器知道你的服务器可用。
+
+清楚这一点后，就可以知道后端服务器并不限于用什么语言，什么服务器，重点是你有一个可用的url，可以做request/response服务就ok。
+
+概念二：腾讯服务器向你服务器发送的请求，只有验证有效的请求是GET，其余用户交互均是POST请求。
+
+网上有比较多关于如何在SAE上搭建应用的例子，我因为有自己的服务器资源，所以还是选择在自己的服务器上提供服务。
+
+创建一个django服务，提供验证服务：
+
+	from django.http import HttpResponse
+	from django.views.decorators.csrf import csrf_exempt
+	import hashlib
+	
+	token = 'shoutan_weiqi'
+
+	@csrf_exempt
+	def index(request):
+	    print request
+	    if request.method == 'GET':
+	        signature = request.GET.get('signature', None)
+	        timestamp = request.GET.get('timestamp', None)
+	        nonce = request.GET.get('nonce', None)
+	        echostr = request.GET.get('echostr', None)
+	        check_list = [token, timestamp, nonce]
+	        check_list.sort()
+	        checkstr = ''.join(check_list)
+	        if hashlib.sha1(checkstr).hexdigest() == signature:
+	            return HttpResponse(echostr)
+	        else:
+	            return HttpResponse('fail')
+	    else:
+	        pass
+
+认证成功后可以在公众号后台页面看到app_id和app_secret （好熟悉，和Facebook API一样一样的）。启动你的服务器配置。。。
+
+我没有再深入研究的槽点在于“接口权限”，按照微信后台的说法，如果是没有认证的订阅号，只能自动回复消息，不能群发消息，另外一方面，个人订阅号不支持认证。。。也可能是我研究不够深入，但如果这样的效果，肯定暂时不能满足我文初提到的需求，所以只能暂时搁置了。
+
+本文算是微信公众平台很浅显的一个介绍，更多好的详细的文章，一方面参考官方文档，另外一方面多用google哈~
+
+
+
+

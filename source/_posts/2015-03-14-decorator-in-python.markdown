@@ -1,0 +1,84 @@
+---
+layout: post
+title: "Python修饰器"
+date: 2015-03-14 09:26:59 +0800
+comments: true
+categories: [Python]
+---
+
+一. 定义
+
+Python修饰器(Decorator)是一种高级Python语法。在设计模式中，修饰器模式使得函数保持原有的对外接口，同时可以动态的添加新的功能，比较常见的例子是Java中IO Stream的操作。关于Python Decorator是否与修饰器模式相同在[此文](http://www.artima.com/weblogs/viewpost.jsp?thread=240808)中有讨论，作者认为Python Decorator更类似C中的宏，原文：
+
+    Indeed, you can use Python decorator to implement the Decorator pattern, but that's an extremely limited use of it. Python decorator, I think, are best equaled to macros.
+
+我的理解是作者的意思是Python Decorator可以实现一些内置的函数流程控制，不过这点并没有理解很深刻。
+
+从Stackoverflow排名很高的一篇[提问](http://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python/1594484#1594484)看，由于Python中一切皆对象的设计原则，函数同样是一种对象，因此允许function call function的形式存在，也就是出于原函数功能不可改变的设计考虑（也可能是没有源码），提供增强版功能的调用：(本文大部分实例来自stackoverflow问题答复，有兴趣可详细参考)
+
+    def doSomethingBefore(func): 
+        print "I do something before then I call the function you gave me"
+    print func()
+    doSomethingBefore(scream)
+
+而decorator实际是把上述的手写编码调用方式修改为一种更为优雅的方式：
+
+    def doSomethingBefore(func):
+        def _doSomething(*args, **kw):
+            # do sth
+            func(*args, **kw)
+        return _doSomething
+    @doSomethingBefore
+    my_func()
+
+二. 语法
+
+1.最简单的语法（摘自stackoverflow上答复）
+
+    # The decorator to make it bold
+    def makebold(fn):
+        # The new function the decorator returns
+        def wrapper():
+            # Insertion of some code before and after
+            return "<b>" + fn() + "</b>"
+        return wrapper
+
+        @makebold
+        def say():
+            return "hello"
+        print say()
+        # output: <b>hello</b>
+代码是自解释的。
+
+2.传入参数
+
+    def decorator(function):
+        def _decorate(name, *args, **kw):
+            print 'Decorate  %s Begin' % name
+            res = function(*args, **kw)
+            print 'Decorate  %s End' % name
+            return res
+        return _decorate
+    def f(count):
+        print 'Make Count %d' % count
+    @decorator
+    def f2(count):
+        print 'Make Count %d' % count
+    f(10)
+    print '\n'
+    f2('linpingta', 10)
+传入name参数作为decorator处理，其余参数作为function本身处理应用，这里用变参的原因是可能decorator需要去做的是一段公共的操作，具体可见“三。场景及其它”，不需要为每个函数实现一段单独的参数传递。
+
+3.应用于类函数
+
+具体见stackverlow的回答，主要要在decorator中加入self参数。
+
+三. 场景及其它
+
+在我工作中遇到的一个decorator应用场景是，我在对Facebook广告API调用时，由于网络以及各种原因，都可能出现失败的情况。如果这种失败是由于逻辑设计问题，那么需要相关的错误处理，但如果这种错误由于网络连接操作（比如短时间内Facebook API调用过于频繁），那么经过一段时间的等待重试就可以解决。而且网络状态或者API调用的错误是无法预知的，因此重试机制有必要存在。
+在这里的设计中，我使用了decorator实现Facebook侧和数据库侧的重试逻辑，同时考虑API参数彼此不同，因此使用变参形式（见二.2）
+
+从Python语言本身看，比如@staticmethod, @classmethod
+从Django应用看，它的caching机制和权限控制是通过decorator实现的
+
+总体而言，Decorator是一种Python常用的工具，可以在需要的时候考虑它。

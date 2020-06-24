@@ -1,0 +1,173 @@
+---
+layout: post
+title: "nginx简单配置"
+date: 2015-04-24 19:53:09 +0800
+comments: true
+categories: [Nginx] 
+keywords: nginx
+description: 
+---
+
+
+[nginx](http://nginx.org/en/)作为世界上最大的Http服务器之一，在各个领域有广泛的应用。。。貌似是废话，这篇blog只是想从最功利的应用角度说明怎么搞一个nginx server，然后让它为我们的网站服务，关于nginx的服务原理（非阻塞，多进程）等，网上有很多优秀的文章介绍，不在本文涉及范围内。
+
+下文操作均以Ubuntu14.04为例
+
+一. 安装与启动
+
+安装：
+
+    apt-get install nginx
+
+启动：
+
+	service nginx start/stop/restart
+
+启动成功后，可以通过 http://yourIP 访问nginx默认页面
+	
+安装完毕后，nginx默认是启动的 （通过 ps -aux | grep nginx 可以找到对应的master和worker进程），但需要注意的是，nginx默认监听80端口，如果服务器上已安装了apache且已启动，在访问http://yourIP 时将得到apache目录，而非nginx目录。
+
+二. 页面服务
+
+nginx服务路径在 /etc/nginx下，假设你希望创建example.com/index.html提供对外服务，可以按以下步骤配置：
+
+在/var/www下创建目录：
+
+	mkdir -p /var/www/example.com/html/index.html
+
+在index.html中编辑内容：
+
+	<html>
+        <head>
+                <title>Welocme to Example</title>
+        </head>
+        <body>
+                <h1>Welcome to Example Body</h1>
+        </body>
+    </html>
+保证目录可被访问：
+
+	chmod 755 /var/www
+	chown -R $USER:$USER /var/www/example.com/html
+
+拷贝/etc/nginx/sites-available/defaults为新页面的配置文件：
+
+	cp /etc/nginx/sites-available/default /etc/nginx/sites-available/example.com
+
+编辑配置文件example.com
+1. 通过不同端口提供服务
+假设以8081作为对外服务的端口：
+
+默认配置：
+
+	
+        listen 80 default_server;
+        listen [::]:80 default_server ipv6only=on;
+
+        root /usr/share/nginx/html;
+
+更新配置：
+	
+        listen 8081 default_server;
+        listen [::]:8081 default_server ipv6only=on;
+
+        root /var/www/example.com/html;
+        index index.html index.htm;
+2. 通过不同domain提供服务
+在保证域名有效的前提下
+	默认配置
+
+	root /usr/share/nginx/html;
+	server_name localhost;
+
+更新配置
+
+	root /var/www/example.com/html;
+	server_name example.com www.example.com;
+
+更新后将sites-available中的example.com软链到sites-enable中，重启服务。
+
+三. 反向代理
+nginx和apahce作为世界上最流行的服务器，在工作方式上不同，在使用场景上也是各有利弊。。一种常用的服务方式是nginx在前端提供静态文件服务，同时作为反向代理连接后端的apache提供动态服务。具体做法如下：
+
+假设你的apache服务在8080端口，修改 location / 内容如下：
+
+	
+        location / {
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                try_files $uri $uri/ =404;
+                # Uncomment to enable naxsi on this location
+                # include /etc/nginx/naxsi.rules
+                proxy_pass http://localhost:8080;
+                proxy_read_timeout 300;
+                proxy_connect_timeout 300;
+                proxy_redirect     off;
+
+                proxy_set_header   X-Forwarded-Proto $scheme;
+                proxy_set_header   Host              $http_host;
+                proxy_set_header   X-Real-IP         $remote_addr;
+        }
+
+	
+此时如果遇到css/js没有加载的情况，需增加对应的location对象：
+
+	
+        location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
+        {
+          root PARENT_PATH_FOR_RESOURCE; # 例如 /var/www/example.com/
+          if (-f $request_filename) {
+                expires 1d;
+                break;
+          }
+        }
+
+        location ~ .*\.(js|css)$
+        {
+          root PARENT_PATH_FOR_RESOURCE;
+          if (-f $request_filename) {
+                expires 1d;
+                break;
+          }
+        }
+		
+四. 其它说明
+
+1.nginx -s signal : (stop/quit/reload/reopen):
+	nginx -s quit : 等待当前任务执行完毕后结束nginx进程
+	
+nginx模块/变量定义： 以空格分隔，简单赋值以分号结尾，block赋值以{}包含内容。
+
+2.模块包含关系：
+	配置文件中最外面的模块称为main模块，http和events模块包含于main模块，server模块包含于http模块，location模块包含于server模块。       
+
+3.URL Mapping
+
+/ 表示最宽泛的匹配，任意其它不匹配的url请求都会请求到/data/www中：
+
+	location / {
+	    root /data/www;
+	}
+
+/images/ 表示请求中/images/的内容均会发送到 /data/images中：
+
+	location /images/ {
+		root /data/images;
+	}    
+
+~ \.(gif|jpg|png)$ 表示用正则匹配，包含以上后缀的文件请求会被用在 /data/images 中查找：
+
+	location ~ \.(gif|jpg|png)$ {
+		root /data/images;
+	}
+
+proxy_pass 用于代理服务，向根目录的请求会被转发到本机的8080端口
+
+	location / {
+        proxy_pass http://localhost:8080;
+    }
+	
+这篇blog几乎没有涉及任何nginx服务原理方面的介绍，也没有涉及nginx模块配置的功能，并非说明这些内容不重要（恰恰相反），主要是因为网上已经有很多详细的介绍，本文只是立足于糙快猛的使用nginx和看到效果，但最终要想深入了解nginx和使用好它，还是要多阅读经典的内容，部分blog:
+
+1. http://nginx.org/en/docs/
+2. https://www.digitalocean.com/community/tags/nginx?type=tutorials

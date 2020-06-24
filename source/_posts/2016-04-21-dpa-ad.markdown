@@ -1,0 +1,68 @@
+---
+layout: post
+title: "DPA Ad"
+date: 2016-04-21 18:56:56 +0800
+comments: true
+categories: [Facebook, Advertise] 
+keywords: DPA Facebook
+description: DPA广告 Facebook广告 Facebook Ad
+---
+
+本篇blog是DPA广告的一个简单介绍，主要阐述一些容易疑惑的问题，具体API操作和完整的操作还需要参考[FB文档](https://www.facebook.com/business/help/397103717129942?sr=3&query=dynamic%20product%20ad&sid=1zBRPgENv8I6Vf6LK)。
+
+为什么是DPA (dynamic product ad)？
+
+	dynamic指的是产品信息动态展现，不同的用户可能看到不同产品的广告。
+	product即产品，这类广告用于电商产品的投放。
+	所以这也是DPA广告的基础：因为dynamic，所以要在网站埋点（否则怎么知道哪个用户喜欢哪个产品），因为product，所以要先创建product catalog才能投放广告。
+
+Product Catalog/Feed/Set区别
+
+	catalog是一个产品目录，feed是里面的产品集合，每个feed是一个产品的全部信息，他们是一对多关系，类似campaign和adset。
+	set是一个广告投放的概念，一个catalog中可以有多个set，每个set中可以有多个产品，真实创建广告时，需要指定的是set信息。
+	feed需要是满足一定的格式csv或者其它文件，包含的信息包括SKU产品的状态（是否在售），描述，图片链接，网站链接，标题和价格等信息，这些信息最终会用于创意模板的填充
+
+Pixel
+
+	app有一套类似的event定义，没有细看，这里只说网站埋点的事情。
+	首先pixel是account级别的，在admanager tools里面可以创建pixel。创建后的pixel要和创建的product catalog关联。
+	pixel本身是一段js代码，要把它加到要埋点的网页中，同时要对应到具体的逻辑上面。所谓对应，指的是，如果要汇报"add to cart"事件，那么相应的js需要在网站上用户实际点击了"add to cart"后触发，因此这里的工作需要工程师支持，毕竟你得知道如何触发相关逻辑的代码才行。
+	pixel默认的行为只有page view, 但FB要求你至少添加三类基本事件的逻辑：
+	(1) viewcontent：用户查看页面
+	(2) addtocart：添加到购物车
+	(3) purchase：购买
+	这些行为发生时，会通过js汇报给FB，FB会依赖这些数据创建product audience
+
+Product audience
+
+	来自事件汇报，把基础事件进行组合，比如“添加了购物车但没有购买”的用户作为投放对象，那么有了"add to cart"和"purchase"事件后，可以创建相应的audience。
+	需要注意的是，audience是DPA广告必须的（否则也没有必要费劲埋点之类的）。
+	这样也可以看出DPA是比较适合做重定向的。
+
+创建广告
+	
+	创建campaign：和install广告类似，当然objective不同
+	创建adset：此时要指定product audience为投放对象，要指定product set为广告产品的来源集合，DPA会将product set中合适的产品展示给合适的用户（依赖machine learning）
+	创建ad/creative：不同于install广告需要指定广告的image_url，creative要指定的是creative template和product set，前者是创意模板，后者是模板中填充内容的来源。也就是说，有了product feed的title, image_url, website_url等信息，可以自动产生创意，而这个创意会在不同的投放人群上选择不同的product feed
+
+DPA vs 其它广告
+
+	我的理解是，DPA是用来投电商的，但不是投电商一定要用DPA。从上述过程可以看到，DPA的创建过程是比较麻烦的，它的价值在于：
+	(1) 效果可追踪，因为它的广告不是宣传你的网站，而是具体到了一个细致的产品售卖
+	(2) 人群优选：重定向，或者其它交叉定向（买了啤酒的人更容易买。。）
+	但它是不能覆盖那些没有访问你网站的用户的，因此如果你的目标是宣传你的电商网站，而不是追踪产品售卖结果的话，选择其它广告，而不是DPA
+	
+7.使用步骤
+
+    (1) 创建产品集合product catalog
+    (2) 创建FB像素并埋点到网站
+    (3) 依赖(1)创建product set
+    (4) 依赖(2)创建product audience
+    (4) 定义创意模板，添加product set
+    (5) adset依赖product set和product audience, ad依赖product set和creative template，这些都有了，可以创建DPA广告
+
+参考文档
+https://developers.facebook.com/docs/facebook-pixel/pixel-with-ads/dynamic-product-ads#how-to-obtain-a-Facebook-Pixel-ID
+https://developers.facebook.com/docs/marketing-api/dynamic-product-ads/v2.5
+https://developers.facebook.com/docs/marketing-api/dynamic-product-ads/product-audiences/v2.5
+https://developers.facebook.com/docs/marketing-api/dynamic-product-ads/ads-management/v2.5

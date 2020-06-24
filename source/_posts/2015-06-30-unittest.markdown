@@ -1,0 +1,94 @@
+---
+layout: post
+title: "单元测试&Python unittest"
+date: 2015-06-30 17:01:30 +0800
+comments: true
+categories: [Python, UnitTest] 
+keywords: 
+description: 
+---
+
+这篇博客是一篇关于单元测试和Python unittest的粗浅描述。背景是最近在项目开发中，涉及到一些基础模块的工作，我添加了一部分单元测试的代码，也在思考如何更合理的进行测试。
+
+###单元测试
+
+####为何做单元测试
+
+首先，理论上说，单元测试是必须的，在TDD开发中，单元测试甚至要先于代码开发，而根据研究，添加单元测试从软件工程的总体而言是会节省时间的。但在实际工作中，我感到更多的是开发进度的压力，使得测试很难完全覆盖代码，同时，由于需求本身的不确定性和自己能力所限，很难在开始就把TDD所需的输入输出构建清楚，因此我更多采用的是对实际拆分类的API类函数添加测试，而对较为复杂的逻辑函数（构建于多个基础函数之上，分支很多，包含状态）放弃单元测试。这的确是不合规的做法，但是我目前从效率和质量上平衡得到的结论。
+
+####单元测试准则
+单元测试应保证：
+
+	1.每个测试用例只测试一个函数
+	2.测试用例间彼此独立且正交
+	3.覆盖可能的边界条件
+单元测试应该避免：
+
+	1.不关心函数内部实现：按照TDD的要求，测试应该先于函数内容完成
+
+####单元测试其它
+
+1. 是否需要测试私有字段（Python中@property）
+
+	如果property里包含负责的逻辑，需要测试
+	如果只是简单的return或者复制，可以考虑不用 （当然理论上总应该是100% code coverage）
+
+2. 是否需要测试abstract class （Python中的abc module）
+
+	如果里面有具体函数实现，需要测试
+
+3. 如何测试含有db/网络访问的代码
+
+	构建测试桩，Python中有单独的mock模块，去模拟调用db或者http访问的返回
+
+
+###PyUnit
+
+官方文档在[这里](http://pyunit.sourceforge.net/pyunit_cn.html)。PyUnit是模仿Java的JUnit添加的一套测试框架，代码类似如下：
+
+	import unittest
+
+	class MyTestCase(unittest.TestCase):
+		def setUp(self):
+			pass
+		def tearDown(self):
+			pass
+		def test_name(self):
+			s = Student("XI", 20)
+			self.assertEqual(s.name, "XI")
+		def test_age(self):
+			s = Student("XI", 20)
+			self.assertEqual(s.age, 20)
+	
+	if __name__ == '__main__':
+		unittest.main()
+其中包含以下内容：
+
+	1. import unittest 引入unittest模块，同理，最终unittest.main()运行当前所有的测试用例
+	2. MyTestCase继承自unittest.TestCase，所有测试类均继承自此类
+	3. test_*函数默认会被自动调用
+	4. setUp和tearDown分别负责所有测试用例的初始化和清理工作
+	5. 通过assertEqual(a, b) 判断函数输出和标准值是否一致
+
+除了assertEqual外，常用的assert函数还包括：
+
+	assertTrue/assertFalse：测试函数返回值为True或者False
+	assertRaises：测试是否抛出指定的异常
+
+一个assertRaises的例子：
+
+	def test_name(self):
+		s = Student("XI", 20)
+		with self.assertRaises(TypeError):
+			s.name = 123
+当函数内部对输入应该抛出异常时，可以通过assertRaises检查是否真的抛出了指定的异常。
+
+除了运行所有测试用例外，也可以通过命令行只运行指定test\_model/TestClass/test\_method：
+
+	python -m unittest test_module
+	python -m unittest test_module.TestClass
+	python -m unittest test_module.TestClass.test_method
+
+TestSuite/TestLoader
+
+可以将一系列测试加入一个Suite管理，包括通过Loader加载，不过这个功能目前我还没怎么用过。

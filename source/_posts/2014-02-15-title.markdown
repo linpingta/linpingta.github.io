@@ -1,0 +1,60 @@
+---
+layout: post
+title: "如何设置Github博客"
+date: 2014-02-15 22:57:10 +0800
+comments: true
+categories: [Github]
+---
+
+http://www.ruanyifeng.com/blog/2012/08/blogging_with_jekyll.html
+
+按照上述博客操作，唯一的问题是在创建origin时 
+     git remove rm origin 
+     git remote add origin github@github.com:username/project.git
+遇到下面的问题
+     
+解决的方法是去：
+     C:\Users\YourUsername\AppData\Local\GitHub\PortableGit_054f2e797ebafd44a30203088cd3d58663c627ef\etc\gitconfig
+里面修改删除[remote "origin"]以及后面的两行，然后再重新尝试
+
+上面的方法设置好像不行
+
+如果按照下面方法设置
+http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/
+
+遇到的一个问题是
+http://stackoverflow.com/questions/15796274/rdiscount-error-failed-to-build-gem-native-extension
+
+有人说需要安装1.9.3 (我目前用的是1.9.2)，也有如下说法
+参考这里 http://www.cnblogs.com/puresoul/archive/2011/12/01/2270890.html
+
+的确看起来193和192的安装结果不同
+
+结论是193可以支持
+
+按照 http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/ 设置，在本地可以看到测试页面
+但是在部署到github上面还存在一些问题
+     运行rake setup_github_pages，出现如下错误
+     
+     问题的解决主要是在环境变量里添加git.exe的路径，可以参考http://stackoverflow.com/questions/9793806/no-such-file-or-directory-git-ls-files-windows ，另外必须重启ruby和git的控制台
+
+最后遇到发布问题
+解决参考此贴：
+https://teamtreehouse.com/forum/i-got-permission-deniedpublickey-when-i-typed-git-push-origin-master
+用 https://github.com/uername/project.git 而不用 git@github.com:username/project.git 来完成功能
+
+管理文章
+     直接增加或删除.markdown文件，然后更新状态:http://never.doubting.me/2013/04/18/2013-04-18-setup-octopress-on-github-step-by-step/
+      rake generate
+      rake deploy
+
+这里如果遇到 "Gem::RemoteFetcher::FetchError:" 的问题，即每次会提示一个ruby模块没有安装，但安装后又继续提醒下一个ruby模块没有安装，实际上是因为下载问题引起的，简单的解决方法是修改octopress目录下的Gemfile文件，将其中的
+
+    source "https://rubygems.org"
+
+修改为
+
+    source "http://rubygems.org"
+
+其它解决方法可以参考[stackoverflow回答](http://stackoverflow.com/questions/10246023/bundle-install-fails-with-ssl-certificate-verification-error/10430331#10430331)
+

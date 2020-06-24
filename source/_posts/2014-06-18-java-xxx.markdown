@@ -1,0 +1,186 @@
+---
+layout: post
+title: "Java 临时抱佛脚1"
+date: 2014-06-18 00:34:39 +0800
+comments: true
+categories: [Java]
+---
+
+Java 临时抱佛脚
+
+* 反射：RTTI
+动态的获取对象属性 
+
+
+    // 方法1 getClass from object
+    Class a = obj.getClass("ClassName");
+    // 方法2 Class.forName()
+    Class a2 = Class.forName("ClassName");
+    
+    Method m = a.getMethod("MethodName",null);
+
+* 抽象类与接口
+
+抽象类和接口的区别更多的体现在design上。因为Java不支持多继承，每个类都只能继承自一个基类，那么抽象类表示
+的含义是 "is a"，而接口表示的是附属属性“has a”，比如一个防盗门，门是它的基本属性，防盗是它的附加属性，那么
+门应该作为抽象类存在，而防盗作为接口提供附加属性。
+    
+    // 抽象类
+    abstract class A1{    
+        abstract public void f1();
+        abstract public void f2();
+    }
+    
+    // 接口
+    interface I1{
+        void f1();
+        void f2();
+    }
+    
+    class A2 extends A1{
+        public void f1(){
+            System.out.println("F1");
+        }
+        
+        public void f2(){
+            System.out.println("F2");
+        }
+    }
+
+* 对象定义
+
+Java的基本数据类型定义在栈上，对象定义在堆上。对象变量实际上是对于对象的引用（实际上Python有相同的概念），
+因此在使用时要区分==和equals()
+   
+    == 表示比较值, equals 表示比较引用
+    比如
+        // class A
+        A a1 = new A("123");
+        A a2 = new A("123");
+        A a3 = a1;
+        
+        a1 == a3 // True
+        a1 == a2 // False
+
+* 静态块
+
+看下面这个例子
+
+    // case1
+    class B{
+        private static int count = 10;
+        static{
+            count = 20;
+        }
+        
+        public void printCount(){
+            System.out.println(count);
+        }
+    }
+    
+    // case2    
+    class B{
+        static{
+            count = 20;
+        }
+        private static int count = 10;
+        
+        public void printCount(){
+            System.out.println(count);
+        }
+    }    
+    
+    结果：
+    20 // case1
+    10 // case2
+
+出现这样结果的原因在于，java静态变量的初始化就是在静态块中进行的，因此直接在变量定义时赋值和通过
+静态块定义都会改变变量的值，最终的结果取决于它们的定义顺序。
+
+另外，和C++一样，Java允许非静态函数中包含静态变量，反之不可，原因想想静态和非静态的编译时刻，静态函数中没有
+this指针，因此无法了解具体在调用的是哪个对象的变量。
+
+    
+* 访问权限
+
+        Java的类只有public和包内两种访问权限。默认是包内，对于每个.java文件，最多只能有一个public类，因为每个
+.java文件会被编译为.class，那么它的对外接口最多只能有一个。
+
+        abstract修饰的类：表示抽象类，用于后面的继承 （必须有子类）
+        final修饰的类: 表示常量类，不可以被继承 （无子类）
+
+* final / finally / finalize
+
+这看起来是java的一个经典议题，它们的相关性是。。它们长得很像。但从功能上讲，它们完成的功能完全不同
+
+    final : 
+    与C++ const比较
+    1. 对于基本类型，可以认为二者是一致的 （似乎final可以用于call 非final的成员函数而const不可以）
+    2. 表示常量类
+
+    finally :
+    异常处理中必须要执行的操作，通常是文件/数据库的关闭等,但此函数的调用时间是由GC决定的，因此执行
+    时刻可能是任意的
+
+    finalize:
+    在垃圾回收时会调用的方法，值得注意的是，它本身并不会主动触发垃圾回收，实际上是在垃圾回收时负责
+    特殊的清理工作
+
+* 垃圾回收
+
+既然说到了垃圾回收，Java采用的回收机制主要有两种
+
+    1. mark and sweep : 一块空间，造成不连续，少量垃圾对象
+    2. stop and copy ：两块内存空间，连续，对象拷贝
+
+* Java和C++区别 （杂）
+
+
+    1. Java中的方法均定义在类内，不允许在类外定义方法
+    2. Java没有作用域运算符::，所有操作用.表示
+    3. Java的类定义没有分号结尾
+    4. Java中只有公有继承，通过extends关键字声明；而implements关键字是声明接口继承用的；
+    5. Java不直接支持多继承，可以用接口替代
+    6. Java通过super显式调用基类构造器；
+    7. final表示不可改变的，和const基本类似；
+    8. private方法隐含就是final类型的；
+    9. final参数表示变量无法在函数中修改
+    10. final函数表示函数不能被重写
+
+
+* foreach遍历容器
+
+
+    int arr1[] = {1,3,5,2};
+    for (int element : arr1){
+        System.out.println(element);
+    }
+
+* 类型转换
+
+        String to int
+        int a = Integer.parseInt(s);
+         int to String
+        String s = String.valueOf(a);
+         // 其余类型类似
+    
+        Integer是int的包装，int是基本类型，Integer是类
+
+* instanceOf 和 getClass
+
+
+    a instanceOf DerivedA 会判断a是不是DerivedA或者它的基类类型
+    a.getClass() == DerivedA.class 只判断a是不是DerivedA类型，不包括对于基类的判断
+
+* 传值还是传引用
+
+
+    参见Python pass by Vlue
+
+* String和StringBuffer
+
+
+    String str = "";
+    str += "here";
+    其实际的操作是str对象不可变，而是改变了str的指向，即此过程中，创建一个新的对象 StringBuffer sb = new StringBuffer(str); sb.append("here"); str = sb.ToString()
+    因此String对于可变数组的效率比StringBuffer小非常多；

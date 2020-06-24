@@ -1,0 +1,39 @@
+---
+layout: post
+title: "excel_convertor"
+date: 2014-07-11 00:29:08 +0800
+comments: true
+categories: [Github Project]
+---
+
+
+最近几天在做的这个项目的需求是这样的（实际上做也就一天不到，然后就是不断的改需求）。客户从某些地方爬取了一些商品数据，存在txt里面（可以认为一行数据是一个item），要导入到指定模板格式的Excel中，简单说txt的一行数据就是excel的一行data（实际上在业务上讲有变体的概念，每个txt在excel中可能对应1到N行），但excel中数据的填写位置要根据模板不同做选择和确定。因为txt里的数据是爬虫直接得到的，可能有些内容不能导入到excel里面，需要提供一个用户修改的界面，比如当用户看到一些图片的时候允许删除它（有版权的水印图片），允许用户修改前缀，另外估计用户是直接抄别人的数据填充自己的网站，所以还有提供价格和折扣价的处理。
+其实整体来讲这个私活没有太高的技术要求，无非是三个部分：解析txt字符串，界面编辑，excel读写，其中txt的解析结果需要存储到数据库里供界面调用处理，然后处理结果再从数据库中转换为excel相关列。比较麻烦的是需要考虑全面，有很多很多细节要处理。（这也是值得吐槽的地方，哎）。因为用户有界面要求，我选择C#作为界面编码部分的语言，主要是因为C#对界面开发有较好的支持，而在解析字符串和读写excel部分，我采用python作为开发语言，原因是对我而言python对于这种原型级别的开发比其它工具快一个数量级（说到底都是为了快点弄完好收钱啊）。
+虽然是不复杂的软件，但也简单画一个架构图说明下。基本一切操作都是围绕数据库的，箭头表示与数据库的关系是insert （解析）， select （excel），或者update / delete （界面控制）
+
+显示效果：
+
+![S1](/images/2014/07/excel_convertor.png)
+
+![S2](/images/2014/07/excel_convertor2.png)
+
+涉及到的技术：
+
+1. C# 通过重定向调用Python
+
+   虽然ironpython也是一种选择，但我之前读过类似的文章，所以还是选择了这种方案，原理是起一个进程调用py，然后把输出结果（我这里用的是标准输出）重定向到C#中，主要用到了C#中ProcessStartInfo类
+  
+2. python读写数据库 （解析部分写，excel部分读）
+
+   用到MySQLdb库。 http://sourceforge.net/projects/mysql-python/  其实没什么好说的，因为建的表也是很简单的table，我把所有txt处理的结果先存到一个对象链表里，然后再insert到数据库里
+
+3. python读写excel （这里说到读写是指python读excel模板写入另一个根据模板生成的excel文件）
+
+  用到xlwt,xlrd,xlutils库。 https://pypi.python.org/pypi/xlrd 但注意它们不支持xlsm。我开始以为xlwt和xlrd就足够支持了，但后来发现不能直接在用xlrd的excel里面写入数据（算是一个小坑吧，因为模板有很多种，我不能写入excel的固定位置，而是要根据字符串内容去查column index，因此在操作逻辑上是要先read template，然后把这些info用于write到一个拷贝模板中，需要用到 wb = copy(rb)）
+  
+4. 各种C#控件 （比如当用户选择某行数据时要在界面上显示相应的图片，用户删除某个图片时图片数量变化）
+
+以上面的图片为例，用户要去除一些不合格的[图片](http://img.blog.csdn.net/20140118154719406?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlucGluZ3Rh/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+
+简单总结下个人感觉，python的确是快速开发的神器，实际上这也是我最爱的语言，C#很像快餐，虽然没什么营养但确实看的漂亮。以后还是少做这种活了，对自己其实没什么提高，要处理的小问题超级多超级麻烦，钱也不多（更关键是还没到手啊）。。。
+

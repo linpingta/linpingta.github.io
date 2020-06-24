@@ -1,0 +1,62 @@
+---
+layout: post
+title: "state pattern"
+date: 2015-03-28 11:04:40 +0800
+comments: true
+categories: [Design Pattern]
+---
+
+今天要介绍的问题是工作中遇到的一处设计问题。简单来说，我们希望模拟用户的一系列行为，一个例子可以理解为一个人从公司到家，可以先做地铁再做公交，也可以先做公交再走路甚至在骑车，或者中途要做什么事情，必须经过某点，这里的用户行为可能是固定模式，但是在不同条件下有不同表现的，而用户的行为，或者说决策是需要支持灵活输入的，而每种行为被拆分为一系列步骤后，步骤间的转换也是灵活可配置的。这里的例子多少有点奇怪，但由于公司工作的特点，我想重点说明的并不是业务逻辑，而是如何去实现一种状态机。
+
+关于这个问题，设计模式中的状态模式可以大显身手了。
+
+当应用程序开发时，可能会根据不同的情况作出不同的处理，最简单的处理方法是用if ... else 语句来囊获所有的处理情况。然而，如果系统非常复杂（或者说用户有不断提出新条件的需求），总不能每个新需求就在代码里新加一个else吧，或者说如果用户需求是系列性彼此依赖的（完成一系列行为要做A，B，C），那么用else无法解决问题。
+
+状态模式立足于灵活的解决上述问题，提供系统更强的扩展性，关于这部分的例子比如[红绿灯](http://alaric.iteye.com/blog/1938400)或者[电梯](http://blog.csdn.net/hguisu/article/details/7557252)
+
+给出我的一个python实现：
+
+    class Context(object):
+        def __init__(self):
+            self.status = ConcreteStatusA()
+            self.value = 1
+        def set_status(self, status):
+            self.status = status
+        def change_status(self):
+            return self.status.change_status(self)
+        def operate(self):
+            return self.status.operate(self)
+
+    class Status(object):
+        def __init__(self):
+            pass
+        def change_status(self, group):
+            pass
+        def operate(self, group):
+            pass
+
+    class ConcreteStatusA(Status):
+        def __init__(self):
+            pass
+        def change_status(self, group):
+            print 'Call Status A'
+            if group.value == 1:
+                group.value = 2
+                group.set_status(ConcreteStatusB())
+                return True
+            return False
+        def operate(self, group):
+            print 'Operate A'
+            if group.value == 1:
+                print group.value
+
+    class ConcreteStatusB(Status):
+        def __init__(self):
+            pass
+        def change_status(self, group):
+            print 'Call Status B'
+            return False
+        def operate(self, group):
+            print 'Operate B'
+
+感觉设计模式在处理实际问题中是有很大作用的，之前做广告创建时用到了工厂，上周文章中Manager.dict用到了代理模式，作为一个非java程序员，今天又了解了spring设计中的控制反转，仍然有很多需要学习和实践。

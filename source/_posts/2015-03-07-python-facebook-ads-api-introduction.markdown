@@ -1,0 +1,154 @@
+---
+layout: post
+title: "python facebook ads api简介"
+date: 2015-03-07 14:28:54 +0800
+comments: true
+categories: [Python, Facebook]
+---
+
+一. Facebook Ads功能简介
+
+据报道，Facebook作为世界最大的社交网站，其绝大部分收入均来自广告。不同于一般移动端/PC广告的常见形式，Facebook广告采用信息流方式(News Feed)推送广告，这一点上，在国内相似的公司还有微博，人人，QQ，头条等，另外多说一点，尽管我并没有深入理解这种广告形式的特点，但从投放效果看，信息流广告作为一种较新兴的广告模式有更好的转化指标，可能在将来会更加吸引广告主的注意。
+
+Facebook具有自己的广告管理平台，但在其生态系统下，同样生存着很多相关应用的公司。从广告角度讲，Facebook提供了广告对外的访问接口（目前主流的有直接拼Http请求，PHP SDK和Python SDK三种，javascript SDK在部分类型的应用中也有实现），给广告主或代理公司更多的控制权限。
+
+通过[Ads API](https://developers.facebook.com/), 用户可以实现:
+(1)[创意](https://developers.facebook.com/docs/marketing-api/adcreative/v2.2)的创建
+(2)广告的创建（在Facebook的层级中广告包含[camapign](https://developers.facebook.com/docs/marketing-api/adcampaign/v2.2), [adset](https://developers.facebook.com/docs/marketing-api/adset/v2.2)和[ad](https://developers.facebook.com/docs/marketing-api/adgroup/v2.2)三个级别），删除，修改和读取
+(3)投放效果的[统计](https://developers.facebook.com/docs/marketing-api/adstatistics/v2.2)
+(4)[报表](https://developers.facebook.com/docs/marketing-api/adreportstats/v2.2)的支持
+
+关于Facebook Ads中对象的概念，可参看[Getting started on the Ads Management API](https://developers.facebook.com/docs/marketing-api/getting-started)
+
+阅读上面的内容，大致可以了解Facebook广告体系中的基本概念，但Facebook广告投放还有很多有趣的而我没有深入了解的概念，比如[粉丝页](https://www.facebook.com/pages/How-to-Make-a-fanpage/154116888814)，比如[相似用户定向](https://developers.facebook.com/docs/marketing-api/lookalike-audience-targeting/v2.2)，以及需要时间说明的概念，比如[Account和User](https://developers.facebook.com/docs/graph-api/reference/v2.2/user)的关系，这些以后有机会再做了解和说明。
+
+二. 模块结构
+
+SDK可以从[这里](https://github.com/facebook/facebook-python-ads-sdk)下载。下载后可以选择setup.py安装，也可以将facebookads作为单独的模块置于程序可访问的路径下。
+
+facebookads中包含如下文件：
+
+    * object.py : Facebook广告系统中对象概念在python中的对应，比如AdCampaign对应Facebook Ads中的campaign，AdUser对应Facebook Ads中的user
+    * mixin.py : object.py中对象的公用接口，比如HasStatus表示继承它的类具有状态
+    * api.py ：负责https请求的包装和响应的接收
+        请求通过 FacebookAdsApi类中的call函数实现
+        响应被记录为FacebookResponse对象返回
+    * exception.py : 异常处理类，继承自python Exception
+    * session.py ：维护http连接， Facebook Ads API中绝大部分的调用都需要调用权限(access_token), sesssion保存会话信息
+    * bootstrap.py / spec.py: 没有实际用过，不了解
+
+Facebook Python SDK开发采用[CRUD模式](https://github.com/facebook/facebook-python-ads-sdk), 所有对象均继承自AbstractObject，被请求的对象继承自AbstractCrudObject(它本身也是AbstractObject的子类)，比如AdAccount对象是AbstractObject而非AbstractCrudObject，AbstractCrudObject包含以下四个基础方法：
+
+    * remote_create : 创建对象（比如在Facebook侧创建campaign）
+    * remote_read ：读取对象信息
+    * remote_update : 更新对象信息
+    * remote_delete : 删除对象
+
+以上操作最终会封装对象相关的信息，通过FacebookAdsApi.call向Facebook侧发送http请求:
+
+    def call(self, method, path, params=None, headers=None, files=None):
+        '''
+        参数：
+            methods: 指的是HTTP请求类型，比如DELETE/GET/POST，根据上层的调用不同不同
+            path: tuple对象，被翻译为 graph_url/tuple[0]/tuple[1]...
+            其中graph_url是https://graph.facebook.com
+            params: JSON对象，请求实际的内容
+        返回：
+            FacebookResponse对象，也是对于http response的封装
+
+最终组合成的http请求类型：
+    
+    graph.facebook.com/v2.2/act_ACCOUNTID/stats?start_time=xxx&end_time=xxx&access_token=xxxx
+
+在实际应用中, 
+
+（1）经常会有类似“获取当前推广活动Campaign下所有的广告系列Adsets”的需求，Facebook Python SDK提供如下的函数：
+
+    def get_ad_sets(self, fields=None, params)
+
+调用方式：
+
+    for adset in campaign.get_ad_sets([
+        AdSet.Field.id,
+        AdSet.Field.name,
+        AdSet.Field.targeting,
+    ]):                                # 返回adsets，其中每个adsets包含id, name和targeting信息
+        print adset[AdSeet.Field.id] 
+        print adset[AdSeet.Field.name]
+        print adset[AdSeet.Field.targeting] 
+
+（2）另外一种常用的请求方式是[Batch Request](https://developers.facebook.com/docs/marketing-api/batch-requests)，即批量的发送请求。它的基本原理是把多条http请求（比如创建多个Ad，每个Ad的创建都是一条http请求）合并为一条请求发送给Facebook，Facebook将所有的响应合并后返回。
+
+在Python SDK中，主要由FacebookAdsApiBatch负责批量请求的发送，具体的代码可见其add和execute函数, 前者负责请求的拼接，后者负责请求的实际发送。
+
+调用实例：
+
+    from functools import partial
+
+    def create_ads(self, adsets, creative_ids, api):
+        ''' batch version of ad creation'''
+        try:
+            api_batch = api.new_batch()
+            def callback_success(response, adset_id):
+                print adset_id
+            def callback_failure(response, adset_id, error_reasons = [])
+                response_error = response.error()
+                e_dict = {}
+                e_dict['http_status'] = response_error.http_status()
+                e_dict['api_error_message'] = response_error.api_error_message()
+                error_reasons.append(e_dict)
+            error_reasons = []
+            for adset in adsets:
+                callback_success = partial(callback_success, adset_id = adset[AdSet.Field.id])
+                callback_failure = partial(callback_failure, aset_id = adset[AdSet.Field.id], error_reasons = error_reasons)
+                ad.update({
+                    AdGroup.Field.name: 'xxx',
+                    AdGroup.Field.campaign_id: adset[AdSet.Field.id]
+                })
+                ad.remote_create(batch=api_batch, success=callback_success, failure=callback_failure)
+            api_batch.execute()
+
+需要说明的是，**批量请求在系统设计的初期最好有所考虑**，这是因为Facebook对于API的调用次数和频率都有一定的限制，当需要进行大量请求时（比如读取所有广告的统计信息），短期频繁的调用可能会引发以下两个错误：(名称可能不完全一致)
+
+    (1) User Call Limit Reached
+    (2) Make too many calls in certain time
+
+由于通常广告系统本身也有并行需求，因此尽早考虑批量API，在调用时做两级并行（应用本身CPU级别并行和https请求拼接）对于系统性能的提高是很有好处的。
+
+三. 调用实例
+
+较常用的实例可见Python SDK中的examples目录。examples基本包含了所有Ad的调用实例，可以作为编码的最主要参考，这里仅结合实际应用做一些简单的补充。
+
+(1) 调用结构
+
+    def run():
+        session = FacebookSession(app_id, app_secret, access_token) # 这三项在创建广告APP的时候应该可以被获取
+        
+        api = FacebookAdsApi(session) # 设置api session
+        FacebookAdsApi.set_default_api(api) # 设置默认api, 对象调用如remote_create/delete等操作会使用默认api
+        # do your call
+
+(2) 统计API
+
+    account = AdAccount('act_<ACCOUNT_ID>')
+    fields = ['action'] # 获取Action信息，Facebook允许定义多种Action，具体可见官网说明，这里也可以填写其它API允许的字段，对于某些API调用，不填写将只返回id
+    params = {
+        'adgroup_ids' : ids, # JSON object here
+        'start_time' : start_time,
+        'end_time' : end_time,
+    }
+    # 根据params限定的请求，返回包含field的结果
+    stats = account.get_ad_group_stats(fields=fields, params=params) 
+
+四. 其它
+
+Facebook Ads API的调用存在一些陷阱，比如最近遇到的[批量创建异常](https://github.com/facebook/facebook-python-ads-sdk/issues/35), (这里也推荐 https://github.com/facebook/facebook-python-ads-sdk/issues 作为一个常见问题查找的地方)，但更多的问题来自调用方式的错误，这一点可以注意保存FacebookResponse信息查找问题。
+
+常见的问题如：
+    (1) User Call Limit Reach，调用次数达到上限，通常过几分钟调用可成功，因此系统应该支持重试机制，毕竟网络因素是难以忽略的
+    (2) Api Call too mang times 同上，修改为批处理模式
+    (3) Connection reset by peer 通常是网络连接不稳定，重试处理
+
+还有其它很多问题，在工作中需要进一步探索，以上谈到问题不正确的地方欢迎指正，邮箱linpinga@163.com，谢谢
+
+
