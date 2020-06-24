@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: weixin | linpingta's blog]]></title>
+  <link href="http://yoursite.com/blog/categories/weixin/atom.xml" rel="self"/>
+  <link href="http://yoursite.com/"/>
+  <updated>2020-06-24T10:13:34+08:00</updated>
+  <id>http://yoursite.com/</id>
+  <author>
+    <name><![CDATA[linpingta]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Weixin相关项目]]></title>
+    <link href="http://yoursite.com/blog/2016/06/18/weixin-related-project/"/>
+    <updated>2016-06-18T21:11:48+08:00</updated>
+    <id>http://yoursite.com/blog/2016/06/18/weixin-related-project</id>
+    <content type="html"><![CDATA[<p>1.<a href="https://github.com/linpingta/weixin-api-related/tree/master/wx-api-alpha">wx-api-alpha</a></p>
+
+<pre><code>最开始的设想是想仿照Facebook Ads Python SDK封装一套weixin的API，但实际完成度很低，项目里主要包含的是一个token的自动获取（微信默认每一段时间token就会失效，因此每次调用前需要先确认token有效，这点可以通过token自动获取简化），以及基本requests对http调用的封装。
+</code></pre>
+
+<p>2.<a href="https://github.com/linpingta/weixin-api-related/tree/master/dm-message-server/weixin_server">dm-message-server</a></p>
+
+<pre><code>微信对用户输入的交互示例
+以及与微信相关的任务管理，包括显示，编辑，创建和删除等
+</code></pre>
+
+<p>3.<a href="https://github.com/linpingta/weixin-api-related/tree/master/weixin-monitor">weixin-monitor</a></p>
+
+<pre><code>微信报警模块的简单示例
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[微信订阅号vs服务号vs企业号]]></title>
+    <link href="http://yoursite.com/blog/2016/04/04/weixin-account/"/>
+    <updated>2016-04-04T10:13:23+08:00</updated>
+    <id>http://yoursite.com/blog/2016/04/04/weixin-account</id>
+    <content type="html"><![CDATA[<p>虽然在上一篇<a href="http://linpingta.cn/blog/2016/03/25/weixin/">博客</a>中对订阅号做了简单的探讨，但现在看来当时对订阅号功能概念理解不深，这里结合微信平台提供的另外两种公众号：服务号和企业号，再对问题做一下说明。</p>
+
+<p>我想初次接触微信开发的人（比如我），总是会对使用哪种类型的公众号产生困惑，毕竟公众号绑定邮箱，同时确认类别后不可再做更改。首先要说明的是，如果你是个人开发者，那么只能绑定订阅号，因为服务号和企业号都需要企业或政府机关的相关资质。反过来说，如果你是企业开发者，订阅号也是有它自己的意义的，具体阐述如下：</p>
+
+<p>先把微信官方关于不同账号区别的<a href="https://kf.qq.com/faq/140806zARbmm140826M36RJF.html">链接</a>放在这里，其实这个链接看懂了，本文下面的内容是可以考虑不看的。。。</p>
+
+<p>但是，既然看到了这里，那么可以再听我阐述下不同账号的区别：
+1.订阅号：主要是消息发布，具体表现上，它提供了每天1条的群发功能，适用的场景是服务群体用户，用户更多的是读取信息，而不是交互信息。
+2.服务号：主要用于客户服务，首先在群发功能上，服务号每月最多只有4条群发消息，相比订阅号每天1条的限制，服务号并不适合发布文章吸引用户，因为群发的频率太低了，它更适合的是和用户做交互，具体表现上，它的消息会像好友消息一样出现，而不是像订阅号一样都出现在一个名叫“订阅号”的群组内，同时它很适合交流，就像好友聊天一样，还有最重要的一点是，它提供了订阅号不能提供的高级功能，比如语音和支付，使得用户交互的形式可以更为多样。
+3.企业号：主要用于企业客户的服务，这里的概念相比服务号，重点强调了企业，实际上也是它和服务号的区别之处：安全和特殊。安全是指，企业号的关注着必须要进行身份验证（不同于服务号只要用户关注了就可以使用），企业号的内容禁止转发；特殊是指，企业号的关注人数有上限限制，你可以为企业号做一些定制方面的应用。</p>
+
+<p>综上所述，如果你是要做企业宣传，那么应该选择订阅号；如果你是要做toC的用户服务，那么应该选择服务号；如果你是要做toB的客户服务（或者内部使用），那么应该选择企业号。</p>
+
+<p>服务号和企业号都有300元/年的管理费用，订阅号如果不认证是没有的。</p>
+
+<p>另外补充一点API的说明：API是针对功能提供的，而不是针对账号提供的。换句话说，只要你的公众号有这种服务功能，那么API就可以做相关支持，因此在API学习方面，并不需要每种账号单独做学习。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[微信公众平台--订阅号开发初探]]></title>
+    <link href="http://yoursite.com/blog/2016/03/25/weixin/"/>
+    <updated>2016-03-25T23:37:37+08:00</updated>
+    <id>http://yoursite.com/blog/2016/03/25/weixin</id>
+    <content type="html"><![CDATA[<p>背景
+本来的计划是希望将一些爬虫聚合的数据通过微信作为出口推送给相关的用户，公司多少也有点类似的需求，因此今天花了一点时间做了相关调研。</p>
+
+<p>1.基础概念
+    1.1 开放平台 vs 公众平台</p>
+
+<p>这里有必要阐述微信两种平台的不同之处，因为尽管从名称上看，技术人员应该选择开放平台作为开发基础，但网上大多数微信开发的入门文章都是基于公众平台的开发（我猜想与开放平台推出时间较晚有关）。</p>
+
+<p>开发平台：针对App开发者，主要用于App内容向微信的分享
+公众平台：微信本身的订阅号和服务号之类开放，以及部分html5开放</p>
+
+<p>理解比较粗浅，但重点是，开放平台(<a href="https://open.weixin.qq.com">https://open.weixin.qq.com</a>) 不同于公众平台(<a href="https://mp.weixin.qq.com">https://mp.weixin.qq.com</a>)。</p>
+
+<p>1.2 服务号 vs 订阅号
+微信公众平台本身提供订阅号和服务号两种类型的公众号，具体功能上，订阅号强调于单方面的信息输出，允许每天一次的向用户推送消息，服务号强调于用户交互，并不会有太多的群发机会，而是更多根据用户输入做反馈交互。</p>
+
+<p>2.注册订阅号</p>
+
+<p>这里我选择的是订阅号，原因有二：
+    (1) 如“背景”所言，我希望向用户定期做消息推送，并没有想太多交互方面的内容（并不排除会有）
+    (2) 好像个人只能申请订阅号</p>
+
+<p>创建订阅号的步骤按照<a href="https://mp.weixin.qq.com/cgi-bin/readtemplate?t=register/step1_tmpl&amp;lang=zh_CN">网站</a>提示步骤执行即可，几点注意：
+    (1) 每个邮箱仅能申请一种帐号：公众号或企业号
+    (2) 选择订阅号或者服务号后不可修改
+    (3) 如果选择非个人类别的订阅号，比如企业政府，那么需要提供各种相关资质（比如营业执照），好吧这里我只能选个人</p>
+
+<p>我注册了一个围棋相关的账号，看到这里可以考虑关注下试试~
+<img src="https://mp.weixin.qq.com/misc/getqrcode?fakeid=2399977679&amp;token=1326491733&amp;style=1" alt="enter image description here" /></p>
+
+<p>注册完账号后，你就可以在订阅号的后台看到这个账号的基础信息，基本的功能包括：
+    (1) 群发消息 （每天一条）
+    (2) 自动回复
+    (3) 自定义菜单
+    注意第(2)和(3)项在开发者模式下失效。</p>
+
+<p>3.订阅号接入后端服务器</p>
+
+<p>实话说，如果你只是想有一个订阅号，然后去使用它，那么并不需要写什么代码，大多数账号也是在这种状态下维护的。</p>
+
+<p>那么如果你想接入开发者后台去做一些自动的操作，这时候才涉及到程序开发。</p>
+
+<p>基础内容首先参考<a href="https://mp.weixin.qq.com/wiki/17/2d4265491f12608cd170a95559800f2d.html">微信接入文档</a>，它对认证相关说明已经比较清楚了，这里只强调一个概念，再附上一段认证的python/Django代码（毕竟官方的认证样例是php的）。</p>
+
+<p>概念一：从架构上说，用户在微信客户端的操作会先发到腾讯服务器，然后再由腾讯服务器发送到你指定的url，同时你的处理（比如用户回复）也会经过腾讯服务器返回给用户。因此接入文档要求你有一个url，80端口有效，用户接收腾讯服务器发来的认证请求，并通过返回值让腾讯服务器知道你的服务器可用。</p>
+
+<p>清楚这一点后，就可以知道后端服务器并不限于用什么语言，什么服务器，重点是你有一个可用的url，可以做request/response服务就ok。</p>
+
+<p>概念二：腾讯服务器向你服务器发送的请求，只有验证有效的请求是GET，其余用户交互均是POST请求。</p>
+
+<p>网上有比较多关于如何在SAE上搭建应用的例子，我因为有自己的服务器资源，所以还是选择在自己的服务器上提供服务。</p>
+
+<p>创建一个django服务，提供验证服务：</p>
+
+<pre><code>from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import hashlib
+
+token = 'shoutan_weiqi'
+
+@csrf_exempt
+def index(request):
+    print request
+    if request.method == 'GET':
+        signature = request.GET.get('signature', None)
+        timestamp = request.GET.get('timestamp', None)
+        nonce = request.GET.get('nonce', None)
+        echostr = request.GET.get('echostr', None)
+        check_list = [token, timestamp, nonce]
+        check_list.sort()
+        checkstr = ''.join(check_list)
+        if hashlib.sha1(checkstr).hexdigest() == signature:
+            return HttpResponse(echostr)
+        else:
+            return HttpResponse('fail')
+    else:
+        pass
+</code></pre>
+
+<p>认证成功后可以在公众号后台页面看到app_id和app_secret （好熟悉，和Facebook API一样一样的）。启动你的服务器配置。。。</p>
+
+<p>我没有再深入研究的槽点在于“接口权限”，按照微信后台的说法，如果是没有认证的订阅号，只能自动回复消息，不能群发消息，另外一方面，个人订阅号不支持认证。。。也可能是我研究不够深入，但如果这样的效果，肯定暂时不能满足我文初提到的需求，所以只能暂时搁置了。</p>
+
+<p>本文算是微信公众平台很浅显的一个介绍，更多好的详细的文章，一方面参考官方文档，另外一方面多用google哈~</p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,127 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>爬虫  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="爬虫 我分析系统的数据源来自58的租房版块和链家的租房信息，实际上也对我爱我家的租房信息做了 简单爬取，但是因为这些数据源的爬虫从技术角度并没有革新（不存在AJAX动态加载的数据）， 过多的数据源只是工程量上的重复（加载哪个div中的数据），因此并没有做过多的扩展。 &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">爬虫</h2>
+	<div class="entry-content"><h2>爬虫</h2>
+
+<p>   我分析系统的数据源来自58的租房版块和链家的租房信息，实际上也对我爱我家的租房信息做了
+   简单爬取，但是因为这些数据源的爬虫从技术角度并没有革新（不存在AJAX动态加载的数据），
+   过多的数据源只是工程量上的重复（加载哪个div中的数据），因此并没有做过多的扩展。</p>
+
+<p>   我采用Java的<a href="">crawler4j</a>作为爬虫框架，<a href="http://jsoup.org/">jsoup</a>作为html解析工具。
+   因为这些网站比较规则，同时我也是入门级的爬虫学习者，因此关于爬虫和html解析本身并没
+   有很多可以说明的东西，基本上照着API文档去做就可以了。</p>
+
+<p>   爬虫数据必须按照数据库中的规范导入数据库，因此我的url解析包含以下两个模块：</p>
+
+<ol>
+<li>html parser</li>
+<li>database store</li>
+</ol>
+
+
+<p>   二者通过dict联系</p>
+
+<pre><code>参考58数据：
+Count: 1 max_floor 3
+Count: 2 greent_rate
+Count: 3 open_company
+Count: 4 pay_num 1
+Count: 5 service_company
+Count: 6 direction 南
+Count: 7 space_num 1
+Count: 8 info_source 58
+Count: 9 city 北京
+Count: 10 size 20
+Count: 11 curr_floor 2
+Count: 12 open_time 0000-00-00
+Count: 13 loan_num 1
+Count: 14 wash_num 1
+Count: 15 agent_tel
+Count: 16 Price 500
+Count: 17 houseDetailDesc 暖气热18度土桥地铁张家湾中心小学高档公寓独立卫浴出租
+Count: 18 local 梨园
+Count: 19 district 通州
+Count: 20 agent_name
+Count: 21 room_num 1
+Count: 22 local_detail 芳草园
+</code></pre>
+
+<p>   详细代码可参考<a href="https://github.com/linpingta/58RentInfoCrawler">这里</a></p>
+
+<p>当时随手写下的一些遇到的问题:</p>
+
+<p><img src="/images/2014/07/table1.png" alt="S1" />
+<img src="/images/2014/07/table2.png" alt="S2" /></p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-07T23:49:51+08:00" pubdate data-updated="true">Jul 7th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

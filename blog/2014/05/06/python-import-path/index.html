@@ -1,0 +1,119 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Python Import 路径  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="基本的import path可见 http://mobile.51cto.com/symbian-272844.htm (1) import 同模块下另一文件 import file1 (2) import 子模块中文件 import mod1.file1 (3) 子模块mod2中 import &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Python Import 路径</h2>
+	<div class="entry-content"><p>基本的import path可见 <a href="http://mobile.51cto.com/symbian-272844.htm">http://mobile.51cto.com/symbian-272844.htm</a></p>
+
+<pre><code>(1) import 同模块下另一文件
+      import file1
+
+(2) import 子模块中文件
+      import mod1.file1
+
+(3) 子模块mod2中 import 同级别 mod1中文件
+      这里需要将mod1和mod2的父路径加入sys.path，以便可以搜索
+</code></pre>
+
+<p>但我在开发中遇到如下的文件结构：</p>
+
+<pre><code>dir
+--mod1
+    --sub_mod1
+        --sub_sub_mod1
+            --sub_sub_sub_mod1
+                sub3_mod1.py
+            --sub_sub_sub_mod2
+                sub3_mod2.py
+--mod2
+    mod2.py
+</code></pre>
+
+<p>现在我需要在mod2.py中import sub3_mod2.py中的类LvSubMod2, 而 sub3_mod2.py中import sub3_mod1.py中的类LvSubMod1.</p>
+
+<p>因为mod2.py和sub_sub_mod1中的目录不在同一级别，采用基本方法3可以处理sub3_mod1和sub3_mod2的关系，但是在Django调用时会提示下面的错误:</p>
+
+<p><img src="/images/2014/05/python_path_1.jpg" alt="TEST1" /></p>
+
+<p>其中/xc/input是mod2.py对应的目录，Django没有提示找不到mod2.py直接引用的sub3_mod2，而是提示找不到sub3_mod1. 我开始认为是sub3_mod1和sub3_mod2之间的引用有问题，但是通过单独建立如上的目录结构，发现问题出现在mod2的sys.path设置上</p>
+
+<p>mod2的sys.path不能简单设置为当前mod2.py所在目录的父目录，因为在父目录下找不到sub3_mod1和sub_mod2，而是需要直接设置到sub3_mod1和sub_mod2的父目录上，即sub_sub_mod1</p>
+
+<p>在mod2.py中</p>
+
+<pre><code>import sys,os
+sys.path.append(os.path.abspath("../mod1/sub_mod1/sub_sub_mod1"))
+</code></pre>
+
+<p>问题解决。</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-05-06T23:25:26+08:00" pubdate data-updated="true">May 6th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

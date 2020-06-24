@@ -1,0 +1,127 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>python 路径相关的小问题  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="只要是稍微大一些的python项目，肯定就不会只包含一个python文件。这篇博客就是关于项目中python文件管理的一些概念说明。 _init_.py文件
+在directory中包含此文件，表示这个directory是一个module。假设我们的directory名称为lib, &hellip;"> <meta name="keywords" content="python; path;">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Python 路径相关的小问题</h2>
+	<div class="entry-content"><p>只要是稍微大一些的python项目，肯定就不会只包含一个python文件。这篇博客就是关于项目中python文件管理的一些概念说明。</p>
+
+<ol>
+<li><p>_<em>init_</em>.py文件
+在directory中包含此文件，表示这个directory是一个module。假设我们的directory名称为lib, 里面包含子文件file1.py, file2.py，那么如果想在其它文件中访问file1.py中的类或者函数，需要两个步骤：</p>
+
+<ol>
+<li>添加lib目录为module，即在其中创建一个空的<strong>init</strong>.py文件</li>
+<li>添加lib目录到sys.path，使得调用对象可以在搜索目录中找到此模块</li>
+</ol>
+</li>
+</ol>
+
+
+<p>一旦目录可访问，调用者可以通过</p>
+
+<pre><code>from file1 import * 
+</code></pre>
+
+<p>来访问其中定义的函数和类</p>
+
+<p>2.sys.path
+直接在py文件中打印sys.path，可能会得到类似下面的目录列表：</p>
+
+<pre><code>['/home/test/path_test', '/usr/local/lib/python2.7/dist-packages/mccabe-0.3.1-py2.7.egg', '/usr/local/lib/python2.7/dist-packages/pep8-1.5.7-py2.7.egg', '/usr/local/lib/python2.7/dist-packages/pyflakes-1.0.0-py2.7.egg', '/usr/lib/python2.7', '/usr/lib/python2.7/plat-x86_64-linux-gnu', '/usr/lib/python2.7/lib-tk', '/usr/lib/python2.7/lib-old', '/usr/lib/python2.7/lib-dynload', '/usr/local/lib/python2.7/dist-packages', '/usr/lib/python2.7/dist-packages', '/usr/lib/python2.7/dist-packages/PILcompat', '/usr/lib/python2.7/dist-packages/gtk-2.0', '/usr/lib/pymodules/python2.7']
+</code></pre>
+
+<p>其中第一项（即sys.path[0])是调用文件的父目录，后面的所有项来自PYTHONPATH环境变量的定义。
+仍然举上面lib的例子，如果调用文件test.py和lib目录平级，那么因为sys.path[0]包含了当前目录，通过</p>
+
+<pre><code>from lib.file1 import *
+</code></pre>
+
+<p>可以直接访问file1中定义的类和函数。
+但是如果调用文件test.py定义在一个与lib目录平级的目录（比如bin目录）中，那么直接按上面书写，因为lib目录并不是bin目录的子目录，因此python解释器不知道如何找到该文件，返回错误。
+此时的解决方法是考虑直接把lib目录添加到sys.path中，类似如下：</p>
+
+<pre><code>import sys, os
+basepath=os.path.abspath(os.path.dirname(sys.path[0]))
+sys.path.append(os.path.join(basepath, 'lib'))
+</code></pre>
+
+<p>3.sys和os.的path函数
+sys模块相关函数主要是与python解释器交互，os模块相关函数主要是与操作系统交互。os本身包含很多功能，比如调用shell脚本（os.system），这里只限制在os.path常用几个函数的功能上进行说明。</p>
+
+<p>分组来看：
+(1).os.path.abspath返回当前路径的绝对路径；os.path.relpath返回当前路径的相对路径。
+(2).os.path.split(a)将当前路径拆分为两个部分，前面的是文件的路径，后面的是文件名（也可能是目录和子目录）；os.path.join正相反；os.path.dirname返回的是其中前面的部分，os.path.basename返回的是其中后面的部分。
+(3).os.path.isfile判断输入字符串是否是一个文件；os.path.isdir判断输入字符串是否是一个目录；os.path.exists判断路径是否存在
+(4).os.path.getmtime获取文件最后一次更新的时间；os.path.getatime获取文件最后一次访问的时间。</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-05-28T16:39:48+08:00" pubdate data-updated="true">May 28th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

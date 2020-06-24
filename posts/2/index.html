@@ -1,0 +1,1262 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="这两天为项目需要写了个查询工具，想想还是有些东西可以提炼出来总结的，所以这篇来描述下我做的事情。 背景 首先，我们把广告主的数据做了汇总，最初的数据构建是为系统使用，并不是为用户数据分析使用的（为用户分析和为系统使用的区别，简单举个例子，用户分析关心账户的名称，系统只需要它的ID）， &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/08/19/offline-task-framework/">
+		
+			离线任务调度框架</a>
+	</h2>
+	<div class="entry-content">
+		<p>这两天为项目需要写了个查询工具，想想还是有些东西可以提炼出来总结的，所以这篇来描述下我做的事情。</p>
+
+<h2>背景</h2>
+
+<p>首先，我们把广告主的数据做了汇总，最初的数据构建是为系统使用，并不是为用户数据分析使用的（为用户分析和为系统使用的区别，简单举个例子，用户分析关心账户的名称，系统只需要它的ID），但项目里想想既然都花时间做了数据，那索性给用户导出一些分析数据（ps，很理解，但从技术角度讲，导数据的辛苦程度相比做数据也不逞多让，尤其是我们的数据开始并不是为用户准备的，还好我在导出兴趣信息的时候多想想，不仅导出了ID，还导出来兴趣名称…）。</p>
+
+<p>开始的需求是比较模糊的，可能是广告类型的投放分析，国家的投放分析，将来很可能会扩展和定制。</p>
+
+<h2>设计目标</h2>
+
+<p>原则上讲，每个查询需求实际都是对应一个hive查询。如果仅仅是处理目前报告的内容，最直接的方法是理解查询需求，然后写hive脚本，导出结果。</p>
+
+<p>这样做虽然对少量的查询比较方便，但长远考虑，有明显的问题：</p>
+
+<ol>
+<li>Hive QL包含大量重复内容，按国家维度可能是查ctr, cpa，按性别维度也是，按年龄维度也是，如果不能保存查询语句，会浪费很多时间重敲语句</li>
+<li>查询对用户不友好，因为查询都是要直接写Hive QL完成，一般非技术人员没有能力这样做，最终导致需求全部叠加到技术人员身上</li>
+<li>查询效率不高，这里指的不是每条Hive QL语句（好吧为了突出优点有点拼，这里并没有对Hive QL本身的优化，在最后的缺点也会提到），而是多个查询本身是可以并行执行的，如果人工输入却不得不串行执行。尤其认真说，考虑到hive查询本身是比较慢的，等待时间并不十分乐观</li>
+<li>Hive数据与导出数据不一致：这点看起来很小，但实际影响很大。虽然有很多查询可以直接使用Hive QL的输出，但还有一些查询需要再对原始数据做进一步的处理。举个例子，我们的国家是按 [A,B,C]保存的，但用户最终要的是国家A，B和C分别保存的信息，忽略或者特殊处理这种合并的情况，直接把hive查询结果返回是不能满足用户需求的</li>
+<li>通用操作：比如结果展现给用户的形式，通过web界面，或者通过邮件，对不同的查询是通用的</li>
+</ol>
+
+
+<p>为解决上述问题，我在设计上考虑框架应该实现的几个属性</p>
+
+<ol>
+<li>任务化：把每个查询作为一个独立的任务对待，通过db ORM读取再处理，这样做主要是考虑将来可能和用户做交互时，用户的查询需要持久化</li>
+<li><p>任务划分：</p>
+
+<p>   Hive查询任务，更通用的说，是和db做交互的任务</p>
+
+<p>   用户定义任务，基于Hive查询任务或其它用户定义任务，做类似ETL或者格式规范化方面的内容</p></li>
+<li><p>信息抽取：主要是针对Hive查询任务，对每个查询语句都有select, from, tablename, where等，这些语法信息是用户不关心也无需了解的，让框架来完成这些通用的内容处理，用户只填写相关的信息</p></li>
+<li>任务调度：hive查询是一个高IO低CPU的操作，可以通过多线程提高效率。同时由于用户定义任务对其它任务的依赖存在，这个调度变成比较经典的有向无环图（DAG）遍历问题</li>
+<li>通用处理：我依赖pandas DataFrame作为数据存储的容器，每个hive查询任务的结果会被转为DataFrame再做持久化，用户依赖任务会依赖DataFrame做进一步操作（的确多了一次落盘读盘，后续考虑改进），DataFrame本身很方便的与csv文件做转换，以及对数据处理的强大支持（嗯还没有内存放不下的数据不用考虑分布式），也会方便后续的处理</li>
+</ol>
+
+
+<h2>框架流程</h2>
+
+<p><img src="/images/2016/8/QQ%E6%88%AA%E5%9B%BE20160819173204.jpg" alt="Framework" /></p>
+
+<h2>实现</h2>
+
+<ol>
+<li>Task表定义</li>
+</ol>
+
+
+<p>基于Django的ORM定义，Task表里把Hive QL的基本组成部分做了独立的拆分，比如dimension, metric，为方便用户输入，这些字段采用json化的list或者list of dict，这些模块后续会由Task的引擎负责检查和拼装成正确的Hive QL</p>
+
+<pre><code>Class QueryTask(models.Model):
+
+    id = models.IntegerField(primary\_key=True)
+
+    name = models.CharField(max\_length=255, blank=True)
+
+    status = models.IntegerField(blank=True, null=True)
+
+    paused = models.IntegerField(blank=True, null=True)
+
+    dimension = models.CharField(max\_length=1024, blank=True)
+
+    metric = models.CharField(max\_length=1024, blank=True)
+
+    filter = models.CharField(max\_length=1024, blank=True)
+
+    order = models.CharField(max\_length=1024, blank=True)
+
+    tablename = models.CharField(max\_length=1024, blank=True)
+
+    limit = models.IntegerField(blank=True, null=True)
+
+    start\_dt = models.IntegerField(blank=True, null=True)
+
+    end\_dt = models.IntegerField(blank=True, null=True)
+
+    create\_time = models.IntegerField(blank=True, null=True)
+
+parent\_task\_ids = models.CharField(max\_length=45, blank=True)
+</code></pre>
+
+<p>后续如果有用户交互的需求，可以把用户的查询保存到db，两边都通过ORM读写。在Django项目外使用modeles.py会有一些小坑，但都不算太大，这里不再描述。</p>
+
+<ol>
+<li>任务依赖执行</li>
+</ol>
+
+
+<p>有向无环图的多线程遍历，我依赖的是两个队列，未执行队列放入所有入度为0的任务，已执行队列保存所有执行完毕的任务。子线程负责从未执行队列里读取任务，执行任务，向完成队列里放入任务，主线程负责从已执行队列里取任务，减少对它依赖任务的入度，并将入度为0的任务放入未执行队列。</p>
+
+<p><img src="/images/2016/8/QQ%E6%88%AA%E5%9B%BE20160819173500.jpg" alt="Iter" /></p>
+
+<ul>
+<li><p>HiveTask</p>
+
+<p>引擎拼装HiveQL</p>
+
+<p>查询执行</p>
+
+<p>结果转换为DataFrame再做dump</p></li>
+<li><p>UserDefineTask</p>
+
+<p>加载依赖Task的DataFrame</p>
+
+<p>数据处理，这里采用组合的方式，把任务的实际处理交给Worker来完成</p>
+
+<p>保存数据</p></li>
+</ul>
+
+
+<h2>代码</h2>
+
+<p><a href="https://github.com/linpingta/tools/tree/master/task_manager">Github task_manager</a></p>
+
+<h2>问题</h2>
+
+<p>作为一个粗糙的版本，虽然解决了开始提到的问题，但本身还是有很多的局限性：</p>
+
+<ol>
+<li>不支持table join，单个任务的查询数据只能来自一个table，这个是硬伤，对小项目可能还行，但大一点的查询就不够了。想想之前微策略做的就是根据table schema去构建table relationship，然后再封装成db无关的BI查询，还是挺敬仰的。</li>
+<li>还是有很多项目耦合的内容在，比如HiveTask可以更一般化到DbTask，读取Task的方法可以考虑db之外更灵活的方式（比如xml），但这个的确是因为时间所限，还是以满足任务需求的扩展为主了。</li>
+<li>用户定义任务通用内容的抽取：现在是通过把任务交给worker的方式解耦，但worker里的通用任务还不多，这点在后续的持续应用中应该会得到增加和改善。</li>
+</ol>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-08-19T17:28:08+08:00" pubdate data-updated="true">Aug 19th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/07/21/how-to-select-graph-with-data/">
+		
+			图表与数据初步调研</a>
+	</h2>
+	<div class="entry-content">
+		<p>我们经常说，一图胜千言。即使从广告这个狭义角度看，广告创意中图片好坏对用户的影响远远大于广告文案的影响（这里指的是类似Facebook Newsfeed中title/body的部分，并非图片中的文案），以至于我们在分析时经常采用图片维度，而不是创意维度。
+图表的形式本身有很多，常用基本的包括折线图（散点图），饼图，柱状图，复杂的包括Bubble, HeadMap，之前在MicroStrategy的时候可视化应用图片应该更多。。怎么做图是问题的一方面，之前接触过一些d3.js，最近又打算看看python的matplotlib库效果（嗯是对matlab的模拟，所以matlab本身也有很多图可做），但问题的另外一方面：什么场景该用什么样的图表，或者是否不应该用图片来解释数据，是这篇博客想要调研的。</p>
+
+<p>这篇博客的工作背景实际是我在项目里对有权限的Facebook账户做了数据收集，这些数据本来是打算用于模型学习和训练的，但在模型处理之前，我们想输出一些简单的数据结果给用户（另外一方面，模型本身也需要一些data explore），我想借机学习下matplotlib的应用。但是，作为输出给用户的内容，我想除了了解代码上怎么作图之外，同样重要的是该在何种场景下以何种形式表达数据:)</p>
+
+<ol>
+<li>表格(Table)：表格并不是一种图，但它却是数据使用非常常用的方式，比如常见的excel表格。表格通常用于包含大量数据和它们的精确值，它的优点在于有助于用户准备的了解数据，但它的缺点也很明显：它不适于表达趋势，不适于比较 （想想90天的股价走势，如果画出折线图可以一眼看出峰谷，如果是表格，再有几位小数）。</li>
+<li>折线图(Line)：用于表达趋势，通常横轴是时间，表达某个变量随时间变化发生的变化，比如产品的CPA随天发生的变化。</li>
+<li><p>柱状图(Chart/Bar)：用于比较，比如几个国家的CPM，横轴是国家，纵轴是CPM，可以直接看出在不同国家的竞争激烈程度。</p>
+
+<ul>
+<li>水平柱状图 vs 垂直柱状图：通常前者更适合表达大小差异</li>
+</ul>
+</li>
+<li>饼图(Pie)：用于表达份额，比如设备只有ios和Android两种，用饼图可以更好的表示二者的比例。相比柱状图，饼图更多的在于表示百分比，而柱状图更适于表示精确值。</li>
+<li>区域图(Area)：通常用于表达几个变量的份额随时间变化的情况，比如不同浏览器的占比，如果只用饼图，那么不能表达时间的因素，通过Area可以同时表达总体市场大小以及各个细分取值的占比变化情况</li>
+<li>散点图：用于表达数据的相似和分离关系，比如图表上位置相近的点可能有类似的属性，远离的点则相反</li>
+<li>气泡图：很像散点图，但它的价值在于通过自身大小增加了一个数据维度，比如同样是使用安卓，投放游戏的产品，用气泡大小表示花费量级</li>
+<li>其它图：
+
+<ol>
+<li>维恩图：用于表达变量间的共同和私有关系</li>
+<li>直方图：变量统计，我能想到的是图像直方图用于表达灰度分布</li>
+</ol>
+</li>
+</ol>
+
+
+<p>看起来是非常简单的一个介绍（貌似写之前我自己也没有预估），但我想我目前会用到的几种图形场景应该都是涵盖其中了，so，end ~</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-07-21T14:24:57+08:00" pubdate data-updated="true">Jul 21st, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/data-graph/'>data-graph</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/07/20/facebook-related-project/">
+		
+			Facebook相关项目</a>
+	</h2>
+	<div class="entry-content">
+		<p>摘自<a href="https://github.com/linpingta/facebook-related">facebook-related READMD.md</a></p>
+
+<p>1.<a href="https://github.com/linpingta/facebook-related/tree/master/facebook-ads-sdk-example">facebook-ads-sdk-example</a>
+主要是提炼在项目中用到的一些Facebook API调用实例。Facebook API提供了http的封装实现，也提供了Python和PHP的SDK。在日常项目中主要会用到广告相关的API实例，关于Facebook API类型，可以看<a href="http://linpingta.cn/blog/2016/01/15/facebook-api-related/">这里</a>，在此做一个记录。</p>
+
+<p>2.<a href="https://github.com/linpingta/facebook-related/tree/master/facebook-fan-page-fetcher">facebook-fan-page-fetcher</a>
+Facebook主页粉丝的信息抓取，主要依赖CasperJS模拟翻页</p>
+
+<p>3.<a href="https://github.com/linpingta/facebook-related/tree/master/facebook-success-creatives">facebook-success-creatives</a>
+爬取Facebook成功创意的信息</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-07-20T16:12:16+08:00" pubdate data-updated="true">Jul 20th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>, <a class='category' href='/blog/categories/node-dot-js/'>node.js</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/07/10/kaggle-shelter-animal-outcome/">
+		
+			Kaggle-shelter-animal-outcome</a>
+	</h2>
+	<div class="entry-content">
+		<p>这是一篇关于<a href="https://www.kaggle.com/c/shelter-animal-outcomes">Kaggle:Shelter Animal Outcomes</a>比赛的总结。</p>
+
+<h3>比赛<a href="https://www.kaggle.com/c/shelter-animal-outcomes">背景</a></h3>
+
+<p>比赛是基于美国一个州过去三年宠物收容所对宠物的记录数据，去预测宠物的最终命运。它本身是一个预测问题，用到的自变量包括官方提供的以下特征：</p>
+
+<pre><code>AnimalID,Name,DateTime,OutcomeType,OutcomeSubtype,AnimalType,SexuponOutcome,AgeuponOutcome,Breed,Color
+</code></pre>
+
+<p>去预测宠物的最终命运，可能的选项包括：</p>
+
+<pre><code>Adoption，Died，Euthanasia，Return_to_owner, Transfer
+</code></pre>
+
+<p>用到的最终评价标准是<a href="https://www.kaggle.com/c/shelter-animal-outcomes/details/evaluation">multiclass logloss</a>，简单来说就是它需要输出每个测试样本属于每类的可能性，而不是最有可能的类别，同时会更大的惩罚那些肯定性判断 （把每个记录以100%的输出错分会受到很大的惩罚），实际上最终leaderboard中那些误差大于3的提交结果应该都是输出了错误的判决结果。</p>
+
+<h3>比赛结果</h3>
+
+<p>截止本文完成时，我的排名是 54th/1289，比赛还有20天结束，但我已不打算进一步优化结果，最终结果应该会在结束后有所变化，我会在相应时间更新。</p>
+
+<h3>最终方案</h3>
+
+<h4>特征选择和处理</h4>
+
+<p>我最终使用的特征包括：</p>
+
+<ul>
+<li>时间特征：DateTime部分被处理为5个部分
+
+<ul>
+<li> YEAR/MONTH/WEEKDAY/HOUR/UNIXTIME</li>
+</ul>
+</li>
+<li>年龄特征：原始的年龄特征包含如“3 months”, &ldquo;2 weeks"等，全部转换为天为单位的表示，原始数据中部分动物没有年龄，相应数据被转为0（也看到过一些根据其它信息去预测年龄做填充的方案，没有尝试）</li>
+<li>名称特征：原始名称转为是否有名称，名称的长度两个新特征</li>
+<li>性别特征：原始性别实际包含Male/Female以及是否被阉割Intact的信息，转为Male/Female和Intact/Not Intact两个新特征</li>
+<li>品种特征：首先把训练集和测试集的所有品种做统计，因为记录中每个动物都可能属于多个品种，因此把属于某品种记为1，不属于记为0</li>
+<li>颜色特征：处理方法类似品种，和品种的区别是，品种会把是否包含Mix和/作为分隔符，颜色会把空格作为分隔符</li>
+<li>去除处理过的原始特征，以及Animal ID信息，对测试集编码后（scikit-learn fit_transform），采用相同的编码方式处理训练集</li>
+</ul>
+
+
+<h4>模型选择</h4>
+
+<p>最终我使用的是由ChenTianqi（中国人，非常厉害）开发的<a href="https://github.com/dmlc/xgboost">XGBoost</a>作为学习模型，如XGBoost名称所示，它本身就是一种boosting方法，在我的测试中，它的效果要比RandomForest更好。</p>
+
+<p>最终的参数：</p>
+
+<pre><code>param = {'max_depth':11, 'eta':0.03, 'subsample':0.75, 'colsample_bytree':0.85, 'eval_metric':'mlogloss', 'objective':'multi:softprob', 'num_class':5, 'verbose':1}
+num_round = 400
+dtrain = xgb.DMatrix(train_x, label=train_y)
+clf = xgb.train(param, dtrain, num_round)
+</code></pre>
+
+<p>关于XGBoost的介绍，首先参考它的<a href="https://github.com/dmlc/xgboost/tree/master/python-package">Github</a>（包含使用的Example），其次关于参数调优可以参考<a href="http://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/">这篇文章</a></p>
+
+<p>PS. XGBoost本身是基于C开发的，它提供了R和Python两种接口，就我看到的情况看，R语言的接口相比Python会更方便一些，如果将来有机会，我还会对XGBoost做更多的探索。</p>
+
+<h3>我做过的尝试</h3>
+
+<p>我相信最终的方案并不是这次比赛的全部收获（或者更直白的说，只是很少一部分），作为第一个真正认真参加的Kaggle比赛，我想记录一个Kaggle新手在处理问题的过程，对阅读博客的人有更多帮助。</p>
+
+<p>下面的尝试我大致按时间记录：
+1. 第一次：几乎没有处理原始数据，只是去除无用的字段（比如OutcomeSubtype, AnimalID）用RandomForest直接训练，得到的logloss是13.8：这里的问题在于，没有看清题目的损失评价方法是logloss，直接用的分类树而不是回归树，给出一堆0，1结果
+2. 第二次：仅仅是更新损失评价方法和树类别，logloss下降到3.4
+3. 第三次：开始真正意义上的数据清理，包括如下尝试：</p>
+
+<pre><code>* 处理Age信息，把年月日数据统一为天表示
+* 尝试把猫和狗作为独立的对象分别训练
+* 处理Datetime，转为年月，weekday以及几点钟
+* 添加本地的cross validation
+这个阶段结束后，logloss下降到1.8
+</code></pre>
+
+<p>4.第四次：回归模型参数，发现在RandomForest中使用的树数量和树深度都太少太浅，调整参数，logloss下降到0.98
+5.第五次：增加名称信息，增加Sex分隔处理，处理品种和颜色是否混合的信息
+6.第六次：开始使用Grid Search做参数空间的搜索，经过参数优化后，logloss大概在0.82左右
+7.第七次：用XGBoost替换RandomForest，调整相关参数，之后又对年龄特征做了细化，logloss达到0.75左右
+8.这之后其实有一段很长的时间，logloss并没有什么提高，这期间我尝试过用KNN（没有太多调优，误差在0.98），尝试过<a href="http://linpingta.cn/blog/2016/06/25/model-stacking/#disqus_thread">模型融合</a>，还尝试过使用场外特征，但是都没有在logloss上面有明显的改善（场外还是有一些改善，但并不合法还是放弃了）
+9.最后的改进：在特征中加入UnixDateTime特征，以及把XGBoost算法从scikit-learn版本更改为它的原生版本，logloss达到0.72，再更新参数和训练周期(num_round)，最佳logloss达到0.708。</p>
+
+<h3>项目代码</h3>
+
+<p><a href="https://github.com/linpingta/shelter-animal-outcome">Github地址</a></p>
+
+<h3>经验和教训</h3>
+
+<p>大致来说，logloss的改进经过“特征处理->模型调参->特征处理”这样不断循环的过程，在模型大致可行的前提下，特征工程，指的是发现新特征，或者处理原有特征，会对结果又明显的改善，但是这句话的前提是模型大致可行，也就是说模型本身的参数，以及选择哪个模型，仍然是非常重要的。
+结论性的来说，模型和特征是解决问题的两个重要因素，哪个弄不动了就试试另外一个，通常会不断提升结果。
+这次也对模型融合做了一些尝试，效果不是很好，但相信以后会有更好的结果。</p>
+
+<h3>关于Kaggle</h3>
+
+<p>其实关于kaggle有没有用，网上有很多说法，但主要的说法是，你要指望通过kaggle去做data science，是不太靠谱的。因为它的数据集本身是比较干净的（虽然也有缺省值要处理），问题的目标也是比较清晰的（损失函数都告诉你了嘛），而实际工作中，包括我自己遇到的问题里，如何去定义问题，去处理数据，往往是问题中最困难的（其实定义问题是最困难的，很多问题并没有那么明显的损失函数去描述）。
+我觉得这种说法是很有道理的，所以我想说kaggle的比赛结果并不能说明什么，但为什么我还愿意参加这样的比赛，我想是基于以下的理由：</p>
+
+<pre><code>1. 接触那些与工作内容完全不同的问题：Kaggle上有各类机器学习的问题，分类回归聚类，图像NLP，一个人的实际工作中其实很难接触到太多方面，这里是个好途径
+2. 学习新的模型，新的方法：恰恰是因为不用去做数据提取和预处理的工作，可以让人更专注于模型本身。我可以学习到新的模型，新的调参方法，这些或许在将来会给予工作帮助
+3. 它本身有一定的意义。Kaggle比赛不能排除作弊，但它毕竟是一个很明确的问题。从我不长时间的面试和被面试经验看，机器学习相关的项目经验，由于业务本身特点（内部工具或者多人合作），其实是很难在面试很短时间内描述清楚的。Kaggle的比赛至少可以说明一个人在运用模型方面的基本能力是get了，因为Kaggle的比赛是一定包括训练集测试集特征处理交叉验证这些基础的方法的。我不认为Kaggle的优胜者一定是一个好的data engineer，但至少说明他在数据这个大领域的某些方面还不错。
+</code></pre>
+
+<p>最后说一点，除了以上的经验，我根据一般模型训练的步骤开发了一套<a href="https://github.com/linpingta/tools/tree/master/model_trainer">框架</a>，可以方便以后使用。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-07-10T15:31:14+08:00" pubdate data-updated="true">Jul 10th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>, <a class='category' href='/blog/categories/kaggle/'>kaggle</a>, <a class='category' href='/blog/categories/machine-learning/'>machine learning</a>, <a class='category' href='/blog/categories/pandas/'>pandas</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/07/01/celery-weixin-monitor/">
+		
+			Celery用于监控微信报警</a>
+	</h2>
+	<div class="entry-content">
+		<p>应用场景</p>
+
+<p>广告系统会根据业务需求（比如预算到期，创意被拒，账户被封等）给用户发送微信提醒。</p>
+
+<p>之前的实现方法是，由业务模块负责把数据推送到由redis简单构成的消息队列中，然后有一个集中处理模块定期去采集消息队列中的信息，发送给对应用户。</p>
+
+<p>这样实现虽然简单，但是有一些问题的：
+1. 定期集中处理相当于是采用轮询的方式查看队列，首先在没有数据时，轮询操作本身是一种浪费资源（尽管在这个场景下浪费不大），其次轮询意味着固定的时间周期，如果时间周期过短肯定是资源消耗增加，如果时间周期过长一方面是报警不及时（你预算都停了半天才告诉我，还不如我自己去看对吧），同时也会让很多报警一次性的发送给用户（微信突然响个不停）
+2. redis的队列本身没有重试，也不会保存信息，换句话说，如果采集模块出bug了，这些数据就是丢了，前期报警数据本身没有那么重要（因为不是直接涉及钱的数据），但丢数据从技术角度还是应该解决的问题。
+3. 代码复杂度，用redis的话，每个业务服务都得redis客户端对吧，那就要负责开关。每个业务服务通常习惯使用不同的名称（与业务本身相关），这点得和采集模块保持一致，但如果模块多了呢，或者说这种信息定义在业务代理里，本身查看和更新也非常不方便。</p>
+
+<p>Celery可以解决的问题
+1.不是同步非阻塞了，是异步查询。执行效率变高了，用户不用等了，如果业务量级大，还是会有延迟，但你可以定义不同优先级的队列处理，用户基本是及时收到报警信息。
+2.任务本身可以重试，相关消息也可以根据需要保存。
+3.采集模块简化为一个函数，业务调用模块调用函数（实际是发送消息到队列），两侧均不再需要直接接触redis。</p>
+
+<p>另外也研究了Celery用于定时任务管理的功能，考虑对其它语言的接受程度和系统稳定性，还是决定使用公司内部开发的调度系统。关于定时任务的应用，以后有机会再做介绍。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-07-01T23:47:00+08:00" pubdate data-updated="true">Jul 1st, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/celery/'>celery</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/06/28/celery-frequent-asked-question/">
+		
+			Celery常见问题</a>
+	</h2>
+	<div class="entry-content">
+		<p>问题节选自<a href="http://docs.celeryproject.org/en/latest/faq.html">Frequently Asked Questions</a>，只挑选了一些感觉比较重要的回答，也掺杂了一些自己的理解，有兴趣请阅读<a href="http://docs.celeryproject.org/en/latest/faq.html">原文</a>。</p>
+
+<p>1.Celery的适用场景</p>
+
+<pre><code>(1) 后台运行的场景。比如web应用中，需要快速返回结果给用户，以求得更好的用户体验，但任务本身还需要在后台运行，此时很适合使用Celery。
+(2) 周期性执行的任务
+</code></pre>
+
+<p>还有几点可以视为Celery的属性</p>
+
+<pre><code>(1) 异步执行，包含重试
+(2) 分布式
+(3) 并行
+</code></pre>
+
+<p>2.Celery的依赖</p>
+
+<p>作者在这里吐槽了下对依赖过多的批评："The rationale behind such a fear is hard to image"，软件本身应该避免重复造轮子，而且有像pip这样的包管理工具，安装依赖本身并不是一件头疼的事情。</p>
+
+<p>这里我想吐槽下依赖的问题：最近在工作里用到Celery发现启动后遇到<a href="http://linpingta.cn/blog/2016/06/24/celery-problem-1/">Socket_connect_timeout错误</a>，最终排查后，发现是kombu的版本略新，而redis的版本略旧导致了问题，所以说依赖如果能够保证版本一致还好，但如果同一模块不同版本间升级较多，依赖者就要麻烦了。</p>
+
+<p>回过头来看看Celery的依赖：</p>
+
+<pre><code>(1) kombu：一个python消息库，据说在openstack项目中也有使用
+(2) billard：一个对python自带multiprocessing模块功能升级的模块
+(3) pytz：时区管理
+</code></pre>
+
+<p>另外Django也提供Celery的使用支持。</p>
+
+<p>3.Celery算是一个轻量级服务吗
+是的，但同样需要考虑CPU和IO的[优化]。(<a href="http://docs.celeryproject.org/en/latest/userguide/optimizing.html#guide-optimizing">http://docs.celeryproject.org/en/latest/userguide/optimizing.html#guide-optimizing</a>)</p>
+
+<p>4.Celery的序列化方式
+默认是pickle，但同样支持yaml, json等其它格式。</p>
+
+<p>5.Celery适用的web框架
+不仅是Django，也包括其它</p>
+
+<p>6.Celery的broker选择
+推荐使用RabbitMQ或者支持AMQP协议的消息队列，但是Redis，或者其它数据库（MongoDB, 关系型数据库）也是可以选择的。
+补充下，在这里Redis的支持应该是好于其它数据库（无论是关系还是非关系），另外也有文章说最好不要用关系型数据库作为Celery的broker，所以其实主要的选择就是两点：RabbitMQ或者Redis。
+像我们工作的环境，RabbitMQ并没有安装，因此我们选择Redis作为broker。</p>
+
+<p>7.Celery支持多语言么
+支持
+这点我还没有什么应用，这里不乱说了，有兴趣请看<a href="http://docs.celeryproject.org/en/latest/faq.html">原文</a>。</p>
+
+<p>8.如何清除队列里的任务
+调用purge命令。
+如果是清除所有任务，可以：</p>
+
+<pre><code>celery -A proj purge
+</code></pre>
+
+<p>如果是清除指定队列中的任务，可以：</p>
+
+<pre><code>celery -A proj amqp queue.purge &lt;queue name&gt;
+</code></pre>
+
+<p>9.如何根据taskID获取任务执行的结果
+调用task.AsyncResult命令</p>
+
+<pre><code>result = my_task.AsyncResult(task_id)
+result.get()
+</code></pre>
+
+<p>10.可以以root身份运行celery么
+一定不要这样，可能的安全问题会导致风险。</p>
+
+<p>11.如何在一个任务调用完后执行另外一个任务
+依赖<a href="http://docs.celeryproject.org/en/latest/userguide/canvas.html">Canvas</a>中定义的操作符，在执行完A后执行B：</p>
+
+<pre><code>do A | do B
+</code></pre>
+
+<p>12.如何取消正在执行的任务</p>
+
+<pre><code>result = add.apply_async(args=[2, 2], countdown=120)
+result.revoke()
+</code></pre>
+
+<p>13.如何将指定任务发送到指定server
+    使用<a href="http://docs.celeryproject.org/en/latest/userguide/routing.html">路由</a></p>
+
+<p>14.Celery支持优先操作么
+不支持消息级别的优先级操作，Celery对优先级操作的支持是通过把不同优先级的任务发送到不同的任务路由实现。</p>
+
+<p>15.可以指定时间执行任务么
+类似crontab的调用：</p>
+
+<pre><code>from celery.schedules import crontab
+from celery.task import periodic_task
+
+@periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
+def every_monday_morning():
+    print("This is run every Monday morning at 7:30")
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-06-28T09:43:58+08:00" pubdate data-updated="true">Jun 28th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/celery/'>celery</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/06/25/model-stacking/">
+		
+			模型融合</a>
+	</h2>
+	<div class="entry-content">
+		<p>这篇博客内容主要参考<a href="http://mlwave.com/kaggle-ensembling-guide/">&ldquo;Kaggle Ensemble Guide&rdquo;</a>，介绍了模型融合方面的一些相关技术（也“融合”我的一些理解）。很推荐直接阅读原文，相信对模型融合的概念会带来更多的了解。</p>
+
+<p>Kaggle Ensembling Guide</p>
+
+<p>对于机器学习相关的任务，模型融合是一种重要的提升学习准确率的方法。所谓融合，可以说是通过将不同模型的学习结果进行综合，使得最终的结果在准确率上超过单个模型的预测结果。</p>
+
+<p>一. 为什么模型融合可以达到这种效果？</p>
+
+<p>举一个简答的例子。假如我们要预测一个0-1序列，序列的真值是：</p>
+
+<pre><code>1111111111
+</code></pre>
+
+<p>现在我们有3个预测准确率在70%的模型，分别的预测结果是：</p>
+
+<pre><code>1110001111
+1010101111
+0111110011
+</code></pre>
+
+<p>我们简单的通过多数表决，即对每一位采用最多的结果作为最终结果，可以得到多数表决后的序列：</p>
+
+<pre><code>1110101111
+</code></pre>
+
+<p>准确率达到80%对么</p>
+
+<p>看到这里肯定会有一个疑问，这种结果应该也是凑巧吧，如果我的三个模型预测序列是一致的，那么准确率也不会提高。</p>
+
+<p>是这样的，所以在我看来模型融合要求两个基本条件：</p>
+
+<p>1.模型之间是不同的，每个模型会学习到不同的特征，这样融合才有意义，模型融合要求模型彼此从本质上的不同性。
+2.模型准确率是相似的。如果把一个80%准确率的模型和一个20%准确率的模型融合，结果肯定还是会变差的，但如果是75%和80%的模型融合，结果很可能是会提高的。</p>
+
+<p>小补充一点，实际应用当中的感觉是，差不多的模型进行容易，一般都会比单个模型有更好的结果。</p>
+
+<p>二. 融合的层次</p>
+
+<p>投票融合： 直接把不同模型的结果。具体的做法又可以分为几种：</p>
+
+<ol>
+<li>平均：模型1的结果A1， 模型2的结果A2， 最终结果= (A1+A2)/2。</li>
+<li>加权：按不同模型准确率的程度进行加权，越准确的模型有越高的权重，准确率可以通过交叉验证计算。</li>
+</ol>
+
+
+<p>好吧，前面说了那么多模型融合牛逼，最后融合的方法就是这个？
+当然不是，但我在这里要说两点：
+1. 最简单的平均融合，虽然看起来比较low，但效果并不差，很多时候平均融合就可以取得很不错的效果了。
+2. 当然有更高端的融合方式，请接着看下面。</p>
+
+<p>还是先摘自“Kaggle Ensemble Guide”一段很有趣的解释：</p>
+
+<pre><code>Averaging prediction files is nice and easy, but it’s not the only method that the top Kagglers are using. The serious gains start with stacking and blending. Hold on to your top-hats and petticoats: Here be dragons. With 7 heads. Standing on top of 30 other dragons.
+</code></pre>
+
+<p>哈哈，再举一个例子，Netflix竞赛算是机器学习比赛的鼻祖了，其中winner的方法就是blending。（ps，还有一个槽点是，Netflix并没有最终使用winner的方法，因为。。在实际中无法使用。pss，这也是Kaggle被吐槽很重要的一个原因，它离实际问题的解决太远了）。</p>
+
+<p>Stack Generalization：首先用一系列分类器对原始数据做分类，然后再用一个分类器去聚合这些分类器分类的结果，总体的降低误差。</p>
+
+<p>Blending：和Stack Generalization很相似，相比Stack，它的好处和坏处可以看<a href="http://mlwave.com/kaggle-ensembling-guide/">原文</a>。</p>
+
+<p>具体是怎么做的呢，举个例子，代码在<a href="https://github.com/emanuele/kaggle_pbr/blob/master/blend.py">这里</a>：</p>
+
+<pre><code>np.random.seed(0) # seed to shuffle the train set
+
+n_folds = 10
+verbose = True
+shuffle = False
+
+X, y, X_submission = load_data.load()
+
+if shuffle:
+    idx = np.random.permutation(y.size)
+    X = X[idx]
+    y = y[idx]
+
+skf = list(StratifiedKFold(y, n_folds))
+
+clfs = [RandomForestClassifier(n_estimators=100, n_jobs=-1, criterion='gini'),
+        RandomForestClassifier(n_estimators=100, n_jobs=-1, criterion='entropy'),
+        ExtraTreesClassifier(n_estimators=100, n_jobs=-1, criterion='gini'),
+        ExtraTreesClassifier(n_estimators=100, n_jobs=-1, criterion='entropy'),
+        GradientBoostingClassifier(learn_rate=0.05, subsample=0.5, max_depth=6, n_estimators=50)]
+
+print "Creating train and test sets for blending."
+
+dataset_blend_train = np.zeros((X.shape[0], len(clfs)))
+dataset_blend_test = np.zeros((X_submission.shape[0], len(clfs)))
+
+for j, clf in enumerate(clfs):
+    print j, clf
+    dataset_blend_test_j = np.zeros((X_submission.shape[0], len(skf)))
+    for i, (train, test) in enumerate(skf):
+        print "Fold", i
+        X_train = X[train]
+        y_train = y[train]
+        X_test = X[test]
+        y_test = y[test]
+        clf.fit(X_train, y_train)
+        y_submission = clf.predict_proba(X_test)[:,1]
+        dataset_blend_train[test, j] = y_submission
+        dataset_blend_test_j[:, i] = clf.predict_proba(X_submission)[:,1]
+    dataset_blend_test[:,j] = dataset_blend_test_j.mean(1)
+
+print
+print "Blending."
+clf = LogisticRegression()
+clf.fit(dataset_blend_train, y)
+y_submission = clf.predict_proba(dataset_blend_test)[:,1]
+
+print "Linear stretch of predictions to [0,1]"
+y_submission = (y_submission - y_submission.min()) / (y_submission.max() - y_submission.min())
+</code></pre>
+
+<p>操作步骤：</p>
+
+<p>1.把训练集的数据分组 （即上面的把训练集分为X_train和X_Test）
+2.遍历所有model （即上面的clfs遍历），训练model
+3.对每个model，预测X_train的结果，把结果存储作为第一层的输出
+4.对于测试集的数据采用一样的model预测
+5.把第3步的输出作为输入，和最终的输出一起训练第二层的模型
+6.用第二层的模型最终预测测试集的结果</p>
+
+<p>博客原文还有很多内容，但我没有看得更多，因此先写到这里，感兴趣的话还是推荐阅读<a href="http://mlwave.com/kaggle-ensembling-guide/">原文</a></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-06-25T11:35:29+08:00" pubdate data-updated="true">Jun 25th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/machine-learning/'>machine learning</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/06/24/celery-problem-1/">
+		
+			Celery Got an Unexpected Keyword Argument 'Socket_connect_timeout'</a>
+	</h2>
+	<div class="entry-content">
+		<p>这是一次问题的错误记录，celery在机器A上可以正常工作，但在机器B上启动时</p>
+
+<pre><code>celery worker -A app --loglevel=info
+</code></pre>
+
+<p>会遇到如下问题：</p>
+
+<pre><code>  File "/usr/local/lib/python2.7/site-packages/celery-3.1.23-py2.7.egg/celery/worker/consumer.py", line 376, in connect
+    callback=maybe_shutdown,
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 369, in ensure_connection
+    interval_start, interval_step, interval_max, callback)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/utils/__init__.py", line 246, in retry_over_time
+    return fun(*args, **kwargs)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 237, in connect
+    return self.connection
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 742, in connection
+    self._connection = self._establish_connection()
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 697, in _establish_connection
+    conn = self.transport.establish_connection()
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/virtual/__init__.py", line 809, in establish_connection
+    self._avail_channels.append(self.create_channel(self))
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/virtual/__init__.py", line 791, in create_channel
+    channel = self.Channel(connection)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 464, in __init__
+    self.client.info()
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/utils/__init__.py", line 325, in __get__
+    value = obj.__dict__[self.__name__] = self.__get(obj)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 908, in client
+    return self._create_client(async=True)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 861, in _create_client
+    return self.AsyncClient(connection_pool=self.async_pool)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 882, in __init__
+    self.connection = self.connection_pool.get_connection('_')
+  File "/usr/local/lib/python2.7/site-packages/redis/connection.py", line 455, in get_connection
+    connection = self.make_connection()
+  File "/usr/local/lib/python2.7/site-packages/redis/connection.py", line 464, in make_connection
+    return self.connection_class(**self.connection_kwargs)
+TypeError: __init__() got an unexpected keyword argument 'socket_connect_timeout'
+</code></pre>
+
+<p>网上关于此问题的主要讨论来自：
+<a href="https://github.com/celery/celery/issues/2903">https://github.com/celery/celery/issues/2903</a></p>
+
+<p>但感觉大多数讨论并没有指明问题的解决方法。重新查看错误日志，看到问题最终出现在 /redis/connection.py中，即python redis客户端模块中，其中Connection类的构造函数如下：</p>
+
+<pre><code>class Connection(object):
+"Manages TCP communication to and from a Redis server"
+description_format = "Connection&lt;host=%(host)s,port=%(port)s,db=%(db)s&gt;"
+
+def __init__(self, host='localhost', port=6379, db=0, password=None,
+             socket_timeout=None, encoding='utf-8',
+             encoding_errors='strict', decode_responses=False,
+             parser_class=DefaultParser):
+    self.pid = os.getpid()
+    self.host = host
+    self.port = port
+    self.db = db
+    self.password = password
+    self.socket_timeout = socket_timeout
+    self.encoding = encoding
+    self.encoding_errors = encoding_errors
+    self.decode_responses = decode_responses
+    self._sock = None
+    self._parser = parser_class()
+</code></pre>
+
+<p>再对比可以运行机器中相应源代码：</p>
+
+<pre><code>class Connection(object):
+    "Manages TCP communication to and from a Redis server"
+    description_format = "Connection&lt;host=%(host)s,port=%(port)s,db=%(db)s&gt;"
+
+    def __init__(self, host='localhost', port=6379, db=0, password=None,
+                 socket_timeout=None, socket_connect_timeout=None,
+                 socket_keepalive=False, socket_keepalive_options=None,
+                 retry_on_timeout=False, encoding='utf-8',
+                 encoding_errors='strict', decode_responses=False,
+                 parser_class=DefaultParser, socket_read_size=65536):
+        self.pid = os.getpid()
+        self.host = host
+        self.port = int(port)
+        self.db = db
+        self.password = password
+        self.socket_timeout = socket_timeout
+        self.socket_connect_timeout = socket_connect_timeout or socket_timeout
+        self.socket_keepalive = socket_keepalive
+        self.socket_keepalive_options = socket_keepalive_options or {}
+        self.retry_on_timeout = retry_on_timeout
+        self.encoding = encoding
+        self.encoding_errors = encoding_errors
+        self.decode_responses = decode_responses
+</code></pre>
+
+<p>可以看到在新版本的redis中才会支持socket_connect_timeout字段。</p>
+
+<p>因为问题的解决办法是：升级redis到2.10以上版本</p>
+
+<pre><code>pip install redis --upgrade
+</code></pre>
+
+<p>这个解决方案我也补充在 <a href="https://github.com/celery/celery/issues/2903">https://github.com/celery/celery/issues/2903</a> 的最后了。s</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-06-24T10:52:17+08:00" pubdate data-updated="true">Jun 24th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/celery/'>celery</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/06/18/weixin-related-project/">
+		
+			Weixin相关项目</a>
+	</h2>
+	<div class="entry-content">
+		<p>1.<a href="https://github.com/linpingta/weixin-api-related/tree/master/wx-api-alpha">wx-api-alpha</a></p>
+
+<pre><code>最开始的设想是想仿照Facebook Ads Python SDK封装一套weixin的API，但实际完成度很低，项目里主要包含的是一个token的自动获取（微信默认每一段时间token就会失效，因此每次调用前需要先确认token有效，这点可以通过token自动获取简化），以及基本requests对http调用的封装。
+</code></pre>
+
+<p>2.<a href="https://github.com/linpingta/weixin-api-related/tree/master/dm-message-server/weixin_server">dm-message-server</a></p>
+
+<pre><code>微信对用户输入的交互示例
+以及与微信相关的任务管理，包括显示，编辑，创建和删除等
+</code></pre>
+
+<p>3.<a href="https://github.com/linpingta/weixin-api-related/tree/master/weixin-monitor">weixin-monitor</a></p>
+
+<pre><code>微信报警模块的简单示例
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-06-18T21:11:48+08:00" pubdate data-updated="true">Jun 18th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>, <a class='category' href='/blog/categories/weixin/'>weixin</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/06/08/keras-introduction/">
+		
+			Keras深度学习框架(介绍)</a>
+	</h2>
+	<div class="entry-content">
+		<p>keras是一个高层次的深度学习模块，底层依赖Theano(默认)或TensorFlow调用，封装了Theano中的功能，简化深度学习相关功能的调用。</p>
+
+<p>Sequential : 用于组合一系列layers，是keras最基础的类。
+最常用的网络定义模式如下：</p>
+
+<pre><code>models = Sequential()
+models.add(Dense(32, input_dim=784)) # 添加model1
+models.add(Activation('relu')) # 添加model2
+# 添加其它model
+...
+# 定义模型
+models.compile(optimizer='sgd',loss='categorical_crossentropy', metric=['accuracy'])
+
+# 训练模型
+models.fit(train_x, train_y, nb_epoch, batch_size)
+
+# 输出预测
+y_pred = models.predict_class(test_x)
+</code></pre>
+
+<p>通过非常清晰简单的方式，我们就可以定义一个深度学习网络(models.add)，定义它的优化方式(models.compile)，然后训练模型(models.fit)，最后应用预测(models.predict)。问题的核心仍然在网络构建本身，但通过预定义的model（例如Dense, Activation）使得网络定义本身也得到了简化。</p>
+
+<p>下面本文介绍下keras主要的应用模块。</p>
+
+<p>1.layer本身相关部分</p>
+
+<p>所有layer都有一些公有函数：
+(1) get_weights() 返回层中神经元的权值，numpy.array
+(2) set_weights() 设置层中神经元的权值
+(3) get_config() 返回layer的配置</p>
+
+<p>如果layer是非共享的，那么可以通过</p>
+
+<pre><code>layer.input
+layer.output
+layer.input_shape
+layer.output_shape
+</code></pre>
+
+<p>获取层的输入张量，输出张量，输入形状，输出形状。
+如果layer是共享的，那么通过 get_xx_at(node_index) 获取指定node的信息。</p>
+
+<p>(1)Dense：较常用的一种Neutral Network layer。</p>
+
+<p>定义</p>
+
+<pre><code>keras.layers.core.Dense(output\_dim, 
+init='glorot\_uniform', activation='linear', weights=None ...)
+
+主要参数：
+output_dim：输出向量
+input_dim：输入向量
+activation: 定义传递函数，如果不指定，默认为linear, f(x)=x
+</code></pre>
+
+<p>调用实例，输入节点16个，输出节点32个：</p>
+
+<pre><code>model = Sequential()
+model.add(Dense(32, input_dim=16))
+</code></pre>
+
+<p>(2)Activation: 定义激活函数activation：</p>
+
+<pre><code>keras.layers.core.Activation(activation)
+</code></pre>
+
+<p>输入层和输出层维度保持一致。</p>
+
+<p>Dropout: 在模型训练的时候使得部分节点的权重不更新，包含参数p，取值范围是[0,1]，指定一定比例的训练样本不用于节点更新，避免过拟合。</p>
+
+<pre><code>keras.layers.core.Dropout(p)
+
+主要参数：
+p：[0, 1], 指定一定比例的样本不用于更新
+</code></pre>
+
+<p>其它相关函数可以参考<a href="http://keras.io/layers/core/">这里</a>。</p>
+
+<p>2.卷积相关layer定义
+(1)Convolution1(/2/3)D ：卷积操作，分别针对1维、2维和3维的输入操作。</p>
+
+<pre><code>keras.layers.convolutional.Convolution1D(nb_filter, filter_length, init='uniform', activation='linear', weights=None, border_mode='valid', subsample_length=1, W_regularizer=None, b_regularizer=None, activity_regularizer=None, W_constraint=None, b_constraint=None, bias=True, input_dim=None, input_length=None)
+
+主要参数：
+nb_filter：指定卷积核的个数（等价于输出的维度）
+卷积核的形状：
+    一维是长度：filter_length
+    二维是形状：nb_row, nb_col
+    三维是形状：kernel_dim1/2/3
+输入形状：
+    一维例如：（10,30），前者是样本数量，后者是每个样本的维度
+    二维例如：（3,256,256），前者是样本数量，后面两项是图像的长宽
+</code></pre>
+
+<p>(2)MaxPooling(&frac12;/3)D / AveragePooling(&frac12;/3)D：主要解释下pooling，它有点像是降采样，把一定区域内的特征按max或average的方法变为一个特征，用于降低处理的数据量。</p>
+
+<p>3.optimizer</p>
+
+<p>定义keras模型的优化方法，keras支持两种类型的输入，
+(1) 指定optimizer类的实例，如：</p>
+
+<pre><code>model = Sequential()
+#...
+sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
+model.compile(loss='mean_square_error', optimizer=sgd)
+</code></pre>
+
+<p>(2) 指定optimizer类的名称，如：</p>
+
+<pre><code>model = Sequential()
+model.compile(loss='mean_square_error', optimizer='sgd')
+</code></pre>
+
+<p>可选的optimizer方法包括SGD, RMSprop，Adagrad，Adadelta等，这些方法主要的区别在于learning rate的计算，learning rate作为超参数的一种，在早期的神经网络中并不能通过网络本身学习，而是通过使用者的经验（调参）决定，因此learning rate的计算方法本身也是深度学习重要的研究方向之一。简单的理解（或者说以我的理解），learning rate可以采取固定值（经验参数，策略一），也可以采用前期跨度大，后期跨度小（策略二），类似的不同策略衍生出不同的optimizer，更详细的科学解释可见<a href="https://www.quora.com/What-are-differences-between-update-rules-like-AdaDelta-RMSProp-AdaGrad-and-AdaM">这里</a>。</p>
+
+<p>4.objective</p>
+
+<p>定义keras模型的损失函数。同optimizer，keras也支持两种类型的输入：
+(1) objective的名称，常用的如：</p>
+
+<pre><code>mean_square_error/mse
+binary_crossentropy
+categorical_crossentropy
+</code></pre>
+
+<p>(2) Theano/TensorFlow的函数，类似<a href="https://github.com/fchollet/keras/blob/master/keras/objectives.py">如下</a>：</p>
+
+<pre><code>def mean_squared_error(y_true, y_pred):
+    return K.mean(K.square(y_pred - y_true), axis=-1)
+</code></pre>
+
+<p>5.activation</p>
+
+<p>神经网络中的激活函数（=转移函数），常用的比如：</p>
+
+<pre><code>model = Sequential()
+model.add(Dense(64, activation='tanh'))
+</code></pre>
+
+<p>添加了tanh作为激活函数。这里同样可以传入函数对象：</p>
+
+<pre><code>def tanh(x):
+    return K.tanh(x)
+
+model.add(Dense(64, activation=tanh))
+model.add(Activation(tanh))
+</code></pre>
+
+<p>6.initializations</p>
+
+<p>网络层的初始权值，不同层可以定义不同的权值分布，例如：</p>
+
+<pre><code>model.add(Dense(64, init='uniform'))
+</code></pre>
+
+<p>定义一个包含64个节点，初始权值一致的网络层。</p>
+
+<p>7.compile函数
+objective和optimizer是compile函数必须的两项输入参数，例如：</p>
+
+<pre><code>model = Sequential()
+model.compile(loss='mean_square_error', optimizer='sgd')
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-06-08T22:14:42+08:00" pubdate data-updated="true">Jun 8th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/machine-learning/'>machine learning</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+<nav id="pagenavi">
+    
+        <a href="1" class="prev">Prev</a>
+    
+    
+        <a href="3" class="next">Next</a>
+    
+</nav>
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

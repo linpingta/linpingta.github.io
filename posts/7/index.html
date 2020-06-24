@@ -1,0 +1,1272 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="django blog system 最开始的目标只是想试用下redis的威力。然后根据redis通常的应用场景（比如获取最热词条，获取
+人人关系）（这些在简单的Blog中没有用武之地）在开发过程中对设计做了一些简单扩展，博客系统实现如下
+功能： 1. 用户登录 （没有做注册页， &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/03/django-blog/">
+		
+			Django-blog</a>
+	</h2>
+	<div class="entry-content">
+		<h1><a href="https://github.com/linpingta/my-blog-redis">django blog system</a></h1>
+
+<p>最开始的目标只是想试用下redis的威力。然后根据redis通常的应用场景（比如获取最热词条，获取
+人人关系）（这些在简单的Blog中没有用武之地）在开发过程中对设计做了一些简单扩展，博客系统实现如下
+功能：</p>
+
+<pre><code>1. 用户登录 （没有做注册页，因为也不是真的要用，但是登录需要有，因为好友关系是
+建立在当前浏览用户不同的基础上，没有当前账户的概念，很难描述好友关系）
+2. Archive展示 展示基本的blog信息，包含两部分：
+    全部blog的展示 （按照“喜欢”程度排序）
+    个人blog的展示  (按照发布时间排序)
+3. Blog详细信息，允许评论
+4. 发布新的Blog
+5. 允许对博客点赞
+6. 允许对博客收藏
+7. 允许对博客按标签过滤
+</code></pre>
+
+<p>设计的不足
+    最重要的一点是，没有和redis紧密联系。虽然redis可以作为Django的cache层，但是从网上的资料看，本身可以控制的内容极少，基本可以理解是django本身cache的一种替代。
+    所以项目可以理解为简单Django的系统</p>
+
+<pre><code>其它不足：
+1. 现在的博客系统非常简陋，有用户和评论的概念，但只允许新增博客，不允许删除和修改自己的博客
+2. Tag过滤的bug （解释见下）
+3. 标题的限制，因为要用将标题作为url跳转的参数，参数如果有空格或者其它字符可能会导致错误    
+</code></pre>
+
+<p>关于功能2：</p>
+
+<pre><code>对于首页，无论是否登录，无论是谁登录，看到的东西都是一样的
+对于自主页，首先要求用户登录，同时只显示自己的部分
+</code></pre>
+
+<p>关于功能5：</p>
+
+<pre><code>需要对于博客有一个like功能：如果通过博客里的字段实现，那么没有办法查到谁lik
+另外需要避免重复like
+</code></pre>
+
+<p>关于功能6：</p>
+
+<pre><code>需要对于author有一个收藏的功能：需要另外一个table存储author和blog，表示author喜欢的blog
+</code></pre>
+
+<p>关于功能4：</p>
+
+<pre><code>对于编辑博客，只允许有非空标题和内容者发布，对于标签，支持分号分隔不同的标签
+（目前不支持标签自动提示功能）
+</code></pre>
+
+<p>关于功能7：</p>
+
+<pre><code>支持在发布日志时对标签计数变化
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-03T23:07:53+08:00" pubdate data-updated="true">Jul 3rd, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/django/'>django</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/01/simulation-structure/">
+		
+			仿真对抗平台</a>
+	</h2>
+	<div class="entry-content">
+		<p>软件架构</p>
+
+<p><img src="/images/2014/07/project1.png" alt="SOFTWARE_STRUCTURE" /></p>
+
+<p>软件界面</p>
+
+<p><img src="/images/2014/07/project2.png" alt="SOFTWARE_INTERFACE" /></p>
+
+<p>模块简介：</p>
+
+<ol>
+<li><p>表现层 (UI)</p>
+
+<p> 表现层分为用户交互(UIDeigner)和动画交互(ViewDesigner)两个模块。</p>
+
+<pre><code> UIDesigner
+ 对应界面中用户可以输入（初始化时）和显示数据（运行时）的部分。
+ 与后端的交互中涉及Read和Write。
+
+ ViewDesigner
+ 对应界面中通过OpenGL渲染动画的部分。
+ 仅从后端读取数据。
+</code></pre></li>
+<li><p>业务逻辑层 （BLL）</p>
+
+<p> TsController
+ 因为仿真系统是时序控制的离散系统，Controller主要负责模块间的调用。</p>
+
+<p> 比如定时控制基于MFC的OnTimer消息处理实现，OnTimer中调用TsController的Run，依次实现
+ 宏观运动模块的变化，探测模块的变化，算法模块的分析，并对结果进行渲染反馈。</p>
+
+<p> 宏观模块
+     根据仿真系统特点，系统包含飞机，探测器，干扰和环境四个基本的运行模块。
+     Airplane Module
+     Detector Module
+     Decoy Module
+     Environment Module</p>
+
+<pre><code> 仿真对抗过程是动态过程，每个模块的空间位置，自身属性（飞机的辐射，干扰的重量）都会
+ 随时间变化，而宏观信息是探测器微观工作过程的基础。
+</code></pre>
+
+<p> 微观模块 SystemPackage
+     点源探测工作过程仿真。系统运行的核心。点源探测实际是物理器件的工作过程，而我们需要
+     做的就是把物理过程（主要指光学器件的运行和采样）通过软件模拟。
+     鉴于研究背景，此部分不做具体说明。</p>
+
+<p> 算法模块 SystemRecognition
+     对于探测器产生的信号，系统需要进行决策（目标判断），并根据决策结果调整
+     自身的运动行为（光轴朝向）</p>
+
+<pre><code> 算法模块的输出会通过比例导引影响探测器的运行，因此又对宏观模块产生影响。        
+
+ 此处主要讲跟踪算法，对于干扰对抗的策略，本平台更多的是提供数据的产生源，对于
+ 算法只做简单的分析 （如何投干扰能规避追踪）
+</code></pre></li>
+<li><p>数据层 （DAL）</p>
+
+<p> 指令文件模块</p>
+
+<pre><code> 1. 初始化设置参数
+ 2. 对抗策略文件
+ 均以XML文件形式保存 （另外一个C#的简单软件允许用户做XmlWriter，更推荐手写配置）
+</code></pre>
+
+<p> 分析数据模块</p>
+
+<pre><code> 保存仿真完整过程中的相关数据。
+ 1. 方便回放
+ 2. 作为对抗策略的分析基础 （风速风向朝向，干扰策略，是否成功）
+ 3. 作为跟踪策略不足的分析基础 （在指标模块更多），Python绘制跟踪角度等指标
+</code></pre>
+
+<p> 指标模块</p>
+
+<pre><code> 主要保存微观变化指标。
+</code></pre></li>
+</ol>
+
+
+<p>交互流程操作</p>
+
+<pre><code>     1. 初始化：
+          1.1 从DB读取配置文件，加载到宏观模块中
+          1.2 读取数据加载到界面显示 
+          1.3 加载OpenGL绘制部分的初始设置和资源
+     2. 应用修改
+          2.1 读取界面显示数据，修改宏观模块
+     3. 启动 / 暂停
+          (暂停 是启动的简单控制) 
+     4.  停止 / 导出数据
+          默认的停止不导出数据（实际上是可以做在一起的）         
+          重新初始化
+</code></pre>
+
+<p>软件不足</p>
+
+<pre><code>缺少unit test级别的测试
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-01T23:30:03+08:00" pubdate data-updated="true">Jul 1st, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/06/28/redis-conf/">
+		
+			redis.conf</a>
+	</h2>
+	<div class="entry-content">
+		<p>redis.conf 关于redis的服务配置，类似Apache的http.conf</p>
+
+<pre><code> 其中例如
+ 1. 关于snapshotting的设置
+      save time num
+ for example, save 900 1 表示如果900s内有一个key发生改变，那么就写到硬盘
+ 2. work directory的设置     
+ dir ./ 默认是当前目录
+ 3. replication
+ master-slave replication 其中slave可以有自己单独的备份设置 （比如间隔多久写到硬盘）
+ slaveof &lt;masterip&gt; &lt;masterport&gt;
+ 4. limits
+ maxclients 
+ 最大客户连接数，默认是0，即无上限，那么连接数取决于redis能够获得的file descriptor的上限
+ maxmemory
+ 可以使用的最大内存
+ max memory policy
+ 当max memory达到时，进行替换的原则 （可以理解为cache替换的原则）
+ 5. append only mode (5中的操作是对数据安全要求较高的操作，默认no，即采用1的策略)
+ 默认mode是异步写入磁盘，那么可能存在crash导致最近数据丢失的情况
+ 采用append only mode，以速度损失为代价，保证数据不丢失，临时文件会存储到appendonly.aof中
+
+ append策略
+      1. always 速度最慢但最安全，每次写操作都写入append.aof
+      2. everysec 在速度和安全性间平衡
+      3. no 由操作系统决定何时写入（buffer满），速度最快
+ 6. slow log 
+ 慢日志 (对应MySQL中的slow_query_log)
+      可以做的设置包括
+           被记录命令的时间间隔标准 (因为慢日志只会记录花费超过一定时间的查询)
+           最大的日志size
+ 7. virutal memory
+ 在2.4以上的版本，VM已经被废止
+ virtual memory的存在主要是满足数据使用的2/8定律，即20%的数据被访问的次数占到80%，但是另外80%的数据仍然需要存储，对于内存不足的情况，那么使用硬盘作为VM，另外，作者推荐用SSD作为硬盘（因为其随机访问时间短）
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-06-28T19:41:16+08:00" pubdate data-updated="true">Jun 28th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/redis/'>redis</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/06/18/java-xxx/">
+		
+			Java 临时抱佛脚1</a>
+	</h2>
+	<div class="entry-content">
+		<p>Java 临时抱佛脚</p>
+
+<ul>
+<li><p>反射：RTTI
+动态的获取对象属性</p>
+
+<p>  // 方法1 getClass from object
+  Class a = obj.getClass(&ldquo;ClassName&rdquo;);
+  // 方法2 Class.forName()
+  Class a2 = Class.forName(&ldquo;ClassName&rdquo;);</p>
+
+<p>  Method m = a.getMethod(&ldquo;MethodName&rdquo;,null);</p></li>
+<li><p>抽象类与接口</p></li>
+</ul>
+
+
+<p>抽象类和接口的区别更多的体现在design上。因为Java不支持多继承，每个类都只能继承自一个基类，那么抽象类表示
+的含义是 &ldquo;is a"，而接口表示的是附属属性“has a”，比如一个防盗门，门是它的基本属性，防盗是它的附加属性，那么
+门应该作为抽象类存在，而防盗作为接口提供附加属性。</p>
+
+<pre><code>// 抽象类
+abstract class A1{    
+    abstract public void f1();
+    abstract public void f2();
+}
+
+// 接口
+interface I1{
+    void f1();
+    void f2();
+}
+
+class A2 extends A1{
+    public void f1(){
+        System.out.println("F1");
+    }
+
+    public void f2(){
+        System.out.println("F2");
+    }
+}
+</code></pre>
+
+<ul>
+<li>对象定义</li>
+</ul>
+
+
+<p>Java的基本数据类型定义在栈上，对象定义在堆上。对象变量实际上是对于对象的引用（实际上Python有相同的概念），
+因此在使用时要区分==和equals()</p>
+
+<pre><code>== 表示比较值, equals 表示比较引用
+比如
+    // class A
+    A a1 = new A("123");
+    A a2 = new A("123");
+    A a3 = a1;
+
+    a1 == a3 // True
+    a1 == a2 // False
+</code></pre>
+
+<ul>
+<li>静态块</li>
+</ul>
+
+
+<p>看下面这个例子</p>
+
+<pre><code>// case1
+class B{
+    private static int count = 10;
+    static{
+        count = 20;
+    }
+
+    public void printCount(){
+        System.out.println(count);
+    }
+}
+
+// case2    
+class B{
+    static{
+        count = 20;
+    }
+    private static int count = 10;
+
+    public void printCount(){
+        System.out.println(count);
+    }
+}    
+
+结果：
+20 // case1
+10 // case2
+</code></pre>
+
+<p>出现这样结果的原因在于，java静态变量的初始化就是在静态块中进行的，因此直接在变量定义时赋值和通过
+静态块定义都会改变变量的值，最终的结果取决于它们的定义顺序。</p>
+
+<p>另外，和C++一样，Java允许非静态函数中包含静态变量，反之不可，原因想想静态和非静态的编译时刻，静态函数中没有
+this指针，因此无法了解具体在调用的是哪个对象的变量。</p>
+
+<ul>
+<li><p>访问权限</p>
+
+<pre><code>  Java的类只有public和包内两种访问权限。默认是包内，对于每个.java文件，最多只能有一个public类，因为每个
+</code></pre>
+
+<p>.java文件会被编译为.class，那么它的对外接口最多只能有一个。</p>
+
+<pre><code>  abstract修饰的类：表示抽象类，用于后面的继承 （必须有子类）
+  final修饰的类: 表示常量类，不可以被继承 （无子类）
+</code></pre></li>
+<li><p>final / finally / finalize</p></li>
+</ul>
+
+
+<p>这看起来是java的一个经典议题，它们的相关性是。。它们长得很像。但从功能上讲，它们完成的功能完全不同</p>
+
+<pre><code>final : 
+与C++ const比较
+1. 对于基本类型，可以认为二者是一致的 （似乎final可以用于call 非final的成员函数而const不可以）
+2. 表示常量类
+
+finally :
+异常处理中必须要执行的操作，通常是文件/数据库的关闭等,但此函数的调用时间是由GC决定的，因此执行
+时刻可能是任意的
+
+finalize:
+在垃圾回收时会调用的方法，值得注意的是，它本身并不会主动触发垃圾回收，实际上是在垃圾回收时负责
+特殊的清理工作
+</code></pre>
+
+<ul>
+<li>垃圾回收</li>
+</ul>
+
+
+<p>既然说到了垃圾回收，Java采用的回收机制主要有两种</p>
+
+<pre><code>1. mark and sweep : 一块空间，造成不连续，少量垃圾对象
+2. stop and copy ：两块内存空间，连续，对象拷贝
+</code></pre>
+
+<ul>
+<li><p>Java和C++区别 （杂）</p>
+
+<ol>
+<li>Java中的方法均定义在类内，不允许在类外定义方法</li>
+<li>Java没有作用域运算符::，所有操作用.表示</li>
+<li>Java的类定义没有分号结尾</li>
+<li>Java中只有公有继承，通过extends关键字声明；而implements关键字是声明接口继承用的；</li>
+<li>Java不直接支持多继承，可以用接口替代</li>
+<li>Java通过super显式调用基类构造器；</li>
+<li>final表示不可改变的，和const基本类似；</li>
+<li>private方法隐含就是final类型的；</li>
+<li>final参数表示变量无法在函数中修改</li>
+<li>final函数表示函数不能被重写</li>
+</ol>
+</li>
+<li><p>foreach遍历容器</p>
+
+<p>  int arr1[] = {1,3,5,2};
+  for (int element : arr1){
+      System.out.println(element);
+  }</p></li>
+<li><p>类型转换</p>
+
+<pre><code>  String to int
+  int a = Integer.parseInt(s);
+   int to String
+  String s = String.valueOf(a);
+   // 其余类型类似
+
+  Integer是int的包装，int是基本类型，Integer是类
+</code></pre></li>
+<li><p>instanceOf 和 getClass</p>
+
+<p>  a instanceOf DerivedA 会判断a是不是DerivedA或者它的基类类型
+  a.getClass() == DerivedA.class 只判断a是不是DerivedA类型，不包括对于基类的判断</p></li>
+<li><p>传值还是传引用</p>
+
+<p>  参见Python pass by Vlue</p></li>
+<li><p>String和StringBuffer</p>
+
+<p>  String str = &ldquo;&rdquo;;
+  str += &ldquo;here&rdquo;;
+  其实际的操作是str对象不可变，而是改变了str的指向，即此过程中，创建一个新的对象 StringBuffer sb = new StringBuffer(str); sb.append(&ldquo;here&rdquo;); str = sb.ToString()
+  因此String对于可变数组的效率比StringBuffer小非常多；</p></li>
+</ul>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-06-18T00:34:39+08:00" pubdate data-updated="true">Jun 18th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/java/'>java</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/05/13/pandas-data-input/">
+		
+			Pandas 数据准备篇</a>
+	</h2>
+	<div class="entry-content">
+		<p>从csv或者文本文件读取数据</p>
+
+<pre><code> import pandas as pd
+
+ r = pd.read_csv('example.csv') # 读取csv文件，默认第一行是header column
+ r = pd.read_csv('example.csv', header=None) # 读取csv，第一行也是数据
+ r = pd.read_table('example.csv', seperator=',') # 读取文件，按逗号分隔
+
+ pd.isnull(r) # return True 对于NaN，-1.#IND和NULL的位置，其它return False
+ 因此可以用来区分数据有效性
+ 也可以通过调用时指定na_values来定义对用户的无效数据
+
+ pd.read_csv('example.csv', na_values=['NULL'])
+
+ na_values 可以进一步扩展为每列不同
+ na_values = {'column1':['NA'],'column2':['NULL']}
+
+ #读取部分文件 (前N行数据)
+ pd.read_csv('example.csv',nrows=N)
+
+ #将DataFrame中的数据输出到csv
+ DataFrame.to_csv('output.csv')
+
+ pd.date_range(start,end,period) # pandas data_range 指定了起始日期，结束日期或者持续长度
+</code></pre>
+
+<p>从数据库里导入数据</p>
+
+<pre><code> import MySQLdb
+ import pandas.io.sql as sql
+
+ #conn 用于建立数据连接
+ sql.read_frame('select * from your_table', conn)
+</code></pre>
+
+<p>例如:</p>
+
+<pre><code> conn = MySQLdb.connect(host='localhost',user='root',passwd='pass',db='tablename',port=3306,charset='utf8')
+ r = sql.read_frame('select * from dw_year', conn)
+
+ &gt;&gt;&gt;
+ YEAR_ID  YEAR  PRE_YEAR_ID
+0        1  2010          NaN
+1        2  2011            1
+2        3  2012            2
+3        4  2013            3
+4        5  2014            4
+5        6  2015            5
+</code></pre>
+
+<p>数据连接
+pandas.merge: 将DateFrames按照一定的key进行连接</p>
+
+<p>pandas将dict转为DataFrame: key作为column，value作为每行元素（通常是list）</p>
+
+<pre><code> df1 = DataFrame({'key1': range(2), 'key2':range(2)})
+</code></pre>
+
+<p>pandas.merge(df1,df2) 默认按照df1和df2中公有名称的key进行merge
+     或者显式调用</p>
+
+<pre><code> pandas.merge(df1,df2,on='keyname')
+</code></pre>
+
+<p>如果在df1和df2中key名称并不相同，那么可以指定merge的left key和right key</p>
+
+<pre><code> pandas.merge(df1,df2,left_on='lkey',right_on='rkey')
+</code></pre>
+
+<p>可以通过how来指定join是left join, right join还是outer join</p>
+
+<pre><code> pd.merge(df1, df2, how='outer')
+</code></pre>
+
+<p>看起来merge并没有复杂的操作，实际上是把sql的join操作在DataFrame level上重新进行了一次实现</p>
+
+<p>merge on index : 如果在定义DataFrame的时候用到了index （比如DataFrame({}, index=[&lsquo;a&rsquo;,&lsquo;b&rsquo;])）那么可以通过left_index=True或者right_index=True来指定使用index而非后面的column进行匹配（实际上这里的index是一个特殊的column）</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-05-13T23:20:55+08:00" pubdate data-updated="true">May 13th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/pandas/'>pandas</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/05/06/python-import-path/">
+		
+			Python Import 路径</a>
+	</h2>
+	<div class="entry-content">
+		<p>基本的import path可见 <a href="http://mobile.51cto.com/symbian-272844.htm">http://mobile.51cto.com/symbian-272844.htm</a></p>
+
+<pre><code>(1) import 同模块下另一文件
+      import file1
+
+(2) import 子模块中文件
+      import mod1.file1
+
+(3) 子模块mod2中 import 同级别 mod1中文件
+      这里需要将mod1和mod2的父路径加入sys.path，以便可以搜索
+</code></pre>
+
+<p>但我在开发中遇到如下的文件结构：</p>
+
+<pre><code>dir
+--mod1
+    --sub_mod1
+        --sub_sub_mod1
+            --sub_sub_sub_mod1
+                sub3_mod1.py
+            --sub_sub_sub_mod2
+                sub3_mod2.py
+--mod2
+    mod2.py
+</code></pre>
+
+<p>现在我需要在mod2.py中import sub3_mod2.py中的类LvSubMod2, 而 sub3_mod2.py中import sub3_mod1.py中的类LvSubMod1.</p>
+
+<p>因为mod2.py和sub_sub_mod1中的目录不在同一级别，采用基本方法3可以处理sub3_mod1和sub3_mod2的关系，但是在Django调用时会提示下面的错误:</p>
+
+<p><img src="/images/2014/05/python_path_1.jpg" alt="TEST1" /></p>
+
+<p>其中/xc/input是mod2.py对应的目录，Django没有提示找不到mod2.py直接引用的sub3_mod2，而是提示找不到sub3_mod1. 我开始认为是sub3_mod1和sub3_mod2之间的引用有问题，但是通过单独建立如上的目录结构，发现问题出现在mod2的sys.path设置上</p>
+
+<p>mod2的sys.path不能简单设置为当前mod2.py所在目录的父目录，因为在父目录下找不到sub3_mod1和sub_mod2，而是需要直接设置到sub3_mod1和sub_mod2的父目录上，即sub_sub_mod1</p>
+
+<p>在mod2.py中</p>
+
+<pre><code>import sys,os
+sys.path.append(os.path.abspath("../mod1/sub_mod1/sub_sub_mod1"))
+</code></pre>
+
+<p>问题解决。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-05-06T23:25:26+08:00" pubdate data-updated="true">May 6th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/05/05/find-common-key-in-dicts/">
+		
+			Find Common Key in Dicts</a>
+	</h2>
+	<div class="entry-content">
+		<p>找到两个dict的公共key (From Python Cookbook)</p>
+
+<p>基本写法：</p>
+
+<pre><code>for key1 in dict1.iterkeys():
+    if dict2.has_key(key1):
+        print key1
+</code></pre>
+
+<p>利用的基本函数： iterkeys() 遍历dict的key部分，dict1.has_key(key1)判断key1是否出现在dict1中</p>
+
+<p>更优雅的写法：</p>
+
+<pre><code>list1 = [for key1 in dict1 if key1 in dict2]
+</code></pre>
+
+<p>或者</p>
+
+<pre><code>list1 = filter(dict1.has_key, dict2.keys())
+</code></pre>
+
+<p>下面两种写法：</p>
+
+<pre><code> 1.for key1 in dict1.keys():
+        if key1 in dict2.keys():
+             print key1
+
+ 2.for key1 in dict1.keys():
+        if dict2.has_key(key1):
+             print key1
+</code></pre>
+
+<p>在执行效率上有很大的区别</p>
+
+<p>假设dict1含有N1个元素，dict2含有N2个元素</p>
+
+<p>写法1会遍历dict1和dict2中的所有元素，因此执行效率是O(N1*N2)</p>
+
+<p>写法2会遍历dict1，然后利用dict2中的hash table去查找元素，因此执行效率是O(N1)</p>
+
+<p>另外据说filter(dict1.has_key, dict2.keys())会有比写法2更高一些的执行效率，但是原作者没有说明具体的原因，同时这种效率的差距极其微小（同一数量级），因此写法2是可以接受的</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-05-05T23:57:03+08:00" pubdate data-updated="true">May 5th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/04/28/python-dynamic-import/">
+		
+			Python 模块动态加载</a>
+	</h2>
+	<div class="entry-content">
+		<p>这篇博客的缘由是在stackoverflow上回答的一个相关<a href="http://stackoverflow.com/questions/23210646/a-dynamic-load-import-reports-no-module-error/23232976#23232976">问题</a></p>
+
+<h1>为什么要引入动态加载</h1>
+
+<p>假如我们有如下的一个main函数</p>
+
+<p>in main.py</p>
+
+<pre><code>import Command1
+import Command2
+...
+import CommandN
+
+if __name__ == '__main__':
+    if condition1:
+        Command1.run()
+    elif:
+        Command2.run()
+    ...
+    else:
+        CommandN.run()
+</code></pre>
+
+<p>我们需要根据一定的条件调用某模块下的函数，但是我们只需要其中的一部分。在这种情况下，把其它模块均加载进去并非有必要。动态加载可以解决这个问题。</p>
+
+<h1>引入动态加载的方式 __import__</h1>
+
+<p>__import__是python内建函数，它允许用户输入字符串，然后查找对应名称的模块并返回。
+例如：</p>
+
+<pre><code>sys = __import__('sys')
+</code></pre>
+
+<p>和</p>
+
+<pre><code>import sys
+</code></pre>
+
+<p>得到的sys是一致的。</p>
+
+<p>然而，当模块中包含多个'.&lsquo;的时候，（如'foo.foo1.Command1'），那么简单使用 <strong>import</strong> 不能正确解析模块，原因在于 <strong>import</strong> 会将第一个逗号后面的内容视为模块名称。</p>
+
+<p>关于这一问题有下面两种解决方法：</p>
+
+<ol>
+<li><p>使用fromlist参数：</p>
+
+<p>  <strong>import</strong>(&ldquo;foo.foo1.Command1&rdquo;, fromlist=[&ldquo;foo.foo1&rdquo;])</p></li>
+<li><p>使用importlib模块：</p>
+
+<p> import importlib
+ importlib.import_module(&ldquo;foo.foo1.Command1&rdquo;)</p></li>
+</ol>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-04-28T22:20:16+08:00" pubdate data-updated="true">Apr 28th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/04/27/kettle-first/">
+		
+			Kettle First</a>
+	</h2>
+	<div class="entry-content">
+		<p>﻿&mdash;
+layout: post
+title: &ldquo;Kettle-first&rdquo;
+date: 2014-04-27 22:24:31 +0800
+comments: true</p>
+
+<h2>categories: [Kettle,数据仓库]</h2>
+
+<p>目前在网上关于Kettle的中文材料比较少，也没有太成型的教程，之前在dataguru上面看到过有人开Kettle的课程，但需要付费，暂时工作里没有这方面的需求，因此这里结合看到的资料和实际的操作做一些简单的探究。Kettle包含的内容远超过本篇的内容，如果之后有机会使用我会继续补充。</p>
+
+<p>Kettle (由于是Pentaho组件之一，官方名称为Pentaho Data Integration), 主要是一款ETL工作组件。它的<a href="http://wiki.pentaho.com/display/EAI/Pentaho+Data+Integration+%28Kettle%29+Tutorial">主要功能</a>包括:
+    1. 在不同数据库和应用间进行数据迁移
+    2. 从数据库中向文本导出数据 （实际反向也已支持）
+    3. 支持向数据库中加载多种数据源
+    4. 数据清洗
+    5. 应用集成</p>
+
+<p>Kettle下载安装
+Kettle是无需安装直接使用的，<a href="http://sourceforge.net/projects/pentaho/files/Data%20Integration/3.2.0-stable/">下载地址</a>,最新版本为3.2.0</p>
+
+<p>下载完成后，可以在\pdi-ce-5.0.1.A-stable\data-integration路径下找到Spoon.bat运行，软件界面如下：</p>
+
+<p><img src="/images/2014/04/ETL_first_15.png" alt="TEST15" /></p>
+
+<p>Kettle把处理对象分为job和transformation两大类：</p>
+
+<ol>
+<li>Job负责工作流的控制，实际上我几乎没有接触</li>
+<li>Transformation负责数据的转换</li>
+</ol>
+
+
+<p>因为我的应用均和Table相关，因此在创建一个Transformation的应用后，首先要做的是建立表输入和表输出。
+选择 &ldquo;核心对象&rdquo;->&ldquo;输入&rdquo;(&ldquo;输出&rdquo;), 可以看到Kettle支持的数据源很多，即官网说的支持多种数据源和数据库间的相互转换。</p>
+
+<p>首先选择一项“表输入”，将其拖拽到右侧的界面。右侧出现以"表输入"为名称的item，双击对其进行编辑。</p>
+
+<p><img src="/images/2014/04/ETL_first_1.png" alt="TEST1" />
+<img src="/images/2014/04/ETL_first_2.png" alt="TEST2" /></p>
+
+<p>&ldquo;步骤名称"建议根据应用需求改名；
+“数据库连接”设置表关联到的数据库，点击"新建"，然后选择合适的数据库连接 （我在这里采用的是MySQL），连接后测试，如果显示下图，表示连接成功</p>
+
+<p><img src="/images/2014/04/ETL_first_3.png" alt="TEST3" /></p>
+
+<p><img src="/images/2014/04/ETL_first_4.png" alt="TEST4" /></p>
+
+<p>连接成功后，还需要将当前item和数据库的一张表关联，点击“获取SQL查询语句”，找到需要的数据表，然后可以在"表输入"界面看到选择的数据。</p>
+
+<p><img src="/images/2014/04/ETL_first_5.png" alt="TEST5" /></p>
+
+<p>最简单的操作即将一张输入表和一张输出表发生关联，使得输入表的数据转到输出表中，这类操作通常应用于不同数据库间的数据转换，定义如下</p>
+
+<p><img src="/images/2014/04/ETL_first_6.png" alt="TEST6" /></p>
+
+<p>在"表输出"中可以显式的改变数据表字段的关联关系（我目前的操作均是如此），勾选"数据库字段"->&ldquo;指定数据库字段&rdquo;->&ldquo;获取字段&rdquo;</p>
+
+<p><img src="/images/2014/04/ETL_first_7.png" alt="TEST7" /></p>
+
+<p>在这里可以通过手动指定源与目标字段的映射关系来解决源表和目标表列不匹配的问题。</p>
+
+<p><img src="/images/2014/04/ETL_first_8.png" alt="TEST8" /></p>
+
+<p>在完成基本表关联的操作后，考虑到实际应用中大部分源表和目标表有着各种类型的不同，我们通过Kettle中的控件进行对应的处理</p>
+
+<pre><code>"字段选择"控件
+指定哪些源字段会被输出到目标字段，同时允许改变字段的精度、类型等
+
+![TEST9](/images/2014/04/ETL_first_9.png)
+
+"过滤记录"控件
+比如源数据中有NULL类型，但是我们的输出中不需要这种类型，那么可以如下使用
+
+![TEST10](/images/2014/04/ETL_first_10.png)
+</code></pre>
+
+<p>另外还有三类常见的数据应用</p>
+
+<ol>
+<li>表连接
+目标表中同时包含多个源表的数据</li>
+</ol>
+
+
+<p>应用“记录集连接” (merge join)控件</p>
+
+<p>在Kettle 连接选项卡里有多种连接方式</p>
+
+<pre><code>Merge Join : 按照指定key连接数据，这是最普通的方式，数据需要按照join key排序
+Join Rows (cartesian product) : 笛卡尔乘积，连接后数据行数等于之前数据行数的乘积
+Database Join : 执行数据库连接
+Multiway Join : 多路连接
+</code></pre>
+
+<p>表合并要求合并前先将数据按join key进行排序，这点并不是非常方便，因为在SQL里面我们可以直接做join，而现在我们不得不增加一项额外步骤，最终连接效果如下图:</p>
+
+<p><img src="/images/2014/04/ETL_first_14.png" alt="TEST14" /></p>
+
+<ol>
+<li>Javascript代码
+“脚本”->&ldquo;Javascript代码"，可以将Javascript脚本定义的变量转换为输出表的一个字段。</li>
+</ol>
+
+
+<p><img src="/images/2014/04/ETL_first_13.png" alt="TEST13" /></p>
+
+<ol>
+<li>产生时间序列
+对于数据仓库，时间纬度是非常重要的一部分，在一段时间内的year, quarter, month, day,以及派生出的 day_in_week, day_in_month, month_in_last_quarter等信息，可以通过Kettle的"计算器"中的原生函数产生。这部分内容较多，我之后单做一份进行说明，这里仅列出计算器的功能：</li>
+</ol>
+
+
+<p><img src="/images/2014/04/ETL_first_11.png" alt="TEST11" />
+<img src="/images/2014/04/ETL_first_12.png" alt="TEST12" /></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-04-27T00:00:00+08:00" pubdate data-updated="true">Apr 27th, 2014</time></div>
+	
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/03/24/publish-django-website/">
+		
+			Publish Django Website</a>
+	</h2>
+	<div class="entry-content">
+		<p>Django生产环境配置</p>
+
+<p>一. Django + Apache</p>
+
+<p>Django本身提供了一套开发测试服务器，但考虑到实际应用的需求（并发性的支持），需要将Django部署到Apache上。下面是部署的操作步骤</p>
+
+<p>假设你已经安装了<a href="https://www.djangoproject.com/download/">Django</a>和<a href="http://httpd.apache.org/download.cgi">Apache</a>,我使用的是Django1.6.2和Apache2.2</p>
+
+<p>1.安装mod_wsgi</p>
+
+<p>根据官网介绍，"The aim of mod_wsgi s to implement a simple to use Apache module which can host any Python application which supports the Python WSGI interface"。mod_wsgi主要支持Python应用在Apache上面的部署。
+在官网上支持的源代码下载<a href="http://modwsgi.googlecode.com/files/mod_wsgi-3.3.tar.gz">mod_wsgi</a>，需要自己编译产生mod_wsgi.so，如果在windows上出于方便考虑也可以直接使用编译好的<a href="http://www.lfd.uci.edu/~gohlke/pythonlibs/#mod_wsgi">二进制文件</a>
+将生成的mod_wsgi.so文件拷贝到Apache目录的module文件夹内。同时在http.conf中加载该模块</p>
+
+<pre><code>LoadModule wsgi_module modules/mod_wsgi-win32-ap22py27-3.3.so
+</code></pre>
+
+<p>2.配置Django应用
+在Django app的根目录创建一个文件夹apache，其中设置配置文件django.wsgi (也可以不建文件夹直接把django.wsgi放在外面)，django.wsgi文件内容如下：</p>
+
+<pre><code>import os
+import sys
+
+path = 'F:/GitHub/xxx' # replace this to your dir
+if path not in sys.path:
+    sys.path.append(path)
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'xxx.settings' # path of settings.py
+
+import django.core.handlers.wsgi
+application = django.core.handlers.wsgi.WSGIHandler()
+</code></pre>
+
+<p>其中需要修改的内容是path和django setting路径，这里请修改成你自己的</p>
+
+<p>3.配置http.conf
+VirtualHost是在同一台机器上搭建属于不同域名或者基于不同IP的网站，设置的标准格式如下（即http.conf中的注释内容）</p>
+
+<pre><code># &lt;VirtualHost *:80&gt;
+#    ServerAdmin webmaster@dummy-host.example.com
+#    DocumentRoot /www/docs/dummy-host.example.com
+#    ServerName dummy-host.example.com
+#    ErrorLog logs/dummy-host.example.com-error_log
+#    CustomLog logs/dummy-host.example.com-access_log common
+#&lt;/VirtualHost&gt;
+</code></pre>
+
+<p>其中ServerAdmin指定网站的域名，DocumentRoot指定网站的根目录，如果需要多个应用，那么简历多个VirtualHost。因为我并不打算在计算机上配置多个应用，因此我并没有设置VirtualHost。
+我在http.conf中的设置主要有三部分：
+1. 设置WSGIScriptAlias，WSGIScriptAlias指定包含WSGI脚本的路径，使得mod_wsgi在加载处理时能够调用python的相关应用。</p>
+
+<pre><code>WSGIScriptAlias / F:/GitHub/xxx/apache/django.wsgi
+</code></pre>
+
+<ol>
+<li><p>设置Django程序的访问路径权限</p>
+
+<p> <Directory F:/GitHub/muni.python/apache/>
+     Options +ExecCGI
+     Order deny,allow
+     Allow from all
+ </Directory></p></li>
+<li><p>设置静态文件路径及权限</p>
+
+<p> Alias /static/ F:/GitHub/xxx/static/
+ <Directory F:/GitHub/xxx/static/>
+     Order deny,allow
+     Allow from all
+ </Directory></p></li>
+</ol>
+
+
+<p>完成以上的设置，重启Apache，通过<a href="http://localhost:80%E8%AE%BF%E9%97%AE%E5%AF%B9%E5%BA%94Django">http://localhost:80%E8%AE%BF%E9%97%AE%E5%AF%B9%E5%BA%94Django</a> urls.py中 url(r'^$&lsquo;,'app.views.index&rsquo;,name=&lsquo;index&rsquo;)对应的url</p>
+
+<p>二. 外网访问</p>
+
+<p>如果只是部署好服务器，那么只能支持内网的访问，外网仍然无法进行访问。我用笔记本连家里的无线路由宽带上网，那么需要如下的配置:
+1. 设置无线路由的映射
+重启无线路由，在配置中“转发规则”->&ldquo;虚拟服务器&rdquo;->&ldquo;添加新条目"，把添加无线路由的IP （比如192.168.1.100）
+查询自己的<a href="http://www.ip138.com/">真实IP</a>，比如123.123.123.123</p>
+
+<ol>
+<li>设置非80端口
+这点操作比较简单，主要是好像对联通80等标准端口会被屏蔽，因此在http.conf中设置一个非常用的端口，比如我设置的是30509</li>
+</ol>
+
+
+<p>外网访问 <a href="http://123.123.123.123:30509/">http://123.123.123.123:30509/</a> 完成</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-03-24T18:29:43+08:00" pubdate data-updated="true">Mar 24th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/apache/'>apache</a>, <a class='category' href='/blog/categories/django/'>django</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+<nav id="pagenavi">
+    
+        <a href="6" class="prev">Prev</a>
+    
+    
+        <a href="8" class="next">Next</a>
+    
+</nav>
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

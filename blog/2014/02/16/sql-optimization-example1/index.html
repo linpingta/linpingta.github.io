@@ -1,0 +1,86 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>SQL Optimization Example1  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="今天在stackoverflow上看到一个问题 http://stackoverflow.com/questions/21770055/can-i-simplify-the-sql ，优化： select count(*) from (select * from T_LOGGINGINFO &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">SQL Optimization Example1</h2>
+	<div class="entry-content"><p>今天在stackoverflow上看到一个问题 <a href="http://stackoverflow.com/questions/21770055/can-i-simplify-the-sql">http://stackoverflow.com/questions/21770055/can-i-simplify-the-sql</a> ，优化：
+     select count(*)  from (select *
+          from T_LOGGINGINFO
+          where to_char(LOGINTIME, &lsquo;YYYY-MM&rsquo;) = &lsquo;2012-05&rsquo;
+          group by USERNAME)
+问题本身并没有太大困难，但是这里涉及到SQL效率的优化，to_char(LOGINTIME,&lsquo;YYYY-MM&rsquo;)=&lsquo;2012-05'是无法使用索引的，因为在上面应用了to_char函数，解决的方法是处理'2012-05&rsquo;
+          where LOGINTIME between to_date(&lsquo;01-MAY-2012 00:00:00&rsquo;, &lsquo;DD-MON-YYYY  HH24:MI:SS&rsquo;)
+                                     and to_date(&lsquo;31-MAY-2012 23:59:59&rsquo;,&lsquo;DD-MON-YYYY HH23:MI:SS&rsquo;)</p>
+
+<p>btw，作者的开场白很有意思：brevity is the soul of wit , but clarity is the soul of code. 果断Approve.</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-02-16T20:18:12+08:00" pubdate data-updated="true">Feb 16th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/stackoverflow/'>stackoverflow</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

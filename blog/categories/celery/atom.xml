@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: celery | linpingta's blog]]></title>
+  <link href="http://yoursite.com/blog/categories/celery/atom.xml" rel="self"/>
+  <link href="http://yoursite.com/"/>
+  <updated>2020-06-24T10:13:34+08:00</updated>
+  <id>http://yoursite.com/</id>
+  <author>
+    <name><![CDATA[linpingta]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Celery用于监控微信报警]]></title>
+    <link href="http://yoursite.com/blog/2016/07/01/celery-weixin-monitor/"/>
+    <updated>2016-07-01T23:47:00+08:00</updated>
+    <id>http://yoursite.com/blog/2016/07/01/celery-weixin-monitor</id>
+    <content type="html"><![CDATA[<p>应用场景</p>
+
+<p>广告系统会根据业务需求（比如预算到期，创意被拒，账户被封等）给用户发送微信提醒。</p>
+
+<p>之前的实现方法是，由业务模块负责把数据推送到由redis简单构成的消息队列中，然后有一个集中处理模块定期去采集消息队列中的信息，发送给对应用户。</p>
+
+<p>这样实现虽然简单，但是有一些问题的：
+1. 定期集中处理相当于是采用轮询的方式查看队列，首先在没有数据时，轮询操作本身是一种浪费资源（尽管在这个场景下浪费不大），其次轮询意味着固定的时间周期，如果时间周期过短肯定是资源消耗增加，如果时间周期过长一方面是报警不及时（你预算都停了半天才告诉我，还不如我自己去看对吧），同时也会让很多报警一次性的发送给用户（微信突然响个不停）
+2. redis的队列本身没有重试，也不会保存信息，换句话说，如果采集模块出bug了，这些数据就是丢了，前期报警数据本身没有那么重要（因为不是直接涉及钱的数据），但丢数据从技术角度还是应该解决的问题。
+3. 代码复杂度，用redis的话，每个业务服务都得redis客户端对吧，那就要负责开关。每个业务服务通常习惯使用不同的名称（与业务本身相关），这点得和采集模块保持一致，但如果模块多了呢，或者说这种信息定义在业务代理里，本身查看和更新也非常不方便。</p>
+
+<p>Celery可以解决的问题
+1.不是同步非阻塞了，是异步查询。执行效率变高了，用户不用等了，如果业务量级大，还是会有延迟，但你可以定义不同优先级的队列处理，用户基本是及时收到报警信息。
+2.任务本身可以重试，相关消息也可以根据需要保存。
+3.采集模块简化为一个函数，业务调用模块调用函数（实际是发送消息到队列），两侧均不再需要直接接触redis。</p>
+
+<p>另外也研究了Celery用于定时任务管理的功能，考虑对其它语言的接受程度和系统稳定性，还是决定使用公司内部开发的调度系统。关于定时任务的应用，以后有机会再做介绍。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Celery常见问题]]></title>
+    <link href="http://yoursite.com/blog/2016/06/28/celery-frequent-asked-question/"/>
+    <updated>2016-06-28T09:43:58+08:00</updated>
+    <id>http://yoursite.com/blog/2016/06/28/celery-frequent-asked-question</id>
+    <content type="html"><![CDATA[<p>问题节选自<a href="http://docs.celeryproject.org/en/latest/faq.html">Frequently Asked Questions</a>，只挑选了一些感觉比较重要的回答，也掺杂了一些自己的理解，有兴趣请阅读<a href="http://docs.celeryproject.org/en/latest/faq.html">原文</a>。</p>
+
+<p>1.Celery的适用场景</p>
+
+<pre><code>(1) 后台运行的场景。比如web应用中，需要快速返回结果给用户，以求得更好的用户体验，但任务本身还需要在后台运行，此时很适合使用Celery。
+(2) 周期性执行的任务
+</code></pre>
+
+<p>还有几点可以视为Celery的属性</p>
+
+<pre><code>(1) 异步执行，包含重试
+(2) 分布式
+(3) 并行
+</code></pre>
+
+<p>2.Celery的依赖</p>
+
+<p>作者在这里吐槽了下对依赖过多的批评："The rationale behind such a fear is hard to image"，软件本身应该避免重复造轮子，而且有像pip这样的包管理工具，安装依赖本身并不是一件头疼的事情。</p>
+
+<p>这里我想吐槽下依赖的问题：最近在工作里用到Celery发现启动后遇到<a href="http://linpingta.cn/blog/2016/06/24/celery-problem-1/">Socket_connect_timeout错误</a>，最终排查后，发现是kombu的版本略新，而redis的版本略旧导致了问题，所以说依赖如果能够保证版本一致还好，但如果同一模块不同版本间升级较多，依赖者就要麻烦了。</p>
+
+<p>回过头来看看Celery的依赖：</p>
+
+<pre><code>(1) kombu：一个python消息库，据说在openstack项目中也有使用
+(2) billard：一个对python自带multiprocessing模块功能升级的模块
+(3) pytz：时区管理
+</code></pre>
+
+<p>另外Django也提供Celery的使用支持。</p>
+
+<p>3.Celery算是一个轻量级服务吗
+是的，但同样需要考虑CPU和IO的[优化]。(<a href="http://docs.celeryproject.org/en/latest/userguide/optimizing.html#guide-optimizing">http://docs.celeryproject.org/en/latest/userguide/optimizing.html#guide-optimizing</a>)</p>
+
+<p>4.Celery的序列化方式
+默认是pickle，但同样支持yaml, json等其它格式。</p>
+
+<p>5.Celery适用的web框架
+不仅是Django，也包括其它</p>
+
+<p>6.Celery的broker选择
+推荐使用RabbitMQ或者支持AMQP协议的消息队列，但是Redis，或者其它数据库（MongoDB, 关系型数据库）也是可以选择的。
+补充下，在这里Redis的支持应该是好于其它数据库（无论是关系还是非关系），另外也有文章说最好不要用关系型数据库作为Celery的broker，所以其实主要的选择就是两点：RabbitMQ或者Redis。
+像我们工作的环境，RabbitMQ并没有安装，因此我们选择Redis作为broker。</p>
+
+<p>7.Celery支持多语言么
+支持
+这点我还没有什么应用，这里不乱说了，有兴趣请看<a href="http://docs.celeryproject.org/en/latest/faq.html">原文</a>。</p>
+
+<p>8.如何清除队列里的任务
+调用purge命令。
+如果是清除所有任务，可以：</p>
+
+<pre><code>celery -A proj purge
+</code></pre>
+
+<p>如果是清除指定队列中的任务，可以：</p>
+
+<pre><code>celery -A proj amqp queue.purge &lt;queue name&gt;
+</code></pre>
+
+<p>9.如何根据taskID获取任务执行的结果
+调用task.AsyncResult命令</p>
+
+<pre><code>result = my_task.AsyncResult(task_id)
+result.get()
+</code></pre>
+
+<p>10.可以以root身份运行celery么
+一定不要这样，可能的安全问题会导致风险。</p>
+
+<p>11.如何在一个任务调用完后执行另外一个任务
+依赖<a href="http://docs.celeryproject.org/en/latest/userguide/canvas.html">Canvas</a>中定义的操作符，在执行完A后执行B：</p>
+
+<pre><code>do A | do B
+</code></pre>
+
+<p>12.如何取消正在执行的任务</p>
+
+<pre><code>result = add.apply_async(args=[2, 2], countdown=120)
+result.revoke()
+</code></pre>
+
+<p>13.如何将指定任务发送到指定server
+    使用<a href="http://docs.celeryproject.org/en/latest/userguide/routing.html">路由</a></p>
+
+<p>14.Celery支持优先操作么
+不支持消息级别的优先级操作，Celery对优先级操作的支持是通过把不同优先级的任务发送到不同的任务路由实现。</p>
+
+<p>15.可以指定时间执行任务么
+类似crontab的调用：</p>
+
+<pre><code>from celery.schedules import crontab
+from celery.task import periodic_task
+
+@periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
+def every_monday_morning():
+    print("This is run every Monday morning at 7:30")
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Celery got an unexpected keyword argument 'socket_connect_timeout']]></title>
+    <link href="http://yoursite.com/blog/2016/06/24/celery-problem-1/"/>
+    <updated>2016-06-24T10:52:17+08:00</updated>
+    <id>http://yoursite.com/blog/2016/06/24/celery-problem-1</id>
+    <content type="html"><![CDATA[<p>这是一次问题的错误记录，celery在机器A上可以正常工作，但在机器B上启动时</p>
+
+<pre><code>celery worker -A app --loglevel=info
+</code></pre>
+
+<p>会遇到如下问题：</p>
+
+<pre><code>  File "/usr/local/lib/python2.7/site-packages/celery-3.1.23-py2.7.egg/celery/worker/consumer.py", line 376, in connect
+    callback=maybe_shutdown,
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 369, in ensure_connection
+    interval_start, interval_step, interval_max, callback)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/utils/__init__.py", line 246, in retry_over_time
+    return fun(*args, **kwargs)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 237, in connect
+    return self.connection
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 742, in connection
+    self._connection = self._establish_connection()
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 697, in _establish_connection
+    conn = self.transport.establish_connection()
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/virtual/__init__.py", line 809, in establish_connection
+    self._avail_channels.append(self.create_channel(self))
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/virtual/__init__.py", line 791, in create_channel
+    channel = self.Channel(connection)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 464, in __init__
+    self.client.info()
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/utils/__init__.py", line 325, in __get__
+    value = obj.__dict__[self.__name__] = self.__get(obj)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 908, in client
+    return self._create_client(async=True)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 861, in _create_client
+    return self.AsyncClient(connection_pool=self.async_pool)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 882, in __init__
+    self.connection = self.connection_pool.get_connection('_')
+  File "/usr/local/lib/python2.7/site-packages/redis/connection.py", line 455, in get_connection
+    connection = self.make_connection()
+  File "/usr/local/lib/python2.7/site-packages/redis/connection.py", line 464, in make_connection
+    return self.connection_class(**self.connection_kwargs)
+TypeError: __init__() got an unexpected keyword argument 'socket_connect_timeout'
+</code></pre>
+
+<p>网上关于此问题的主要讨论来自：
+<a href="https://github.com/celery/celery/issues/2903">https://github.com/celery/celery/issues/2903</a></p>
+
+<p>但感觉大多数讨论并没有指明问题的解决方法。重新查看错误日志，看到问题最终出现在 /redis/connection.py中，即python redis客户端模块中，其中Connection类的构造函数如下：</p>
+
+<pre><code>class Connection(object):
+"Manages TCP communication to and from a Redis server"
+description_format = "Connection&lt;host=%(host)s,port=%(port)s,db=%(db)s&gt;"
+
+def __init__(self, host='localhost', port=6379, db=0, password=None,
+             socket_timeout=None, encoding='utf-8',
+             encoding_errors='strict', decode_responses=False,
+             parser_class=DefaultParser):
+    self.pid = os.getpid()
+    self.host = host
+    self.port = port
+    self.db = db
+    self.password = password
+    self.socket_timeout = socket_timeout
+    self.encoding = encoding
+    self.encoding_errors = encoding_errors
+    self.decode_responses = decode_responses
+    self._sock = None
+    self._parser = parser_class()
+</code></pre>
+
+<p>再对比可以运行机器中相应源代码：</p>
+
+<pre><code>class Connection(object):
+    "Manages TCP communication to and from a Redis server"
+    description_format = "Connection&lt;host=%(host)s,port=%(port)s,db=%(db)s&gt;"
+
+    def __init__(self, host='localhost', port=6379, db=0, password=None,
+                 socket_timeout=None, socket_connect_timeout=None,
+                 socket_keepalive=False, socket_keepalive_options=None,
+                 retry_on_timeout=False, encoding='utf-8',
+                 encoding_errors='strict', decode_responses=False,
+                 parser_class=DefaultParser, socket_read_size=65536):
+        self.pid = os.getpid()
+        self.host = host
+        self.port = int(port)
+        self.db = db
+        self.password = password
+        self.socket_timeout = socket_timeout
+        self.socket_connect_timeout = socket_connect_timeout or socket_timeout
+        self.socket_keepalive = socket_keepalive
+        self.socket_keepalive_options = socket_keepalive_options or {}
+        self.retry_on_timeout = retry_on_timeout
+        self.encoding = encoding
+        self.encoding_errors = encoding_errors
+        self.decode_responses = decode_responses
+</code></pre>
+
+<p>可以看到在新版本的redis中才会支持socket_connect_timeout字段。</p>
+
+<p>因为问题的解决办法是：升级redis到2.10以上版本</p>
+
+<pre><code>pip install redis --upgrade
+</code></pre>
+
+<p>这个解决方案我也补充在 <a href="https://github.com/celery/celery/issues/2903">https://github.com/celery/celery/issues/2903</a> 的最后了。s</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Celery: 建议资料汇总]]></title>
+    <link href="http://yoursite.com/blog/2016/03/20/celery-tips/"/>
+    <updated>2016-03-20T10:02:52+08:00</updated>
+    <id>http://yoursite.com/blog/2016/03/20/celery-tips</id>
+    <content type="html"><![CDATA[<p>这篇博客是网上关于Celery的一些使用建议方面的资料汇总。</p>
+
+<p><a href="https://denibertovic.com/posts/celery-best-practices/">CELERY - BEST PRACTICES</a>
+1. Don&rsquo;t use the database as your AMQP Broker
+不要用数据库作为AMQP的broker，虽然Celery支持这样做，但是数据库可能会因此导致更差的IO性能，进而影响实际提供的服务
+2. Use more Queues (ie. not just the default one)
+把不同的任务扔到不同的队列中处理，因为他们的处理时间和优先级不同
+3. Use priority workers
+同2.
+4. Use Celery&rsquo;s error handling mechanisms
+在任务函数的定义中，注意异常处理，包括try&hellip;except,  设置重试次数和重试间隔
+5. Use Flower
+Flower: <a href="http://celery.readthedocs.org/en/latest/userguide/monitoring.html#flower-real-time-celery-web-monitor">Real-time Celery web-monitor</a>
+6. Keep track of results only if you really need them
+只有在你需要的时候才关注任务执行的结果，设置CELERY_IGNORE_RESULT = True
+7. Don&rsquo;t pass Database/ORM objects to tasks
+不要把ORM对象传入task</p>
+
+<p><a href="https://library.launchkit.io/three-quick-tips-from-two-years-with-celery-c05ff9d7f9eb#.ewpt0c9eo">Three quick tips from two years with Celery</a>
+1. Set a global task timeout
+默认情况下，task不会结束，有必要设置全局的timeout时间，以免由于网络或者其它原因出现无法结束的任务。
+2. Use -Ofair for your preforking workers
+任务会在worker启动后分配，而不是预先分配，避免某个task执行时间过长导致worker的利用不充分
+3. Use exponential retry delays
+类似上一篇文章的第4项，且看起来没有它优雅</p>
+
+<p><a href="https://blog.jixee.me/7-tips-for-working-with-celery/">7 Tips for Working with Celery</a>
+1. Set up Task Timeout
+设置任务的超时时间，同上
+2. Set the Number of Clients
+意义不大
+3. -Ofair Task Distribution for Preforking Workers
+同上
+4. Setup Retry Delays
+同上
+5. JSON Serializer for Inoperability
+用JSON作为序列化方式
+6. Celery In Development
+7. Configure a Broker
+意义不大</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Celery 概念：分布式、路由队列与工作流]]></title>
+    <link href="http://yoursite.com/blog/2016/03/19/celery-2/"/>
+    <updated>2016-03-19T13:21:24+08:00</updated>
+    <id>http://yoursite.com/blog/2016/03/19/celery-2</id>
+    <content type="html"><![CDATA[<p>一. 分布式</p>
+
+<p>在Celery基础教程中，我们了解了如何定义task，启动celery worker和client调用。再次回到Celery定义：</p>
+
+<pre><code>Celery is asynchronous task queue/job based on distributed message passing. It is focused on real-time operation, but supports scheduling as well.
+</code></pre>
+
+<p>可见Celery也是一个分布式的消息系统，那么如何利用分布式的方法执行任务呢？</p>
+
+<p>Celery的分布式实际包含两个层次：</p>
+
+<ol>
+<li>Distribute work on a given machine across all CPUs</li>
+<li>Distribute work to many machines</li>
+</ol>
+
+
+<p>先说第一点，默认情况下，Celery在一台机器上启动worker，worker的进程数量和机器的CPU个数一致。但也可以通过concurrency参数控制启动worker的进程数量：</p>
+
+<pre><code>同时启动5个worker进程
+celery -A tasks worker --loglevel=INFO --concurrency=5
+</code></pre>
+
+<p>比如你的机器只有一个CPU，但仍然可以通过上述方法启动5个worker进程，在某些IO密集型的任务中，可以考虑启动worker的数量多于CPU数量，在CPU密集型的任务中，这样的操作可能没有什么好处。</p>
+
+<p>再说第二点，因为Celery只指定了worker的broker，所以只需要在不同机器上启动worker，它们都会从相同的broker中获取任务并处理。</p>
+
+<p>在考虑不同机器上的操作时，涉及远程控制的概念。</p>
+
+<ol>
+<li>celery inspect</li>
+</ol>
+
+
+<p>观察所有运行worker的信息，例如观察当前处于活跃状态的worker和task：</p>
+
+<pre><code>        celery -A tasks inspect active          
+</code></pre>
+
+<ol>
+<li>celery control</li>
+</ol>
+
+
+<p>控制worker的行为，例如向worker中增加对某队列的消费：</p>
+
+<pre><code>    celery control -d w1.e.com add_consumer queue_name
+</code></pre>
+
+<ol>
+<li>celery status</li>
+</ol>
+
+
+<p>观察当前worker状态</p>
+
+<pre><code>celery -A tasks status
+# celery@iZ25d0yvrwwZ: OK
+#
+# 1 node online.
+</code></pre>
+
+<p>二. 路由(Route)与队列(Queue)</p>
+
+<p>如果不特殊指定，Celery将会创建名为celery的默认队列，用于消息传递。但在某些应用场景下，例如不同任务的耗时和优先级不同，不应让耗时低和优先级高的任务等待耗时较高优先级较低的任务执行，毕竟如上面提到的，worker进程的数量是有限的，过多的任务会造成任务等待，此时需要把不同的消息投递到不同的任务队列处理。</p>
+
+<p>这里涉及的Route，Queue和Exchange概念，我的理解是依赖AMQP本身相关概念的，因此相应定义也是一致的。另外由于我研究较浅，虽然Exchange有多重类型(direct, topic&hellip;)，但这里我们只使用默认的Exchange，问题的焦点放在Route, Queue和Task的绑定上。</p>
+
+<p>(1) 绑定Route与Queue：
+    在Celery的配置文件中，设定CELERY_QUEUES变量</p>
+
+<pre><code>CELERY_QUEUES = (
+    Queue('add', routing_key='task.#'),
+    Queue('default', routing_key='default'),
+)
+</code></pre>
+
+<p>   这里多说一句的是，配置文件如何覆盖到Worker上（因为看了网上很多文章，都在配置文件的内容上，但没有写清如何在Worker上生效），可以依赖如下代码：</p>
+
+<pre><code>app = Celery('task_info', broker='redis://localhost', backend='redis://localhost') # for case with backend
+app.conf.CELERY_TASK_SERIALIZER = 'json'
+app.conf.CELERY_QUEUES = CELERY_QUEUES
+</code></pre>
+
+<p>(2) 绑定Queue与task：</p>
+
+<pre><code>@app.task(queue='add')
+def add(x, y):
+    return 2*x + 2*y
+</code></pre>
+
+<p>  指定task处理来自名为add的队列内容</p>
+
+<p>(3) 启动只处理指定队列的worker</p>
+
+<pre><code>celery -A tasks worker -Q add
+</code></pre>
+
+<p>   启动worker，只处理来自名为add的队列消息</p>
+
+<p>(4) 客户端调用</p>
+
+<p>   client调用时可以指定路由：</p>
+
+<pre><code>result = add.apply_async(args=[4,4],     routing_key='task.add')
+</code></pre>
+
+<p> 也可以指定队列：</p>
+
+<pre><code>result = add.apply_async(args=[4,4], queue='default')
+</code></pre>
+
+<p>三. 工作流(canvas)</p>
+
+<p>子任务：也可以视为一种任务，但如果把任务视为函数的话，它可能是填了部分参数的函数。子任务的主要价值在于它可以用于关联运算中，即几个子任务按某种工作流方式的定义执行更为复杂的任务。</p>
+
+<p>Celery工作流包含以下原语：</p>
+
+<ol>
+<li><p>group</p>
+
+<blockquote><p> group并行的执行一系列任务：</p>
+
+<pre><code>from celery import group
+from proj.tasks import add
+
+group(add.s(i, i) for i in xrange(10))().get()
+# [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+</code></pre></blockquote></li>
+<li><p>chain</p>
+
+<blockquote><p>chain串行的执行任务：</p>
+
+<pre><code> from celery import chain
+ from proj.tasks import add, mul
+
+ chain(add.s(4, 4) | mul.s(8))().get()
+ # (4 + 4) * 8
+</code></pre></blockquote></li>
+<li><p>chord</p>
+
+<blockquote><p> chord是包含回调的group操作</p></blockquote></li>
+<li>map</li>
+<li>starmap</li>
+<li>chunks</li>
+</ol>
+
+]]></content>
+  </entry>
+  
+</feed>

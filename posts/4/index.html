@@ -1,0 +1,1492 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="一. 什么是Celery Celery是一个python模块,它在官网的定义： Celery is asynchronous task queue/job based on distributed message passing. It is focused on real-time &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/03/15/celery-taskqueue-vs-messagequeue/">
+		
+			Celery:任务队列 vs 消息队列</a>
+	</h2>
+	<div class="entry-content">
+		<p>一. 什么是Celery</p>
+
+<p>Celery是一个python模块,它在官网的<a href="http://www.celeryproject.org/">定义</a>：</p>
+
+<hr />
+
+<pre><code>Celery is asynchronous task queue/job based on distributed message passing. It is focused on real-time operation, but supports scheduling as well.
+</code></pre>
+
+<p>这里强调的概念包括：异步任务队列 / 分布式消息传递 / 实时或调度任务,下面对这些概念分别做解释</p>
+
+<p>二. 任务队列 vs 消息队列</p>
+
+<p>消息队列作为进程间异步通信方式，在模块解耦上有广泛的应用。常用的消息队列包括: rabbitmq, zeromq, 以及redis等。
+Celery首先在定义上强调了自己是task queue而不是message queue，同时它的具体实现上，会选择rabbitmq(默认方式)或者redis作为broker（貌似对其它mq和database也有支持，具体可见<a href="http://docs.celeryproject.org/en/latest/getting-started/brokers/index.html#broker-overview">broker列表</a>，也说明它本身并不是一种消息队列，那么任务队列与消息队列的区别在哪里呢？</p>
+
+<p>这个问题的回答主要参考<a href="https://www.quora.com/What-is-the-difference-between-a-message-queue-and-a-task-queue-Why-would-a-task-queue-require-a-message-broker-like-RabbitMQ-Redis-Celery-or-IronMQ-to-function">Quora/What is difference between a message queue and a task queue</a></p>
+
+<p>截取较为重要的一段：</p>
+
+<pre><code>Let's forget Celery for a moment. Let's talk about RabbitMQ. What would we usually do? Our Django/Flask app would send a message to a queue. We will have some workers running which will be waiting for new messages in certain queues. When a new message arrives, it starts working and processes the tasks
+</code></pre>
+
+<p>也就是说，任务队列会在一个比消息队列更高的层级管理你的工作，你不再需要关注消息的传递，而是重点定义工作的任务。</p>
+
+<p>这仍然是一个模糊的概念，我们需要举一个具体的例子：这里我们定义两个task functions，表示Worker可以执行的任务，然后再在客户端调用执行这些任务。为了对比，我们再用rabbitmq作为消息队列，完成类似的功能。
+(在这里省去Celery/rabbitmq/redis的安装和配置，我们假设相关环境已配置ok)。</p>
+
+<p>Celery版本：
+1. server端定义(tasks.py)</p>
+
+<pre><code>from celery import Celery
+import time
+
+app = Celery('task', broker='redis://localhost',     backend='redis://localhost')
+app.conf.CELERY_TASK_SERIALIZER = 'json'
+
+@app.task
+def add(x, y):
+    time.sleep(5)
+    return x + y
+
+@app.task
+def multiply(x, y):
+    return x * y
+</code></pre>
+
+<p>首先我们定义一个任务队列的实例app，它包含的参数：
+&lsquo;tasks&rsquo;:  任务名称，实践发现是可以不同于server文件名的，但简单处理可保持一致
+broker:  指定Celery所依赖的消息队列地址，这里使用的是我本机的redis
+backend: 指定Celery对tasks状态信息的存储位置，此处可以为空</p>
+
+<p>简单对比下设置和未设置backend的效果（假设用redis作为backend):</p>
+
+<ol>
+<li>有backend设置运行task, server端日志：</li>
+</ol>
+
+
+<blockquote><p>[2016-03-15 16:33:00,736: INFO/MainProcess] Received task: tasks.add[7e5c2132-d2a1-4ef6-a369-bb415b6499c4]</p></blockquote>
+
+<p>在redis中查找task_id：</p>
+
+<blockquote><p>get celery-task-meta-7e5c2132-d2a1-4ef6-a369-bb415b6499c4
+&ldquo;\x80\x02}q\x01(U\x06statusq\x02U\aSUCCESSq\x03U\ttracebackq\x04NU\x06resultq\x05K\bU\bchildrenq\x06]u.&rdquo;
+2. 无backend设置运行task, server端日志：
+[2016-03-15 16:40:10,620: INFO/MainProcess] Received task: tasks.add[68a795c7-ab1e-4480-a735-3db2e8bd2918]</p></blockquote>
+
+<p>在redis中不能查找到这个task_id。</p>
+
+<p>启动worker server:</p>
+
+<pre><code>celery -A tasks worker --loglevel=info
+</code></pre>
+
+<p>可以看到类似如下启动日志：</p>
+
+<blockquote><p>[tasks]
+  . tasks.add
+  . tasks.multiply
+[2016-03-15 16:40:03,028: INFO/MainProcess] Connected to redis://localhost:6379//
+[2016-03-15 16:40:03,122: INFO/MainProcess] mingle: searching for neighbors
+[2016-03-15 16:40:04,146: INFO/MainProcess] mingle: all alone
+[2016-03-15 16:40:04,188: WARNING/MainProcess] celery@iZ25d0yvrwwZ ready.</p></blockquote>
+
+<p>我们定义了两个任务add和multiply，redis作为broker对外提供服务。</p>
+
+<ol>
+<li><p>客户端定义(client.py)
+异步调用</p>
+
+<pre><code>  from tasks import add
+  import time
+
+  result = add.delay(4, 4)
+
+  while 1:
+      if result.ready():
+          print 'result ',result.get()
+          break
+      else:
+          print 'not ready, wait 1 second'
+          time.sleep(1)
+</code></pre></li>
+</ol>
+
+
+<p>因为我们在server端的add里面加入了sleep，因此result.ready()初始返回False，直到时间达到（模拟任务处理）返回处理结果，如下：</p>
+
+<pre><code>not ready, wait 1 second
+not ready, wait 1 second
+not ready, wait 1 second
+not ready, wait 1 second
+not ready, wait 1 second
+result 8
+</code></pre>
+
+<p>同步调用</p>
+
+<pre><code># synchronous way
+try:
+    # short time
+    result.get(timeout=1)
+    # long time
+    result.get(timeout=10)
+except Exception as e:
+    print e
+</code></pre>
+
+<p>此时client会阻塞在get函数上，直到取到任务结果，或者timeout。</p>
+
+<p>Rabbitmq版本</p>
+
+<p>由于本篇主要介绍Celery功能，因此这里主要附上代码，它的基本原理是采用RPC调用实现消息传递</p>
+
+<p>Server端 (add_consumer.py)</p>
+
+<pre><code>import pika
+import simplejson as json
+
+connection = pika.BlockingConnection(pika.ConnectionParameters(
+        host='localhost'))
+
+channel = connection.channel()
+
+channel.queue_declare(queue='rpc_queue')
+
+def on_request(ch, method, props, body):
+    [x, y] = json.loads(body)
+
+    print(" [.] %d + %d" % (x, y))
+    response = x + y
+
+    ch.basic_publish(exchange='',
+                     routing_key=props.reply_to,
+                     properties=pika.BasicProperties(correlation_id = \
+                                                         props.correlation_id),
+                     body=str(response))
+    ch.basic_ack(delivery_tag = method.delivery_tag)
+
+channel.basic_qos(prefetch_count=1)
+channel.basic_consume(on_request, queue='rpc_queue')
+
+print(" [x] Awaiting RPC requests")
+channel.start_consuming()
+</code></pre>
+
+<p>Client端 (add_producer.py)</p>
+
+<pre><code>import pika
+import uuid
+import simplejson as json
+
+class TaskRpcClient(object):
+    def __init__(self):
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(
+                host='localhost'))
+
+        self.channel = self.connection.channel()
+
+        result = self.channel.queue_declare(exclusive=True)
+        self.callback_queue = result.method.queue
+
+        self.channel.basic_consume(self.on_response, no_ack=True,
+                                   queue=self.callback_queue)
+
+    def on_response(self, ch, method, props, body):
+        if self.corr_id == props.correlation_id:
+            self.response = body
+
+    def add(self, x, y):
+        body = json.dumps([x, y])
+        self.response = None
+        self.corr_id = str(uuid.uuid4())
+        self.channel.basic_publish(exchange='',
+                                   routing_key='rpc_queue',
+                                   properties=pika.BasicProperties(
+                                         reply_to = self.callback_queue,
+                                         correlation_id = self.corr_id,
+                                         ),
+                                   body=body)
+        while self.response is None:
+            self.connection.process_data_events()
+        return int(self.response)
+
+task_rpc = TaskRpcClient()
+
+x = 4
+y = 4
+print(" [x] Requesting %d + %d" % (x,y))
+response = task_rpc.add(x, y)
+print(" [.] Got %r" % response)
+</code></pre>
+
+<p>这里的实现依据Rabbitmq<a href="http://www.rabbitmq.com/tutorials/tutorial-six-python.html">官方介绍</a>。</p>
+
+<p>通过上述代码的对比，可以看到，实现相同的功能，Celery要简洁很多。它对使用者隐藏了底层mq操作的复杂性，使得使用者可以以函数的形式更专注于实际任务，而不需要为mq操作过多操心。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-03-15T19:58:23+08:00" pubdate data-updated="true">Mar 15th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/celery/'>celery</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/01/16/ab-test/">
+		
+			A-B测试框架PlanOut简介</a>
+	</h2>
+	<div class="entry-content">
+		<p>背景
+希望了解A/B测试框架，主要的原因是在我们自管理服务里应用了很多策略。这些策略初期是根据广告运营以及自身经验获得，但在一段时间后，有必要用数据支撑策略的上线，因此决定研究是否现有的开源A/B测试框架可以满足需求。</p>
+
+<p>根据Quora上<a href="https://www.quora.com/Which-are-the-best-open-source-A-B-testing-framework-to-use-in-your-projects">关于A/B测试框架的问题</a>，再结合我服务的语言特点(Python)，我决定调研PlanOut是否可以应用于我的场景。</p>
+
+<p>PlanOut简介
+它是由Facebook开发的一款开源A/B测试框架，它本身是支持多语言的，但它的基础语言和样例文档都是Python提供的，Github地址在<a href="https://github.com/facebook/planout">这里</a>。应该说，Python语言支持，以及Github Star数量是我首选它的主要原因。</p>
+
+<p>关于A/B测试
+这是一个在UE领域非常重要的概念，通过将研究对象划分为实验组和测试组，保证除实验元素外的其它因素一致，来判断实验效果。在做A/B测试时，需要保证实验组和对照组不交叉，即实验组用户只看到实验信息，而对照组用户只看到对照信息。</p>
+
+<p>PlanOut安装应用
+安装：</p>
+
+<pre><code>pip install planout
+</code></pre>
+
+<p>模块引入：</p>
+
+<pre><code>from planout.experiment import SimpleExperiment
+from planout.ops.random import *
+</code></pre>
+
+<p>PlanOut基础概念</p>
+
+<p>1.定义实验
+所有实验都是通过继承SimpleExperiment类来实现的。SimpleExperiment类继承自Experiment，但PlanOut建议使用者继承SimpleExperiment而不是Experiment，因为前者包含了日志相关的工作。</p>
+
+<p>示例：</p>
+
+<pre><code>from planout.experiment import SimpleExperiment
+from planout.ops.random import *
+
+class VotingExperiment(SimpleExperiment):
+  def assign(self, params, userid):
+    params.button_color = UniformChoice(choices=["#ff0000", "#00ff00"],
+      unit=userid)
+    params.button_text = UniformChoice(choices=["I'm voting", "I'm a voter"],
+      unit=userid)
+</code></pre>
+
+<p>解释：
+    前两行是引入相关文件，SimpleExperiment如上所述，planout.ops.random包含了一些常用的随机数产生函数（比如Uniform，RandomInteger）
+    类定义里，每个Experiment类都需要实现自己的assign函数，它是用户构建实验的位置。
+    param函数用于定义实验的属性，在上面的例子里，我们定义了按钮颜色和按钮文字两个实验属性，它们的取值都是均匀采样（UniformChoice）自choices中定义的字段。</p>
+
+<p>这里可以注意到，PlanOut支持交叉实验，即对一个输入(user_id)可以同时实验多个属性(button.color, button.text），另外，PlanOut也支持多个输入，每个输入或每几个输入决定一个输出属性，在后面会具体提到。通过这种方式，PlanOut能够提供一种灵活的多对多实验框架。</p>
+
+<p>2.添加实验</p>
+
+<p>在需要调用实验的代码里：</p>
+
+<pre><code>exp = VotingExperiment(userid=14)
+call_to_action_color = exp.get('button_color')
+call_to_action = exp.get('button_text')
+</code></pre>
+
+<p>根据指定user返回展示给用户button_color和button_text。采样依据user_id，对于相同user_id，Experiment类会返回固定的button.color和button.text，而对不同user_id，Experiment类保证对应的随机数不一致。</p>
+
+<p>3.日志
+对于实验而言，提供准确清晰的日志记录非常重要。PlanOut在上述代码get调用时会输出一条日志，默认日志文件名为定义Experiemnt的类名，日志位置为当前路径，日志以json形式展示：</p>
+
+<pre><code>{
+  "inputs": {
+    "userid": 14
+  },
+  "name": "VotingExperiment",
+  "params": {
+    "button_color": "#ff0000",
+    "button_text": "I'm voting"
+  },
+  "time": 1396487778,
+  "salt": "VotingExperiment",
+  "event": "exposure"
+}
+</code></pre>
+
+<p>4.在Web方面的应用
+随机实验很多时候会直接用在网站UX上，官网提供了一个基于Flask的样例，代码可以直接看Github上的<a href="https://github.com/facebook/planout/blob/master/demos/anchoring_demo.py">demo</a>，演示在<a href="http://planoutdemo.herokuapp.com/">这里</a>。</p>
+
+<p>5.盐的生成方法
+PlanOut的随机盐来自三方面的设置：</p>
+
+<p>(1)Experiment-level，指的是在Experiment的setup函数里定义的变量，如果没有定义，那么会采用Experiment类名作为变量
+(2)Parameter-level，指的是在assign函数unit里指定的变量取值，比如user_id
+(3)Namespace-level，指的是同一个实验但不同时间段的信息</p>
+
+<p>6.NameSpace
+PlanOut提供NameSpace，主要是解决同一个实验，但在不同时间段执行的问题。可能由于某些设置问题，需要重新执行实验，但因为各类设置和之前一致，因此无法区分数据来自前一个还是更新后的实验。引入NameSpace进行区分</p>
+
+<p>7.Operators
+PlanOut提供了以下默认的操作符：</p>
+
+<p>(1)UniformChoice</p>
+
+<pre><code>params.x = UniformChoice(choices=['a', 'b'], unit=userid)
+</code></pre>
+
+<p>根据userid均匀设置choices中的属性到param.x</p>
+
+<p>(2)WeightedChoice</p>
+
+<pre><code>params.x = WeightedChoice(choices=['a', 'b', 'c'], weights=[0.8, 0.1, 0.1],unit=userid)
+</code></pre>
+
+<p>根据userid加权均匀设置choices中的属性到param.x</p>
+
+<p>(3)BernoulliTrial</p>
+
+<pre><code>params.y = BernoulliTrial(p=0.2, unit=userid)
+</code></pre>
+
+<p>params.y有20%可能性为1，80%可能性为0</p>
+
+<p>(4)RandomFloat/RandomInteger</p>
+
+<pre><code>params.x = RandomFloat(min=0.0, max=10.0), unit=userid)
+params.x = RandomFloat(min=0, max=10), unit=userid)
+</code></pre>
+
+<p>在min, max之间随机返回值</p>
+
+<p>结论
+通过基础调研，我认为PlanOut有一些很好的特性：</p>
+
+<pre><code>1.叉乘维度的实验
+2.日志自动添加
+3.多种随机方案
+</code></pre>
+
+<p>它很适合web端的随机分组和实验。
+在我们的问题里，因为我们的策略应用是在campaign或者account维度，我们并没有像userid这样大数量的数据，我们并不太关心campaign id是否足够随机，而更关心究竟是哪些campaign id参加了实验组，换句话说，我们希望确定性的指定参加实验的campaign/account，或者只需要简单的ID划分（比如结尾为1的campaign为实验组），因此最终我们没有在项目中应用PlanOut。但通过调研，我们仍然认为它是一个很好的A/B测试框架，在将来需要的场景下会考虑应用。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-01-16T10:21:18+08:00" pubdate data-updated="true">Jan 16th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/a-slash-b-test/'>a/b test</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/01/15/facebook-api-related/">
+		
+			关于Facebook API可以考虑了解的几件事</a>
+	</h2>
+	<div class="entry-content">
+		<ul>
+<li><p>Facebook API分为Graph API，Marketing API和Atlas API三种：</p>
+
+<ul>
+<li>Graph API：是否还记得几年前Facebook推出的社交图谱，实际上它就是Graph API对应的逻辑概念。Graph API是另外两种API的基础，它实际是最主要也是最全面的Facebook对象获取方式。</li>
+<li>Marketing API：与广告营销相关的API，比如作为FMP（Facebook Marketing Partner，像Domob），或者作为广告主调用</li>
+<li>Altas API：实话说，我在今天之前都不知道这个API系列，看了下它的介绍，好像也是与应用和广告管理有关，但是里面的文档大多数又不可访问了，暂时打算忽略</li>
+</ul>
+</li>
+<li><p>Facebook API开发必备：</p>
+
+<ul>
+<li>如果你是Python/PHP开发者（最近应该又造福了Java），可以在Github上搜索官方提供的SDK，比如<a href="https://github.com/facebook/facebook-python-ads-sdk">Python的</a>。</li>
+<li>如果你用其它语言，那么可能你需要自己手写SDK，就需要涉及到构造Http请求，这时候推荐现在<a href="https://developers.facebook.com/tools/explorer/145634995501895/">Facebook Graph Explorer</a>验证你的请求是否正常（容易的说官方的SDK也是拼接Http请求，基于requests库，但自己做起来还是很麻烦的，感谢官方SDK）</li>
+</ul>
+</li>
+<li><p>Facebook API采用RESTful API格式设计，具体介绍可见我之前的<a href="http://linpingta.cn/blog/2015/11/08/facebook-api-introduction/">博客</a></p></li>
+<li><p>Graph API：每个Graph API包含三个部分：nodes, edges, fields，请求哪个对象（nodes）的哪个关联（edges）的哪个属性（fields），可见edges并不是必须的，完全可以通过nodes/fields=xxx的形式请求nodes本身的属性。举个例子， ad_id/fields=name用于请求ad名称，ad_id/creatives/fields=name用于请求ad下面创意的名称，在<a href="https://developers.facebook.com/docs/graph-api">这里</a></p></li>
+<li><p>Marketing API：实际也是Graph API的一个子集，在<a href="https://developers.facebook.com/docs/marketing-apis">这里</a></p></li>
+<li><p>Facebook API实例：<a href="https://www.facebookmarketingdevelopers.com/samples/">这里</a>，看起来非常完全，不过是基于python的，我很遗憾我刚开始开发的时候没有发现这个东西（也可能是当时还没有），不过以后的开发，参考这里应该非常有帮助</p></li>
+<li><p>Facebook API文档：实际更广泛的说，应该叫Facebook developer文档，它本身服务的对象包括Facebook应用开发者，相关应用（比如Instagram, Oculus,）开发者，广告营销开发者，比如包含很多为移动开发者准备的IOS或则Android SDK，具体见<a href="https://developers.facebook.com/docs">这里</a>。</p></li>
+</ul>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-01-15T15:11:12+08:00" pubdate data-updated="true">Jan 15th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/facebook/'>facebook</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/01/01/flake-check/">
+		
+			Flake_check</a>
+	</h2>
+	<div class="entry-content">
+		<p>最近在项目组打算组织了一次规模较大的code review，也是借这个机会检查自己程序上的问题。当然程序会有不同层次上的问题，比如模块的解耦，功能的设计，再到测试用例的添加和
+代码书写的规范。今天主要要介绍的就是一款代码书写规范方面的模块: <a href="http://flake8.readthedocs.org/en/latest/index.html">flake8</a></p>
+
+<p>flake8包含了下面三种模块：</p>
+
+<pre><code>PyFlakes
+pep8
+Net Batchelder's McCabe script
+</code></pre>
+
+<p>PyFlakes中包含了一些code style方面的规范，pep8是python官方的<a href="https://www.python.org/dev/peps/pep-0008/">编程规范</a>，McCabe是一个代码复杂度方面的检查脚本</p>
+
+<p>flake8的安装：</p>
+
+<pre><code>pip install flake8 / easy_install flake8
+</code></pre>
+
+<p>flake8对项目/文件的检查
+    假设有module命名为A，其中包含a.py文件，那么可以在项目级别做代码规范检查：</p>
+
+<pre><code>flake A
+
+也可以在文件级别做代码规范检查：
+
+flake8 A/a.py
+</code></pre>
+
+<p>flake8的配置
+    flake8支持两种级别的设置：</p>
+
+<pre><code>1. Global级别： 修改 ~/.config/flake8 
+2. Project级别：在Project的根目录增加一项tox.ini文件，在其中增加配置
+
+    [flake8]
+    max-line-length = 200 # 修改默认的单行字数长度
+
+（较为常用，因为通常由于权限原因，我们并不能做Global级别的设置，同时Project级别的设置也是可以满足要求的）
+
+通过这些设置，可以避免一些不需要的报警，比如单行字数限制为80通常会引起较多的code报警
+</code></pre>
+
+<p>flake8报警类型：</p>
+
+<pre><code>以E**/W**开头：pep8的error和warning
+以F**开头：PyFlakes的代码检查
+    code    sample message
+    F401    module imported but unused
+    F402    import module from line N shadowed by loop variable
+    F403    ‘from module import *’ used; unable to detect undefined names
+    F404    future import(s) name after other statements
+
+    F811    redefinition of unused name from line N
+    F812    list comprehension redefines name from line N
+    F821    undefined name name
+    F822    undefined name name in __all__
+    F823    local variable name ... referenced before assignment
+    F831    duplicate argument name in function definition
+    F841    local variable name is assigned to but never used
+以C9**开头：McCabe的代码复杂度检查
+以N8**开头：命名检查
+</code></pre>
+
+<p>flake8与Git关联
+    在.git/hooks/pre-commit中添加设置</p>
+
+<pre><code>import sys
+from flake8.hooks import git_hook
+</code></pre>
+
+<p>一些常见的代码格式问题：</p>
+
+<pre><code>单行长度
+class / def 间的空行数
+[l.append(x) for x in x_list] 中的空格数
+单行中加注释与代码间的空格间距
+。。。
+</code></pre>
+
+<p>以上只是一些简单的应用，与flake8有相似功能的模块还有更出名的<a href="http://www.pylint.org/">pylint</a>，flake8本身的功能并不复杂，但对于规范代码书写上的要求，的确需要更多
+提高，这方面我还做得不足，需要更加注意和重视。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-01-01T20:03:55+08:00" pubdate data-updated="true">Jan 1st, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/12/20/trac-winner-predict/">
+		
+			预测公司的优秀员工评选</a>
+	</h2>
+	<div class="entry-content">
+		<h3>trac_winner_predict</h3>
+
+<p>Try to predict who is winner of Next Quarter in company based on history info, just for fun</p>
+
+<p>背景</p>
+
+<pre><code>公司每个季度都会有优秀员工的评选，需要每位员工参与提名他们认为合适的候选人，再由leader组成的委员会对于候选人做最终评定。在本次评定中, 新增加了一项最佳预测奖，即如果提名和实际获奖员工的一致程度越大，那么就可以认为是越准确的预测。
+对于这一情况，我想可以抽象为一个候选人获奖的预测模型，根据历史的评奖行为来计算候选人新获奖的可能性。
+</code></pre>
+
+<p>前期处理</p>
+
+<p>这里主要是评估数据源（毕竟这不是一个准备好数据的模型处理问题，而是一个从原始数据都要自己去搞的模型）、可行性以及相关取舍，通俗来说就是看看能不能做，得怎么做，什么不做。主要的方式就是看数据。
+可以发现的规律：
+      (1) 有当期评价后预估获奖可能性
+  &ndash; 更合理一些，因为描述和评估结果本身是有较强相关性的 &ndash; 最基本的是评价条数，条数越多代表越受欢迎
+  经过观察后发现，如果了解本次数据，依赖本次的评价长度和个数，基本就可以判定获奖对象了 &ndash; 实际上有可能最终评定的方法也就是依赖于此
+      (2) 无当期评价时预估获奖可能性
+  先验知识：
+ 连续获奖概率很小
+ 但相隔一次的获奖概率并不低 ：比如今年Q2和去年Q3，重合人数达到4人，但这种规律只出现了一次，可信性不大</p>
+
+<p>因为是周三提出评选，周日前要给出提名，同时这周工作上的事情又很多，所以并没有很多时间处理这个问题，那么就要涉及用时的评估。在最初的设想中，因为我们直接会用到的数据是候选人的评价数据，而评价本身是一大段一大段的语句，因此我想到是否应该在NLP方面做一些事情，也看了python相关的一些中文处理库的方法，但是考虑到这个问题并非提取每个候选人的特性，而是去搞最终获奖人的共性，而共性提取中又要涉及到词性的处理，blabla，而且很可能提出的共性会是一些没什么用的常用词，所以最终放弃了对语言方面的处理，而是将评价简单抽象为评价个数和单个评价的字数长度。但如果只用这两个信息，显然评估上又不太靠谱，因此想想可以把用户的特征抽取的更仔细一些，包括性别、职位、部门，这些可以从公司网站上抓取。还有一个重要的信息就是入职时间，入职时间和评奖时间的时间差可能对结果也会产生影响。</p>
+
+<p>数据抓取:</p>
+
+<p>因为这是一次实际问题的抽象，好处就是好玩，坏处就是所有数据源，从抓取开始都要自己处理。在这里我主要用到了reqeusts和Beautifulsoup，具体细节时间所限不表了</p>
+
+<p>数据预处理：
+ 1. 根据user的部门、入职时间、性别、描述、以及之前的描述计算获奖概率
+  1.1 user position/gender/desc/onboard time ： 来源是domobfamily
+  1.2 评奖记录：从trac上面抓取，比较坑，各种数据不一致
+   user:  time, pre_comment_num, pre_comment_value, [关键字], Y(是否获奖)  &ndash; 这里说明，第一次的获奖记录名单暂时没有利用
+  1.3 将1.1和1.2的数据做join<br/>
+   也就是说以Q3评奖数据和Q1获奖记录做用户级别combine
+如1.1中有但1.2中无的数据：
+ 如用户入职时间晚于12月，则忽略
+ 如用户入职时间早于12月，则增加一行为0记录
+如1.2中有但1.1中无的数据：
+ 抛弃 （说明已经不在了）
+   此时将time转换为入职时间的距离，以及其它类别数据的转换&ndash;comment的长度</p>
+
+<p>   &ndash; 至此形成训练数据 （两个季度的数据作为训练 ）
+   &ndash; 根据两组时间，先遍历name
+如果name对应的入职时间小于组时间，则忽略
+否则：
+ 根据name和组时间查找 是否有评价信息，
+  如有则归并name信息后生成一条记录
+  如无则生成一条未被选中的记录</p>
+
+<p>这里说的生成还包括数据的重新编码：
+ pre_comment_value / onboard_date</p>
+
+<p>  其它数据格式匹配</p>
+
+<ol>
+<li>名称匹配 “丹丹”和“柳丹丹”</li>
+<li>日期格式转换</li>
+<li>职位名称处理： 先用部门，如果不清楚部门就用title</li>
+<li>description转换</li>
+<li>评价描述转换 &ndash; 转为 条数 和 字数</li>
+</ol>
+
+
+<p>模型训练</p>
+
+<pre><code>分类树
+</code></pre>
+
+<p>交叉验证</p>
+
+<pre><code>平均准确率可以达到80%
+</code></pre>
+
+<p>最终结果</p>
+
+<pre><code>待了解。。。
+</code></pre>
+
+<p>感悟</p>
+
+<pre><code>其实最主要的感悟是，通过思考，是可以把生活中的实际问题抽象成一个模型，并且用模型去做一些事情。所以不管最终预测的实际结果如何，这都是一件很有乐趣的事情
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-12-20T16:34:15+08:00" pubdate data-updated="true">Dec 20th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/12/12/rabbitmq/">
+		
+			RabbitMQ初探</a>
+	</h2>
+	<div class="entry-content">
+		<p>按照<a href="http://www.rabbitmq.com/features.html">官方文档</a>的说法，RabbitMQ是一种基于AMQP(Advanced Message Queue Protocol)协议实现的“工业级”消息队列，在许多实际系统（这里我本想找到RabbitMQ的项目列表，但很可惜在官网上并没有发现）都有着应用。这里谈到AMQP是一项消息队列协议，那么它就包含了多种实现方式，这里附录下<a href="https://www.amqp.org/about/examples">AMQP的具体实现族</a>，比如常用的RabbitMQ/ZeroMQ等，关于不同MQ的比较，可以参考经典的<a href="http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/">兔子与兔子窝</a>以及<a href="http://stackoverflow.com/questions/731233/activemq-or-rabbitmq-or-zeromq-or">RabbitMQ vs ActiveMQ vs ZeroMQ</a>：</p>
+
+<p>RabbitMQ：实现一种<a href="https://en.wikipedia.org/wiki/Broker_Pattern">经纪人模式</a>，通过central node集中管理数据再做分发，这样做的好处是易于使用和部署，但相应的代价是系统为支持这点会变得更慢（我理解是central node负载压力过大）</p>
+
+<p>ZeroMQ：实现P2P模式，是一种较为轻量级的消息系统，很多复杂的功能需要使用者自己实现</p>
+
+<p>ActiveMQ：相比而言，它处于ZeroMQ和RabbitMQ之间，即它既可以按broker模式部署也可以按P2P模式部署，另外据说它有丢失消息的可能性（这点基本要被性能要求的服务pass了）</p>
+
+<p>那么下面来具体说说今天的主题，RabbitMQ，关于它语言特性的支持可以参考官方文档：
+    可依赖(Reliability)
+    灵活的路由分发(Flexible Routing)
+    集群(Clustering)
+    &hellip;&hellip;
+对于这些特性我并没有直观的理解，所以下面还是具体来看它的使用实例。（其中最好的阅读文档还是<a href="http://www.rabbitmq.com/getstarted.html">官方文档</a>）</p>
+
+<p>基础对象：</p>
+
+<p>Producer：生产者(P)</p>
+
+<p>Consumer：消费者&copy;</p>
+
+<p>Queues：队列，数据的数据存储(queue)</p>
+
+<p>Exchange：Producer并不是直接把数据发送到Queue中，而是将它委托给Exchange，由Exchange将数据交给合理的route</p>
+
+<p>Bindings: Exchange用于判断该发送到哪个route的规则 (To instruct an exchange E to route messages to a queue Q, Q has to be bound to E)</p>
+
+<p>应用模式：</p>
+
+<p><a href="http://www.rabbitmq.com/tutorials/tutorial-one-python.html">one Producer one Consumer</a>: 这是最简单的调用形式，Producer把消息发送到消息队列，Consumer从消息队列中读取消息</p>
+
+<p><a href="http://www.rabbitmq.com/tutorials/tutorial-two-python.html">work queues</a>: 可以视为One Producer，Multi-Consumer，Producer把数据放到消息队列，多个Consumer从Queue中读取数据（任务）进行处理</p>
+
+<p><a href="http://www.rabbitmq.com/tutorials/tutorial-three-python.html">publish/subscribe</a>：发布者/订阅者模式，当发布者发送消息时，所有的订阅者都可以订阅得到消息，并进行自己的处理</p>
+
+<p>Routings/Topics/RPC：远程过程调用，Topics在其它语言中有了解，这里并没有仔细阅读</p>
+
+<p>应用场景</p>
+
+<p>为什么要使用消息队列？ 或许最重要的功能在于解耦，软件模块解耦的价值不需要多做解释，那么我们是否有其它解耦的方式呢？在<a href="http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/">兔子与兔子窝</a>提到一个很经典的例子：
+    当我们用MySQL来将处理数据交互时，可以由一个服务把数据写在表里，由另一个服务来读取，但是如果有多个服务都想去读取数据呢？（数据表里的数据实际是单线程的读写），如果程序需要根据压力情况进行动态增减呢？
+这就是消息队列能解决的问题，可以使得数据在不同服务（模块）间灵活的交互。</p>
+
+<p>应用语言</p>
+
+<p>RabbitMQ作为AMQP的一种实现，本身也有不同编程语言的实现方法（C#/Java/PHP/Python&hellip;）,我在这里主要使用Python的一种实现库<a href="https://pika.readthedocs.org/en/0.10.0/">pika</a>， Python的语言包还包括<a href="http://code.google.com/p/py-amqplib/">py-amqplib</a></p>
+
+<p>安装方法
+    以Ubuntu为例，第一步，安装rabbitmq-server</p>
+
+<pre><code>    apt-get install rabbitmq-server
+
+第二步，安装pika
+
+    pip install pika
+</code></pre>
+
+<p>应用实例</p>
+
+<p>最简单的rabbit_test_sender.py:</p>
+
+<pre><code>import pika
+
+
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+
+channel.queue_declare(queue='hello')
+
+for m in range(3):
+    channel.basic_publish(exchange='', routing_key='hello', body='Hello World %d' % m)
+    print " [x] sent 'Hello World' %d" % m
+
+connection.close()
+</code></pre>
+
+<p>rabbit_test_receiver.py:</p>
+
+<pre><code>import pika
+
+
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+
+channel.queue_declare(queue='hello')
+
+def callback(ch, method, properties, body):
+    print " [x] Received %r" % (body,)
+
+channel.basic_consume(callback, queue='hello', no_ack=True)
+channel.start_consuming()
+</code></pre>
+
+<p>我的应用背景</p>
+
+<p>那么最后说说我为什么要接触RabbitMQ，在我提供的Facebook自动管理服务模块中，原先实际包括了对象创建和对象管理两个部分。之所以两部分写在一起，主要是因为对象的创建需要自动加入管理组中，同时我并不希望每次管理都需要先从数据库中做一次全量的数据加载（对象创建后会在数据库里持久化），而是只对于新创建的对象做增量的内存数据增加。这里可以看到，两个功能上可以解耦的模块被写在同一个服务中，因此带来的问题是：
+    当某种情况下，对象管理模块出现了问题，那么对象创建模块同样也会受到影响。而对象创建这件事是用户可以感知到的，那么管理的延迟就会导致创建的延迟，进而影响用户体验。。。
+通过RabbitMQ，我将对象创建和对象管理模块拆分成两个不同的服务，这样做有两个好处：
+    1. 当新对象被用户创建时，对象的添加通过RabbitMQ通知对象管理模块，创建模块可以继续做自己的事情，用户不会感知管理模块行为带来的延迟
+    2. 管理模块可以简单的通过多个服务提高数据处理的效率</p>
+
+<p>因为RabbitMQ是由实际问题引起的，对它谈不上多仔细的研究，上述博客中参考了下面的内容，谨此致谢~</p>
+
+<p>兔子窝的翻译，有意思的一篇文章： <a href="http://blog.ftofficer.com/2010/03/translation-rabbitmq-python-rabbits-and-warrens/">http://blog.ftofficer.com/2010/03/translation-rabbitmq-python-rabbits-and-warrens/</a>
+其它就是各个官方文档：
+<a href="https://pika.readthedocs.org/en/0.10.0/examples/blocking_basic_get.html">https://pika.readthedocs.org/en/0.10.0/examples/blocking_basic_get.html</a>
+<a href="http://www.rabbitmq.com/features.html">http://www.rabbitmq.com/features.html</a></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-12-12T22:30:27+08:00" pubdate data-updated="true">Dec 12th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>, <a class='category' href='/blog/categories/rabbitmq/'>rabbitmq</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/11/08/facebook-api-introduction/">
+		
+			Facebook API (RESTful API)简介</a>
+	</h2>
+	<div class="entry-content">
+		<p>这里称之为简介实际也是勉强的，因为我所涉及的API主要只包含广告相关操作的API (称为Marketing API)和很小部分的用户行为API(称为Graph API，Marketing API是包含于Graph API中的一个小部分，Facebook有一个在西雅图的团队主要负责API相关的设计和各类语言支持。。因为见过他们的一些人。。扯得有点远)，但我更想借这个机会去了解API设计的规范，至少从我的角度看，Facebook API在使用上还是让人满意的，最后也会涉及一些Facebook 具体API调用方面的说明。</p>
+
+<h4>RESTful</h4>
+
+<p>1.RESTful与RESTful API：Representational State Transfer，表现层状态转化</p>
+
+<p>这实际是一个非常熟悉的概念，但如果突然被问到，却很难讲清楚。按我现在的理解，REST本身是一种架构规范，它指的是网络通信方式以 “资源（服务器对象）的表现形式上发生状态转换（增删改查操作）“的方式来实现，RESTful API指的是在设计规范上符合RSET架构的API。
+RESTful API的一个重要特点是API本身没有动词，因为所有资源都是用名词表示的，通过GET/POST/DELETE/HEAD等http请求来模拟读写删等操作。因此RESTful API看起来非常清晰：</p>
+
+<pre><code>GET graph.facebook.com/v2.4/me?field=id, name
+</code></pre>
+
+<p>获取me资源中id和name字段的值。</p>
+
+<p>看起来是一件很简单的事情，不是么？但RESTful的重要价值就在于它提供了一种简单清晰的规范，让所有人都可以参照去做。或许你自己的网站也有一套url定义，但想想，如果你的网站不只是十几个，而是上百个页面的时候（从Facebook API对外提供的对象接口看，上百个应该只是保守说法），再或者说，当你的网站需要和开发者有交互时，这或许是最重要的原因，开发者通常来自世界，必须要有一套基础标准来规范通信方式，否则网站API升级一个版本导致以前的url全得重写，那开发者基本也会离你而去了。</p>
+
+<p>2.RESTful API格式</p>
+
+<p>格式即元素，每个RESTful API应该包含哪些元素：</p>
+
+<pre><code>GET 
+https://graph.facebook.com/v2.4/ADSET_ID?fields=id,name&amp;access_token=YOUR_ACCESS_TOKEN
+
+返回：
+
+{
+   "id": "ADSET_ID",
+   "name": "ADSET_NAME"
+}
+</code></pre>
+
+<ul>
+<li>协议：https</li>
+<li>域名：graph.facebook.com，API通常有一个独立的域名</li>
+<li>版本：v2.4，API在调用中通常要指定版本</li>
+<li>对象(endpoint)：ADSET_ID，你要访问的资源对象</li>
+<li>属性：fields，算是一个特殊的属性，它用于访问资源对象本身的属性</li>
+<li>access_token也算是一个特殊属性，无论是Facebook还是Weixin的API，都需要权限，而权限信息就保持在access_token中</li>
+<li>操作类型：GET/POST是最主要的</li>
+<li>返回值和状态码：status_code</li>
+</ul>
+
+
+<p>关于RESTful的相关概念，应该还可以参考<a href="http://www.zhihu.com/topic/19579308/top-answers">知乎</a>，但坦白说大部分内容我也没有看。</p>
+
+<h4>Facebook API</h4>
+
+<p>本文并无意（实际也没有能力）列举所有Facebook对象以及调用方法，但通过上文的说明，Facebook API是有固定的理解方式的：</p>
+
+<pre><code>选择一个对象(endpoint)，选择它的属性(fields)，指定操作类型(GET/POST)，保证权限（access_token）
+然后，。。。API调用就完成了
+</code></pre>
+
+<p>具体的API调用文档可以打开<a href="https://developers.facebook.com/docs/%EF%BC%8C%E7%84%B6%E5%90%8E%E6%90%9C%E7%B4%A2%E8%A6%81%E6%89%BE%E7%9A%84%E5%AF%B9%E8%B1%A1%E3%80%82">https://developers.facebook.com/docs/%EF%BC%8C%E7%84%B6%E5%90%8E%E6%90%9C%E7%B4%A2%E8%A6%81%E6%89%BE%E7%9A%84%E5%AF%B9%E8%B1%A1%E3%80%82</a></p>
+
+<p>然而还有几点算是比较通用的（文档里常常要去关注的），我想有必要在这里列举下：</p>
+
+<ul>
+<li>changelog：在<a href="https://developers.facebook.com/docs/apps/changelog">这里</a>，每个版本的API都有使用期限，如果超过会造成API调用失败，服务受到损失，通常情况下，开发不会总是去追最新的版本，因此必须注意版本的时效性，以及不同版本间对象的修改情况。（这里的一个例子是，Python Ads SDK中的对象命名在最近做了较大的修改，比如class AdGroup修改为class Ad）</li>
+<li>Explorer：在<a href="https://developers.facebook.com/tools/explorer/">这里</a>，这是Facebook提供的一个web端调用页面（想想微信好像也有），使得用户不需要自己去拼http请求查看调用效果，在遇到新endpoint不熟悉其相关属性的时候非常方便，它本身也支持field字段的搜索，非常赞的功能。</li>
+<li>token：在<a href="https://developers.facebook.com/docs/facebook-login/access-tokens/">这里</a>，token几乎是API调用的一个必须字段，理解token实际就是API是否有访问对象(endpoint)的权限，Facebook中token分为三类：App token/Page token/User token，我在工作中常用的是最后一项，相当于代表用户去操作广告</li>
+<li>batch_request：在<a href="https://developers.facebook.com/docs/marketing-api/batch-requests#adgroup">这里</a>，批量操作在广告API中非常常见，比如用户在一次campaign创建时创建几百个adset，或者获取几百个adset的统计数据。因为Facebook本身对API的调用频率也有限制，超出后会遇到user call frequency limit的错误，因此很多广告操作必须要用批量接口实现。</li>
+</ul>
+
+
+<p>暂时关于Facebook API能想到的东西就到这里，我这一年的使用感觉是，有问题看文档，Facebook作为世界最大的互联网公司，提供的文档本身是非常完善的，如果仍然有问题，可以关注Facebook上的一些技术小组，里面也有Facebook的工程师会回答问题。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-11-08T12:46:21+08:00" pubdate data-updated="true">Nov 8th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/facebook/'>facebook</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/10/23/matplotlib-docs/">
+		
+			Matplotlib-docs</a>
+	</h2>
+	<div class="entry-content">
+		<p>matplotlib.pyplot : 提供类似matlab中的绘制功能</p>
+
+<pre><code>import matplotlib.pyplot as plt
+</code></pre>
+
+<p>常用函数：
+1.plt.plot</p>
+
+<p>plt.plot(y) ：x取值为[0, len(y)-1]
+plt.plot(x,y) ：x,y以pair的形式绘制
+plt.plot(x,y,format)：format包含color和style两部分，格式是color string
+concatenated with style string, 比如'ro'表示红色的点阵
+plt.plot(x1,y1,x2,y2&hellip;)：同时绘制多条曲线
+另外还包括很多指定线属性的方法，具体见<a href="http://matplotlib.org/devdocs/api/pyplot_api.html#matplotlib.pyplot.plot">官方文档</a>。</p>
+
+<p>2.plt.axis &amp; plt.figure
+绘图时，matplotlib有当前axis和当前figure的概念，通过gca()和gcf()获取它们，通过cla()和clf()清除它们。
+plt.figure(n)指定当前绘制第几幅图，默认情况下，matplotlib会隐含的调用plt.figure(1)来开始绘制，因此有时候并不需要显式调用plt.figure。</p>
+
+<pre><code>plt.figure(1) # 绘制第一幅图
+</code></pre>
+
+<p>plt.subplot(rows, cols, cur_fig_num)用来切割当前图完成子图绘制，相关概念和matlab一致。</p>
+
+<pre><code>plt.subplot(211) # 切割两幅图中上面的一幅
+plt.subplot(212) # 切割两幅图中下面的一幅
+</code></pre>
+
+<p>plt.axis([x_min, x_max, y_min, y_max])指定绘图的取值范围</p>
+
+<pre><code>plt.axis([40, 160, 0, 0.03])
+</code></pre>
+
+<p>3.plt.text , title, xlabel, ylabel
+指定文字位置，其中text可以通过指定x和y坐标（即x,y列表中的某一对取值）来指定图中未知
+title, xlabel, ylabel在图中均是相对固定的位置。
+可以进一步指定文字的颜色和大小：</p>
+
+<pre><code>t = plt.xlabel('my data', fontsize=14, color='red')
+</code></pre>
+
+<p>plt.annotate用于标注图片中特定点，它需要指定待标志的位置，以及标志文字出现的位置。</p>
+
+<pre><code>plt.annotate('local max', xy=(2, 1), xytext=(3, 1.5),
+        arrowprops=dict(facecolor='black', shrink=0.05),
+        )
+</code></pre>
+
+<p>4.plt.tight_layout
+自动调整布局，避免字符被截断或者出现重合，在<a href="http://matplotlib.org/devdocs/users/tight_layout_guide.html">这里</a></p>
+
+<p>5.plt.legend
+图例，添加对绘制对象的描述。
+可以单独调用，也可以通过label属性和绘制对象绑定。</p>
+
+<pre><code>line, = ax.plot([1, 2, 3], label='Inline label')
+# Overwrite the label by calling the method.
+line.set_label('Label via method')
+ax.legend()
+</code></pre>
+
+<p>6.plt.setp
+设置某个或某组artist对象的属性，例如：</p>
+
+<pre><code>lt.setp(labels, rotation=30, fontsize=10)
+</code></pre>
+
+<p>在matplotlib中API分为三个层级：</p>
+
+<pre><code>1.FigureCanvas:决定绘制的地方
+2.Renders：决定绘制的方式
+3.Artist：决定如何调用1和2
+</code></pre>
+
+<p>通常情况下，matplotlib程序中操作的对象都属于artist，它具体又可以划分为两个类别：primitives和containers，前者是绘制对象，后者是绘制的容器，举个例子，前者是line，后者是figure。因此，最终的绘制，可以视为在对象中添加对象的过程，例如：</p>
+
+<pre><code>fig = plt.figure() # figure对象
+ax1 = fig.add_suplot(211) # 添加第一个subplot对象
+ax2 = fig.add_axis([1,2,3,4]) # 添加第二个axix对象
+print fig.axes # ax1和ax2都是figure下的对象
+</code></pre>
+
+<p>上例中的ax1和ax2都属于Axes（不是axis）类，这是matplotlib中最常用的一个类，它自带了如plot()，text()等函数，用于绘制Line, Rectangle等promitive对象。
+每次绘制，都是创建一个artist对象，然后把它放置到某个container的过程。</p>
+
+<p>与pandas集成</p>
+
+<p>通常使用Python进行数据处理后，我们可能会得到一个pandas.Series或pandas.DataFrame对象。pandas在内部与matplotlib进行了集成，使得基于数据结果的绘制非常方便。
+文档见<a href="http://pandas.pydata.org/pandas-docs/version/0.18.1/visualization.html">这里</a></p>
+
+<p>常见问题
+1.在无界面的Linux引入报错无模块tkinter：</p>
+
+<pre><code>import matplotlib
+</code></pre>
+
+<p>出现错误：</p>
+
+<pre><code>import _tkinter # If this fails your Python may not be configured for Tk
+ImportError: No module named _tkinter
+</code></pre>
+
+<p>解决方法：</p>
+
+<pre><code>import matplotlib
+matplotlib.use('Agg') # 强制使用agg作为backend
+</code></pre>
+
+<p>原因：
+        在官网的<a href="http://matplotlib.org/faq/howto_faq.html#matplotlib-in-a-web-application-server">这里</a>，对于没有界面的系统，你必须显式指定绘制哪种类型的图片(PNG, PDF, SVG)。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-10-23T09:42:09+08:00" pubdate data-updated="true">Oct 23rd, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/matplotlib/'>matplotlib</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/07/19/python-package-make-and-publish/">
+		
+			Python Package制作及类库发布</a>
+	</h2>
+	<div class="entry-content">
+		<p>很多人使用python，主要是被它非常丰富的库功能吸引。找到一个要做的事情，搜索对应的模块，然后用pip install或者easy_install就可以轻松的安装模块，然后使用。。。尤其对于一个之前一直工作在c++环境里，看到boost都兴奋很久的人而言，python的库功能无疑是我选择它重要的原因之一。</p>
+
+<p>那么，是否可能自己制作自己的类库，然后发布给其它人使用呢？答案是肯定的，本文主要介绍如何制作一个自己的类库，供自己（在本地安装）或发布到pypi使用。</p>
+
+<p>一. 制作类库</p>
+
+<p>假设你的类库名称是first_test，那么类库应该满足如下格式：</p>
+
+<pre><code>first_test/
+----setup.py
+----setup.cfg
+----README.md
+----first_test/
+    ---- __init__.py
+    ---- real_logic_file.py
+</code></pre>
+
+<p>其中setup.py和子文件夹first_test是必须的。</p>
+
+<ul>
+<li><p>前者定义了类库生成的基础格式：</p>
+
+<pre><code>  from setuptools import setup
+
+  setup(name='linpingta_first_test',
+          version='0.1',
+          description='linpingta first test for package',
+          author='linpingta',
+          author_email='linpingta@163.com',
+          url = 'https://github.com/linpingta',
+          packages=['linpingta_first_test'],
+          install_required=['time', 'datetime']
+          )
+</code></pre>
+
+<p>这里面参数中，值得注意的是install_required：因为通常模块之间会有依赖，可能你的类库需要依赖一些基础类库，那么可以通过这个字段指定，这样pip知道在安装你的类库前先去安装你的依赖类库。name, version, author和author_emaill应该是必须参数，其它参数应该是选填（不完全确认，可以使用时check下）</p></li>
+<li><p>后者定义类库的实际内容</p></li>
+</ul>
+
+
+<p>最简单的情况下，只需要在first_test/_<em>init_</em>.py中定义逻辑，例如：</p>
+
+<pre><code>def hello():
+    return 'hello world'
+</code></pre>
+
+<p>但通常情况下，我们并不会把内容写在_<em>init_</em>文件中，而是使用单独的文件（例如real_logic_file.py），然后再在init中导入它，如下：</p>
+
+<pre><code>__init__.py
+
+from .real_logic_file import hello
+
+real_logic_file.py
+
+def hello():
+    return 'hello world'
+</code></pre>
+
+<p>ok，你的类库已经制作好了，如果要在本地发布（安装到site-packages或者dist-packages），那么可以执行 python setup.py install就可以了。</p>
+
+<p>二. 发布到PyPI</p>
+
+<p>或许你并不满足于类库只在本地使用，而是希望把它放到PyPI上面，供所有人通过pip安装使用。那么需要做下面几件事：</p>
+
+<ul>
+<li><p>在PyPI上<a href="https://pypi.python.org/pypi?%3Aaction=register_form">注册账号</a>, 这里多说一句是，除了PyPI外，还有一个用于模块测试的<a href="https://testpypi.python.org/pypi">testpypi</a>，用于模块正式发布前的测试，它是要单独注册账号的</p></li>
+<li><p>填充setup.cfg和README.md
+如果要使用markdown格式编辑README.md，那么在setup.cfg中添加如下一句：</p>
+
+<pre><code>  [metadata]
+  description-file = README.md
+</code></pre></li>
+<li><p>创建.pypirc，用于保留给PyPI的注册信息，放在根目录上，内容如下：</p>
+
+<pre><code>  [distutils]
+  index-servers =
+    pypi
+    pypitest
+
+  [pypi]
+  repository=https://pypi.python.org/pypi
+  username=account_name
+  password=account_password
+
+  [pypitest]
+  repository=https://testpypi.python.org/pypi
+  username=account_name
+  password=account_password
+</code></pre></li>
+<li><p>发布到PyPI，执行以下语句 （实际register, sdist和upload是三条独立的命令，可以分别执行）</p>
+
+<pre><code>  python setup.py register sdist upload
+</code></pre></li>
+</ul>
+
+
+<p>三. 参考资料及更多</p>
+
+<p>上述的内容主要来自以下两篇文章：
+1. <a href="https://python-packaging.readthedocs.io/en/latest/minimal.html">https://python-packaging.readthedocs.io/en/latest/minimal.html</a>
+2. <a href="http://peterdowns.com/posts/first-time-with-pypi.html">http://peterdowns.com/posts/first-time-with-pypi.html</a>
+感觉文章里写的不清楚的地方，请直接check它们:)</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-07-19T10:11:32+08:00" pubdate data-updated="true">Jul 19th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/06/30/unittest/">
+		
+			单元测试&Python Unittest</a>
+	</h2>
+	<div class="entry-content">
+		<p>这篇博客是一篇关于单元测试和Python unittest的粗浅描述。背景是最近在项目开发中，涉及到一些基础模块的工作，我添加了一部分单元测试的代码，也在思考如何更合理的进行测试。</p>
+
+<h3>单元测试</h3>
+
+<h4>为何做单元测试</h4>
+
+<p>首先，理论上说，单元测试是必须的，在TDD开发中，单元测试甚至要先于代码开发，而根据研究，添加单元测试从软件工程的总体而言是会节省时间的。但在实际工作中，我感到更多的是开发进度的压力，使得测试很难完全覆盖代码，同时，由于需求本身的不确定性和自己能力所限，很难在开始就把TDD所需的输入输出构建清楚，因此我更多采用的是对实际拆分类的API类函数添加测试，而对较为复杂的逻辑函数（构建于多个基础函数之上，分支很多，包含状态）放弃单元测试。这的确是不合规的做法，但是我目前从效率和质量上平衡得到的结论。</p>
+
+<h4>单元测试准则</h4>
+
+<p>单元测试应保证：</p>
+
+<pre><code>1.每个测试用例只测试一个函数
+2.测试用例间彼此独立且正交
+3.覆盖可能的边界条件
+</code></pre>
+
+<p>单元测试应该避免：</p>
+
+<pre><code>1.不关心函数内部实现：按照TDD的要求，测试应该先于函数内容完成
+</code></pre>
+
+<h4>单元测试其它</h4>
+
+<ol>
+<li><p>是否需要测试私有字段（Python中@property）</p>
+
+<p> 如果property里包含负责的逻辑，需要测试
+ 如果只是简单的return或者复制，可以考虑不用 （当然理论上总应该是100% code coverage）</p></li>
+<li><p>是否需要测试abstract class （Python中的abc module）</p>
+
+<p> 如果里面有具体函数实现，需要测试</p></li>
+<li><p>如何测试含有db/网络访问的代码</p>
+
+<p> 构建测试桩，Python中有单独的mock模块，去模拟调用db或者http访问的返回</p></li>
+</ol>
+
+
+<h3>PyUnit</h3>
+
+<p>官方文档在<a href="http://pyunit.sourceforge.net/pyunit_cn.html">这里</a>。PyUnit是模仿Java的JUnit添加的一套测试框架，代码类似如下：</p>
+
+<pre><code>import unittest
+
+class MyTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+    def tearDown(self):
+        pass
+    def test_name(self):
+        s = Student("XI", 20)
+        self.assertEqual(s.name, "XI")
+    def test_age(self):
+        s = Student("XI", 20)
+        self.assertEqual(s.age, 20)
+
+if __name__ == '__main__':
+    unittest.main()
+</code></pre>
+
+<p>其中包含以下内容：</p>
+
+<pre><code>1. import unittest 引入unittest模块，同理，最终unittest.main()运行当前所有的测试用例
+2. MyTestCase继承自unittest.TestCase，所有测试类均继承自此类
+3. test_*函数默认会被自动调用
+4. setUp和tearDown分别负责所有测试用例的初始化和清理工作
+5. 通过assertEqual(a, b) 判断函数输出和标准值是否一致
+</code></pre>
+
+<p>除了assertEqual外，常用的assert函数还包括：</p>
+
+<pre><code>assertTrue/assertFalse：测试函数返回值为True或者False
+assertRaises：测试是否抛出指定的异常
+</code></pre>
+
+<p>一个assertRaises的例子：</p>
+
+<pre><code>def test_name(self):
+    s = Student("XI", 20)
+    with self.assertRaises(TypeError):
+        s.name = 123
+</code></pre>
+
+<p>当函数内部对输入应该抛出异常时，可以通过assertRaises检查是否真的抛出了指定的异常。</p>
+
+<p>除了运行所有测试用例外，也可以通过命令行只运行指定test_model/TestClass/test_method：</p>
+
+<pre><code>python -m unittest test_module
+python -m unittest test_module.TestClass
+python -m unittest test_module.TestClass.test_method
+</code></pre>
+
+<p>TestSuite/TestLoader</p>
+
+<p>可以将一系列测试加入一个Suite管理，包括通过Loader加载，不过这个功能目前我还没怎么用过。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-06-30T17:01:30+08:00" pubdate data-updated="true">Jun 30th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>, <a class='category' href='/blog/categories/unittest/'>unittest</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+<nav id="pagenavi">
+    
+        <a href="3" class="prev">Prev</a>
+    
+    
+        <a href="5" class="next">Next</a>
+    
+</nav>
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

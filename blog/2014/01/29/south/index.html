@@ -1,0 +1,111 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>South  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="Django数据迁移 South组件 在使用Django model模块时，遇到的一个问题是，可能我们开始设计的ORM随着开发和功能变化不再
+符合要求，需要增加，删除或者更新字段，此时如果直接修改models.py的字段是不够的，因为会提示
+column相关的error， &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">South</h2>
+	<div class="entry-content"><h1>Django数据迁移</h1>
+
+<p>South组件</p>
+
+<p>在使用Django model模块时，遇到的一个问题是，可能我们开始设计的ORM随着开发和功能变化不再
+符合要求，需要增加，删除或者更新字段，此时如果直接修改models.py的字段是不够的，因为会提示
+column相关的error，South的主要作用就是实现这种model结构变化后的数据库更新。</p>
+
+<p>south托管app的数据库后，再执行manage.py syncdb不会处理该app中的model，migrate命令负责
+对于托管的app进行数据库更新。</p>
+
+<p>south的使用可以分为两大类：</p>
+
+<ol>
+<li><p>models中有定义（或者没有），但数据库中没有相应的表定义</p>
+
+<p> # 初始化，创建migration目录
+ # 此操作会在数据库中创建app的models中定义的表，同时创建south_migrationhistory表
+ # 另外会在app的目录下创建一个migration的目录
+ manage.py shcemamigration appname &ndash;initial</p>
+
+<p> # 如果models发生了变化，进行更新
+ manage.py schemamigration appname &ndash;auto
+ managy.py migrate appname # 实际更新数据库</p></li>
+<li><p>models和数据库中均已有了定义</p>
+
+<p> # 此时不同于1，需要先将有表定义的数据库转为migration托管的状态
+ manage.py syncdb # 在数据库中创建south_migrationhistory
+ managy.py convert_to_south appname # 在app的目录下创建migration的目录创建表</p>
+
+<p> # 如果modesl发生了变化，和1的更新操作一致</p></li>
+</ol>
+
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-01-29T00:57:57+08:00" pubdate data-updated="true">Jan 29th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/django/'>django</a>, <a class='category' href='/blog/categories/south/'>south</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

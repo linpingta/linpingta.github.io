@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: stackoverflow | linpingta's blog]]></title>
+  <link href="http://yoursite.com/blog/categories/stackoverflow/atom.xml" rel="self"/>
+  <link href="http://yoursite.com/"/>
+  <updated>2020-06-24T10:13:34+08:00</updated>
+  <id>http://yoursite.com/</id>
+  <author>
+    <name><![CDATA[linpingta]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[SQL Optimization Example1]]></title>
+    <link href="http://yoursite.com/blog/2014/02/16/sql-optimization-example1/"/>
+    <updated>2014-02-16T20:18:12+08:00</updated>
+    <id>http://yoursite.com/blog/2014/02/16/sql-optimization-example1</id>
+    <content type="html"><![CDATA[<p>今天在stackoverflow上看到一个问题 <a href="http://stackoverflow.com/questions/21770055/can-i-simplify-the-sql">http://stackoverflow.com/questions/21770055/can-i-simplify-the-sql</a> ，优化：
+     select count(*)  from (select *
+          from T_LOGGINGINFO
+          where to_char(LOGINTIME, &lsquo;YYYY-MM&rsquo;) = &lsquo;2012-05&rsquo;
+          group by USERNAME)
+问题本身并没有太大困难，但是这里涉及到SQL效率的优化，to_char(LOGINTIME,&lsquo;YYYY-MM&rsquo;)=&lsquo;2012-05'是无法使用索引的，因为在上面应用了to_char函数，解决的方法是处理'2012-05&rsquo;
+          where LOGINTIME between to_date(&lsquo;01-MAY-2012 00:00:00&rsquo;, &lsquo;DD-MON-YYYY  HH24:MI:SS&rsquo;)
+                                     and to_date(&lsquo;31-MAY-2012 23:59:59&rsquo;,&lsquo;DD-MON-YYYY HH23:MI:SS&rsquo;)</p>
+
+<p>btw，作者的开场白很有意思：brevity is the soul of wit , but clarity is the soul of code. 果断Approve.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[SQL应用]]></title>
+    <link href="http://yoursite.com/blog/2014/02/16/sql-application/"/>
+    <updated>2014-02-16T19:53:32+08:00</updated>
+    <id>http://yoursite.com/blog/2014/02/16/sql-application</id>
+    <content type="html"><![CDATA[<p>参考
+<a href="http://stackoverflow.com/questions/21770257/querying-sql-server-2005">http://stackoverflow.com/questions/21770257/querying-sql-server-2005</a></p>
+
+<p>需求：
+根据original table : timemilemaker
+    08:00 101.2
+    08:45 109.8
+    09:15 109.8
+    09:30 111.0
+    10:00 114.6
+生成new table 如下
+    08:00-08:45 101.1-109.8
+    08:45-09:15 109.8-109.8
+    09:15-09:30 109.8-111.0
+    09:30-10:00 111.0-114.6
+所以重点是要根据现有列插入新列，方法是用select子句，通常select子句出现在from或where里面作为derived table，但这种情况下可以出现在select里面去选择特殊行</p>
+
+<pre><code>select t1.*, (select t1.time from timemilemaker t2 where t2.time &gt; t1.time order by t1.time) as newtime ...
+</code></pre>
+]]></content>
+  </entry>
+  
+</feed>

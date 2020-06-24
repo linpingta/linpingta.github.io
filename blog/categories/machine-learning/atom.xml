@@ -1,0 +1,1062 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: machine learning | linpingta's blog]]></title>
+  <link href="http://yoursite.com/blog/categories/machine-learning/atom.xml" rel="self"/>
+  <link href="http://yoursite.com/"/>
+  <updated>2020-06-24T10:13:34+08:00</updated>
+  <id>http://yoursite.com/</id>
+  <author>
+    <name><![CDATA[linpingta]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[广告成本（CPA）预测模型初步]]></title>
+    <link href="http://yoursite.com/blog/2016/10/23/cpa-perdiction-with-spark/"/>
+    <updated>2016-10-23T09:57:40+08:00</updated>
+    <id>http://yoursite.com/blog/2016/10/23/cpa-perdiction-with-spark</id>
+    <content type="html"><![CDATA[<h2>广告成本（CPA）预测模型初步</h2>
+
+<h3>实验背景</h3>
+
+<p>通过投放管理，我们收集了相当数量广告主的广告投放数据。Facebook广告在设定时包含相当数量的定向信息，最常用的比如国家，性别和年龄。广告投放往往在相同定向上有相似的表现效果（比如同一款游戏投放美国和东南亚，前者的CPA一定比后者高），因此我们可以尝试用历史数据预测广告CPA的未来表现。</p>
+
+<h3>实验目标</h3>
+
+<p>希望依据广告投放的历史数据，构建回归模型，预测广告当前的CPA表现，指导模型投放。</p>
+
+<h3>分析工具</h3>
+
+<p>考虑到数据源直接存储在Hive中，同时也考虑数据量可能的增长预测，我们采用Spark做数据处理和模型预测方面的工作。
+Spark本身是基于RDD实现的内存计算框架，它的一个重要应用在于处理机器学习中迭代问题的优化，相对应的库为Spark ml。多说一句的是 ，Spark版本更新较快，相应机器学习库存在ml和mllib两个版本，分别基于DataFrame和RDD处理数据。实际上，DataFame可以视为对RDD的封装，在1.3版本前，它也被称为schema RDD，即包含元数据描述的RDD。
+我们选择ml和DataFrame操作数据，因为它们在后续更新的优先级会高于mllib。</p>
+
+<h3>数据源介绍</h3>
+
+<p>我们把离线模块拥有的数据源信息划分为广告维度，产品维度，时间维度，广告特征维度，定向特征维度，创意维度和统计维度这几个部分。
+技术上，它们来自Hive表offlin_data，表内容每天会定时加载更新。</p>
+
+<p>广告维度字段 (字段名称我只补充了部分需要说明的，因为大多数字段都是自表意的)
+| id | description |
+|&mdash;|:&mdash;|:&mdash;:|&mdash;:|
+|Bm_id  |Business Manager|
+|Account_id|   <br/>
+|Campaign_id|  <br/>
+|Adset_id| <br/>
+|Ad_id|</p>
+
+<p>产品维度</p>
+
+<table>
+<thead>
+<tr>
+<th> id </th>
+<th style="text-align:left;"> description </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Application_id / promotion_url</td>
+<td style="text-align:left;">    App链接</td>
+</tr>
+<tr>
+<td>Product_type</td>
+<td style="text-align:left;">  App类型，提取自user_os</td>
+</tr>
+<tr>
+<td>Game_type</td>
+<td style="text-align:left;"> 应用类型，需单独处理</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>时间维度
+| id | description |
+|&mdash;|:&mdash;|:&mdash;:|&mdash;:|
+|Dt / start_dt / end_dt|    数据分析的最小单位是天|</p>
+
+<p>广告特征维度</p>
+
+<table>
+<thead>
+<tr>
+<th> id </th>
+<th style="text-align:left;"> description </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bid_amount</td>
+<td style="text-align:left;">    广告的出价</td>
+</tr>
+<tr>
+<td>Daily_budget</td>
+<td style="text-align:left;">  广告的日预算，如果设置</td>
+</tr>
+<tr>
+<td>Lifetime_budget</td>
+<td style="text-align:left;">   广告的生命周期预算，如果设置</td>
+</tr>
+<tr>
+<td>Is_autobid</td>
+<td style="text-align:left;">    是否是autobid</td>
+</tr>
+<tr>
+<td>Relevance_score</td>
+<td style="text-align:left;">   广告的质量得分</td>
+</tr>
+<tr>
+<td>Page_id</td>
+<td style="text-align:left;">   广告使用的page信息</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>定向特征维度
+| id | description |
+|&mdash;|:&mdash;|:&mdash;:|&mdash;:|
+|Min_age / max_age <br/>
+|gender<br/>
+|country   <br/>
+|city   我们抓取了city信息，如果有的话
+|Custom_audience   <br/>
+|Connection<br/>
+|Exclude_connection<br/>
+|Interests <br/>
+|…   <br/>
+完整的定向特征保持与PE上adset可编辑的定向内容完全一致，这里不一一列出</p>
+
+<p>创意维度
+| id | description |
+|&mdash;|:&mdash;|:&mdash;:|&mdash;:|
+|Video_id / video_image_url |Video的FB ID
+|Image_url / image_hash |Image的链接</p>
+
+<p>统计维度
+| id | description |
+|&mdash;|:&mdash;|:&mdash;:|&mdash;:|
+|Impression / reach<br/>
+|Clicks<br/>
+|Actions   <br/>
+|Spend <br/>
+|Unique_click/unique_impression</p>
+
+<p>创意分为视频和图片两类，出价方式分为使用autobid和不使用autobid，本次分析只针对图片类创意，不使用autobid的游戏类广告。</p>
+
+<p>Spark中对数据加载通过Hive QL，如下语句：</p>
+
+<pre><code>conf = SparkConf().setAppName("offline-train")
+sc = SparkContext(conf=conf)
+hc = HiveContext(sc)
+
+# generate your query_sql
+df = hc.sql(query_sql)
+</code></pre>
+
+<h3>数据预处理</h3>
+
+<p>1.考虑在数据量极小时，CPA的绝对值没有意义（比如一共只有几十美分的花费就带来安装并不能说明说明当前定向下真实成本就是几十美分），因此我们过滤掉单日花费小于20$的广告，因为我们认为在太少的花费下，CPA是不可信的。
+2.对autobid的广告，数据源中会把对应的bid_amount设置为0，同时，广告在应用和游戏上通常也有着不同的表现，目前我们没有方法直接判断一个promotion_url是游戏还是应用（后续拟添加支持），但通常应用的出价范围和游戏不一致，因此我们选择bid_amount>50美分的ad作为样本对象。
+3.回归中较常用的误差衡量方式是RMSE，一些异常点可能对RMSE的结果影响较大，根据经验，因此我们选择天级别实际cpa小于20的ad作为样本，将cpa大于20的ad视为异常数据。
+4.因为我们只分析图片创意，因此我们选择image_url非空的case
+5.因为后续OneHotEncoder不接受空字符串，因此把空字符串均转为”unknown”</p>
+
+<p>经过以上过滤后，7天内有效数据量占总记录条数的比例约为2%。</p>
+
+<h3>特征工程</h3>
+
+<p>首先，我们经数据预处理后，从数据源中选择了如下原始特征：</p>
+
+<p>dimensions部分</p>
+
+<pre><code>    Image_url
+    Dt
+    Age_min
+    Age_max
+    Is_autobid
+    Genders
+    Product_type
+    Countries
+    Bid_amount
+    Daily_budget
+    Connection_ids
+    Custom_audience_ids
+    Excluded_connection_ids
+    Interest_ids
+    Billing_event
+</code></pre>
+
+<p>metric部分</p>
+
+<pre><code>    Spend
+    Mobile_app_install
+</code></pre>
+
+<p>metric部分只用于计算cpa，通过Hive定义的udf完成。</p>
+
+<pre><code>UdfFunc = udf(udf_func, FloatType())
+df = df.withColumn(“cpa”, UdfFunc(df[“spend”], df[“mobile_app_install”]))
+</code></pre>
+
+<p>1.把age_min和age_max合并为age_avg，然后在最终输入模型的训练特征中去除age_min和age_max：</p>
+
+<pre><code>age_avg = (age_min + age_max) / 2
+</code></pre>
+
+<p>2.把dt信息转为weekday，在最终模型中去除dt信息：</p>
+
+<pre><code>def weekday(dt):
+    if not dt:
+        return '-1'
+    import datetime
+    d = datetime.datetime.strptime(str(dt), '%Y%m%d')
+    return int(d.weekday())
+</code></pre>
+
+<p>3.对于如countries, connection_ids，可能在一条记录中包含多个国家或多个connection，我们只抽取其中第一条记录视为记录的代表：</p>
+
+<pre><code>def countries_fill(countries):
+    if (not countries) or (countries == 'null'):
+        return 'unknown'
+    countries = countries.replace('::',',')
+    return countries[0]
+</code></pre>
+
+<h3>特征编码</h3>
+
+<p>由于Spark.ml的树模型不接受字符串类型输入（与scikit-learn一致），因此我们对所有字符特征都作为string to index的转换，然后做了one hot encoder。</p>
+
+<pre><code># countries -&gt; one-hot encoder, category
+countries_indexer = StringIndexer(inputCol="countries", outputCol="countries_index", handleInvalid="skip")
+countries_onehot_indexer = OneHotEncoder(dropLast=False, inputCol="countries_index", outputCol="countries_vec")
+</code></pre>
+
+<p>Spark.ml支持流水线（pipeline）的数据处理模式，需要我们把相关处理特征加入pipeline中。</p>
+
+<pre><code>stages = [
+        countries_indexer, countries_onehot_indexer,
+]
+# finally
+pipeline = Pipeline(stages=stages)
+</code></pre>
+
+<p>最终将cpa视为label，将其它特征视为features：</p>
+
+<pre><code>assembler = VectorAssembler(
+    inputCols = feature_columns,
+    outputCol = "features"
+)
+stages.append(assembler)
+</code></pre>
+
+<h3>模型选择</h3>
+
+<p>在Spark.ml的默认模型中，我们选择随机森林（Random Forest）作为回归预测模型。虽然从效果上讲，Random Forest可能不如其它ensemble方法，但它是强于decision tree的，考虑模型的可解释性，以及实现的便利性，我们直接选择RandomForestRegressor作为回归模型。</p>
+
+<p>对于Random Forest，较为重要的两个参数是单棵树的深度(max depth of tree)和树的个数(num of trees)，对这两个参数通过grid-search确定合理值。</p>
+
+<pre><code># do cross-validation
+paramGrid = ParamGridBuilder()\
+    .addGrid(random_forest.maxDepth, [3, 5, 7, 9])\
+    .addGrid(random_forest.numTrees, [100])\
+    .build()
+evaluator = RegressionEvaluator()
+
+cv = CrossValidator(estimator=pipeline,
+    estimatorParamMaps=paramGrid,
+    evaluator=evaluator,
+    numFolds=2)
+model = cv.fit(df)
+print model.avgMetrics
+</code></pre>
+
+<p>最终模型选择14天数据为训练数据，1天数据为预测数据，RMSE大约在1.59
+预测cpa和实际cpa输出样例（前50条）：</p>
+
+<table>
+<thead>
+<tr>
+<th>        prediction</th>
+<th style="text-align:left;">    label</th>
+<th style="text-align:center;">            features</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.5217560913620043</td>
+<td style="text-align:left;">1.4385713</td>
+<td style="text-align:center;">(1042,[0,1,2,3,17&hellip;</td>
+</tr>
+<tr>
+<td>2.3752164632800854</td>
+<td style="text-align:left;">5.8022223</td>
+<td style="text-align:center;">(1042,[0,1,2,3,19&hellip;</td>
+</tr>
+<tr>
+<td> 2.411657767271753</td>
+<td style="text-align:left;">3.0307143</td>
+<td style="text-align:center;">(1042,[0,1,2,3,42&hellip;</td>
+</tr>
+<tr>
+<td>3.6899882643509763</td>
+<td style="text-align:left;">3.5722387</td>
+<td style="text-align:center;">(1042,[0,1,2,3,50&hellip;</td>
+</tr>
+<tr>
+<td> 4.092828817916082</td>
+<td style="text-align:left;">2.2818182</td>
+<td style="text-align:center;">(1042,[0,1,2,3,55&hellip;</td>
+</tr>
+<tr>
+<td> 4.197697715305045</td>
+<td style="text-align:left;"> 3.366192</td>
+<td style="text-align:center;">(1042,[0,1,2,3,52&hellip;</td>
+</tr>
+<tr>
+<td> 4.197697715305045</td>
+<td style="text-align:left;">4.0157895</td>
+<td style="text-align:center;">(1042,[0,1,2,3,46&hellip;</td>
+</tr>
+<tr>
+<td> 4.197697715305045</td>
+<td style="text-align:left;">3.4369998</td>
+<td style="text-align:center;">(1042,[0,1,2,3,49&hellip;</td>
+</tr>
+<tr>
+<td> 4.071716257839271</td>
+<td style="text-align:left;"> 1.917647</td>
+<td style="text-align:center;">(1042,[0,1,2,3,44&hellip;</td>
+</tr>
+<tr>
+<td>3.9807423344404818</td>
+<td style="text-align:left;">2.6338665</td>
+<td style="text-align:center;">(1042,[0,1,2,3,42&hellip;</td>
+</tr>
+<tr>
+<td>3.9807423344404818</td>
+<td style="text-align:left;">3.5842857</td>
+<td style="text-align:center;">(1042,[0,1,2,3,42&hellip;</td>
+</tr>
+<tr>
+<td> 4.177470410349176</td>
+<td style="text-align:left;">1.9453847</td>
+<td style="text-align:center;">(1042,[0,1,2,3,42&hellip;</td>
+</tr>
+<tr>
+<td> 4.071716257839271</td>
+<td style="text-align:left;">1.8128395</td>
+<td style="text-align:center;">(1042,[0,1,2,3,44&hellip;</td>
+</tr>
+<tr>
+<td>1.9035986906299776</td>
+<td style="text-align:left;">1.7442857</td>
+<td style="text-align:center;">(1042,[0,1,2,3,22&hellip;</td>
+</tr>
+<tr>
+<td>13.808040417768252</td>
+<td style="text-align:left;">   16.058</td>
+<td style="text-align:center;">(1042,[0,1,2,3,27&hellip;</td>
+</tr>
+<tr>
+<td>14.168610809794092</td>
+<td style="text-align:left;">  14.8975</td>
+<td style="text-align:center;">(1042,[0,1,2,3,18&hellip;</td>
+</tr>
+<tr>
+<td>11.971184107912041</td>
+<td style="text-align:left;">    10.89</td>
+<td style="text-align:center;">(1042,[0,1,2,3,19&hellip;</td>
+</tr>
+<tr>
+<td>11.962558073010637</td>
+<td style="text-align:left;">     8.89</td>
+<td style="text-align:center;">(1042,[0,1,2,3,30&hellip;</td>
+</tr>
+<tr>
+<td>2.3169264529890903</td>
+<td style="text-align:left;"> 2.916579</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>2.3169264529890903</td>
+<td style="text-align:left;">3.2772727</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>1.5221071103811983</td>
+<td style="text-align:left;">6.3782606</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>1.3389387340836876</td>
+<td style="text-align:left;">2.1707425</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>1.7074257356107376</td>
+<td style="text-align:left;">1.8128985</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>1.8675894765662682</td>
+<td style="text-align:left;">3.8840384</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.241272660641193</td>
+<td style="text-align:left;">4.9881816</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.268769985708979</td>
+<td style="text-align:left;"> 2.851852</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>  2.16831561899445</td>
+<td style="text-align:left;">3.3324242</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>  2.16831561899445</td>
+<td style="text-align:left;"> 4.152222</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.292079711361142</td>
+<td style="text-align:left;">3.9308271</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.292079711361142</td>
+<td style="text-align:left;">2.6325426</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>1.8987393163009587</td>
+<td style="text-align:left;">2.9423833</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>1.8987393163009587</td>
+<td style="text-align:left;">2.2502885</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>2.1668434345072054</td>
+<td style="text-align:left;">4.4953847</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>2.1668434345072054</td>
+<td style="text-align:left;">2.8725274</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.268769985708979</td>
+<td style="text-align:left;"> 2.570139</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.268769985708979</td>
+<td style="text-align:left;"> 3.188125</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>  2.16831561899445</td>
+<td style="text-align:left;">1.9479818</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>  2.16831561899445</td>
+<td style="text-align:left;">3.9414287</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>2.3165876740390625</td>
+<td style="text-align:left;"> 2.620024</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.318769978387125</td>
+<td style="text-align:left;">1.6355883</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.146834324914294</td>
+<td style="text-align:left;">1.5435859</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.146834324914294</td>
+<td style="text-align:left;">2.0905683</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.361828624187834</td>
+<td style="text-align:left;">2.4541378</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.237440741142636</td>
+<td style="text-align:left;">3.7431035</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td> 2.237440741142636</td>
+<td style="text-align:left;">1.1768421</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>2.2990649947244433</td>
+<td style="text-align:left;">  2.50875</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>  2.35518238420236</td>
+<td style="text-align:left;"> 3.223077</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>1.9192676385516463</td>
+<td style="text-align:left;">3.5867856</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>1.9192676385516463</td>
+<td style="text-align:left;">2.2514102</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+<tr>
+<td>2.3522288292714277</td>
+<td style="text-align:left;">3.7342856</td>
+<td style="text-align:center;">(1042,[0,1,2,3,11&hellip;</td>
+</tr>
+</tbody>
+</table>
+
+
+<h3>后续展望</h3>
+
+<p>就模型本身而言，在各个方面都还有很大的改进空间：</p>
+
+<pre><code>处理数据集本身的局限性
+特征工程的方法
+模型的选择和参数调试
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[kaggle-shelter-animal-outcome]]></title>
+    <link href="http://yoursite.com/blog/2016/07/10/kaggle-shelter-animal-outcome/"/>
+    <updated>2016-07-10T15:31:14+08:00</updated>
+    <id>http://yoursite.com/blog/2016/07/10/kaggle-shelter-animal-outcome</id>
+    <content type="html"><![CDATA[<p>这是一篇关于<a href="https://www.kaggle.com/c/shelter-animal-outcomes">Kaggle:Shelter Animal Outcomes</a>比赛的总结。</p>
+
+<h3>比赛<a href="https://www.kaggle.com/c/shelter-animal-outcomes">背景</a></h3>
+
+<p>比赛是基于美国一个州过去三年宠物收容所对宠物的记录数据，去预测宠物的最终命运。它本身是一个预测问题，用到的自变量包括官方提供的以下特征：</p>
+
+<pre><code>AnimalID,Name,DateTime,OutcomeType,OutcomeSubtype,AnimalType,SexuponOutcome,AgeuponOutcome,Breed,Color
+</code></pre>
+
+<p>去预测宠物的最终命运，可能的选项包括：</p>
+
+<pre><code>Adoption，Died，Euthanasia，Return_to_owner, Transfer
+</code></pre>
+
+<p>用到的最终评价标准是<a href="https://www.kaggle.com/c/shelter-animal-outcomes/details/evaluation">multiclass logloss</a>，简单来说就是它需要输出每个测试样本属于每类的可能性，而不是最有可能的类别，同时会更大的惩罚那些肯定性判断 （把每个记录以100%的输出错分会受到很大的惩罚），实际上最终leaderboard中那些误差大于3的提交结果应该都是输出了错误的判决结果。</p>
+
+<h3>比赛结果</h3>
+
+<p>截止本文完成时，我的排名是 54th/1289，比赛还有20天结束，但我已不打算进一步优化结果，最终结果应该会在结束后有所变化，我会在相应时间更新。</p>
+
+<h3>最终方案</h3>
+
+<h4>特征选择和处理</h4>
+
+<p>我最终使用的特征包括：</p>
+
+<ul>
+<li>时间特征：DateTime部分被处理为5个部分
+
+<ul>
+<li> YEAR/MONTH/WEEKDAY/HOUR/UNIXTIME</li>
+</ul>
+</li>
+<li>年龄特征：原始的年龄特征包含如“3 months”, &ldquo;2 weeks"等，全部转换为天为单位的表示，原始数据中部分动物没有年龄，相应数据被转为0（也看到过一些根据其它信息去预测年龄做填充的方案，没有尝试）</li>
+<li>名称特征：原始名称转为是否有名称，名称的长度两个新特征</li>
+<li>性别特征：原始性别实际包含Male/Female以及是否被阉割Intact的信息，转为Male/Female和Intact/Not Intact两个新特征</li>
+<li>品种特征：首先把训练集和测试集的所有品种做统计，因为记录中每个动物都可能属于多个品种，因此把属于某品种记为1，不属于记为0</li>
+<li>颜色特征：处理方法类似品种，和品种的区别是，品种会把是否包含Mix和/作为分隔符，颜色会把空格作为分隔符</li>
+<li>去除处理过的原始特征，以及Animal ID信息，对测试集编码后（scikit-learn fit_transform），采用相同的编码方式处理训练集</li>
+</ul>
+
+
+<h4>模型选择</h4>
+
+<p>最终我使用的是由ChenTianqi（中国人，非常厉害）开发的<a href="https://github.com/dmlc/xgboost">XGBoost</a>作为学习模型，如XGBoost名称所示，它本身就是一种boosting方法，在我的测试中，它的效果要比RandomForest更好。</p>
+
+<p>最终的参数：</p>
+
+<pre><code>param = {'max_depth':11, 'eta':0.03, 'subsample':0.75, 'colsample_bytree':0.85, 'eval_metric':'mlogloss', 'objective':'multi:softprob', 'num_class':5, 'verbose':1}
+num_round = 400
+dtrain = xgb.DMatrix(train_x, label=train_y)
+clf = xgb.train(param, dtrain, num_round)
+</code></pre>
+
+<p>关于XGBoost的介绍，首先参考它的<a href="https://github.com/dmlc/xgboost/tree/master/python-package">Github</a>（包含使用的Example），其次关于参数调优可以参考<a href="http://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/">这篇文章</a></p>
+
+<p>PS. XGBoost本身是基于C开发的，它提供了R和Python两种接口，就我看到的情况看，R语言的接口相比Python会更方便一些，如果将来有机会，我还会对XGBoost做更多的探索。</p>
+
+<h3>我做过的尝试</h3>
+
+<p>我相信最终的方案并不是这次比赛的全部收获（或者更直白的说，只是很少一部分），作为第一个真正认真参加的Kaggle比赛，我想记录一个Kaggle新手在处理问题的过程，对阅读博客的人有更多帮助。</p>
+
+<p>下面的尝试我大致按时间记录：
+1. 第一次：几乎没有处理原始数据，只是去除无用的字段（比如OutcomeSubtype, AnimalID）用RandomForest直接训练，得到的logloss是13.8：这里的问题在于，没有看清题目的损失评价方法是logloss，直接用的分类树而不是回归树，给出一堆0，1结果
+2. 第二次：仅仅是更新损失评价方法和树类别，logloss下降到3.4
+3. 第三次：开始真正意义上的数据清理，包括如下尝试：</p>
+
+<pre><code>* 处理Age信息，把年月日数据统一为天表示
+* 尝试把猫和狗作为独立的对象分别训练
+* 处理Datetime，转为年月，weekday以及几点钟
+* 添加本地的cross validation
+这个阶段结束后，logloss下降到1.8
+</code></pre>
+
+<p>4.第四次：回归模型参数，发现在RandomForest中使用的树数量和树深度都太少太浅，调整参数，logloss下降到0.98
+5.第五次：增加名称信息，增加Sex分隔处理，处理品种和颜色是否混合的信息
+6.第六次：开始使用Grid Search做参数空间的搜索，经过参数优化后，logloss大概在0.82左右
+7.第七次：用XGBoost替换RandomForest，调整相关参数，之后又对年龄特征做了细化，logloss达到0.75左右
+8.这之后其实有一段很长的时间，logloss并没有什么提高，这期间我尝试过用KNN（没有太多调优，误差在0.98），尝试过<a href="http://linpingta.cn/blog/2016/06/25/model-stacking/#disqus_thread">模型融合</a>，还尝试过使用场外特征，但是都没有在logloss上面有明显的改善（场外还是有一些改善，但并不合法还是放弃了）
+9.最后的改进：在特征中加入UnixDateTime特征，以及把XGBoost算法从scikit-learn版本更改为它的原生版本，logloss达到0.72，再更新参数和训练周期(num_round)，最佳logloss达到0.708。</p>
+
+<h3>项目代码</h3>
+
+<p><a href="https://github.com/linpingta/shelter-animal-outcome">Github地址</a></p>
+
+<h3>经验和教训</h3>
+
+<p>大致来说，logloss的改进经过“特征处理->模型调参->特征处理”这样不断循环的过程，在模型大致可行的前提下，特征工程，指的是发现新特征，或者处理原有特征，会对结果又明显的改善，但是这句话的前提是模型大致可行，也就是说模型本身的参数，以及选择哪个模型，仍然是非常重要的。
+结论性的来说，模型和特征是解决问题的两个重要因素，哪个弄不动了就试试另外一个，通常会不断提升结果。
+这次也对模型融合做了一些尝试，效果不是很好，但相信以后会有更好的结果。</p>
+
+<h3>关于Kaggle</h3>
+
+<p>其实关于kaggle有没有用，网上有很多说法，但主要的说法是，你要指望通过kaggle去做data science，是不太靠谱的。因为它的数据集本身是比较干净的（虽然也有缺省值要处理），问题的目标也是比较清晰的（损失函数都告诉你了嘛），而实际工作中，包括我自己遇到的问题里，如何去定义问题，去处理数据，往往是问题中最困难的（其实定义问题是最困难的，很多问题并没有那么明显的损失函数去描述）。
+我觉得这种说法是很有道理的，所以我想说kaggle的比赛结果并不能说明什么，但为什么我还愿意参加这样的比赛，我想是基于以下的理由：</p>
+
+<pre><code>1. 接触那些与工作内容完全不同的问题：Kaggle上有各类机器学习的问题，分类回归聚类，图像NLP，一个人的实际工作中其实很难接触到太多方面，这里是个好途径
+2. 学习新的模型，新的方法：恰恰是因为不用去做数据提取和预处理的工作，可以让人更专注于模型本身。我可以学习到新的模型，新的调参方法，这些或许在将来会给予工作帮助
+3. 它本身有一定的意义。Kaggle比赛不能排除作弊，但它毕竟是一个很明确的问题。从我不长时间的面试和被面试经验看，机器学习相关的项目经验，由于业务本身特点（内部工具或者多人合作），其实是很难在面试很短时间内描述清楚的。Kaggle的比赛至少可以说明一个人在运用模型方面的基本能力是get了，因为Kaggle的比赛是一定包括训练集测试集特征处理交叉验证这些基础的方法的。我不认为Kaggle的优胜者一定是一个好的data engineer，但至少说明他在数据这个大领域的某些方面还不错。
+</code></pre>
+
+<p>最后说一点，除了以上的经验，我根据一般模型训练的步骤开发了一套<a href="https://github.com/linpingta/tools/tree/master/model_trainer">框架</a>，可以方便以后使用。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[模型融合]]></title>
+    <link href="http://yoursite.com/blog/2016/06/25/model-stacking/"/>
+    <updated>2016-06-25T11:35:29+08:00</updated>
+    <id>http://yoursite.com/blog/2016/06/25/model-stacking</id>
+    <content type="html"><![CDATA[<p>这篇博客内容主要参考<a href="http://mlwave.com/kaggle-ensembling-guide/">&ldquo;Kaggle Ensemble Guide&rdquo;</a>，介绍了模型融合方面的一些相关技术（也“融合”我的一些理解）。很推荐直接阅读原文，相信对模型融合的概念会带来更多的了解。</p>
+
+<p>Kaggle Ensembling Guide</p>
+
+<p>对于机器学习相关的任务，模型融合是一种重要的提升学习准确率的方法。所谓融合，可以说是通过将不同模型的学习结果进行综合，使得最终的结果在准确率上超过单个模型的预测结果。</p>
+
+<p>一. 为什么模型融合可以达到这种效果？</p>
+
+<p>举一个简答的例子。假如我们要预测一个0-1序列，序列的真值是：</p>
+
+<pre><code>1111111111
+</code></pre>
+
+<p>现在我们有3个预测准确率在70%的模型，分别的预测结果是：</p>
+
+<pre><code>1110001111
+1010101111
+0111110011
+</code></pre>
+
+<p>我们简单的通过多数表决，即对每一位采用最多的结果作为最终结果，可以得到多数表决后的序列：</p>
+
+<pre><code>1110101111
+</code></pre>
+
+<p>准确率达到80%对么</p>
+
+<p>看到这里肯定会有一个疑问，这种结果应该也是凑巧吧，如果我的三个模型预测序列是一致的，那么准确率也不会提高。</p>
+
+<p>是这样的，所以在我看来模型融合要求两个基本条件：</p>
+
+<p>1.模型之间是不同的，每个模型会学习到不同的特征，这样融合才有意义，模型融合要求模型彼此从本质上的不同性。
+2.模型准确率是相似的。如果把一个80%准确率的模型和一个20%准确率的模型融合，结果肯定还是会变差的，但如果是75%和80%的模型融合，结果很可能是会提高的。</p>
+
+<p>小补充一点，实际应用当中的感觉是，差不多的模型进行容易，一般都会比单个模型有更好的结果。</p>
+
+<p>二. 融合的层次</p>
+
+<p>投票融合： 直接把不同模型的结果。具体的做法又可以分为几种：</p>
+
+<ol>
+<li>平均：模型1的结果A1， 模型2的结果A2， 最终结果= (A1+A2)/2。</li>
+<li>加权：按不同模型准确率的程度进行加权，越准确的模型有越高的权重，准确率可以通过交叉验证计算。</li>
+</ol>
+
+
+<p>好吧，前面说了那么多模型融合牛逼，最后融合的方法就是这个？
+当然不是，但我在这里要说两点：
+1. 最简单的平均融合，虽然看起来比较low，但效果并不差，很多时候平均融合就可以取得很不错的效果了。
+2. 当然有更高端的融合方式，请接着看下面。</p>
+
+<p>还是先摘自“Kaggle Ensemble Guide”一段很有趣的解释：</p>
+
+<pre><code>Averaging prediction files is nice and easy, but it’s not the only method that the top Kagglers are using. The serious gains start with stacking and blending. Hold on to your top-hats and petticoats: Here be dragons. With 7 heads. Standing on top of 30 other dragons.
+</code></pre>
+
+<p>哈哈，再举一个例子，Netflix竞赛算是机器学习比赛的鼻祖了，其中winner的方法就是blending。（ps，还有一个槽点是，Netflix并没有最终使用winner的方法，因为。。在实际中无法使用。pss，这也是Kaggle被吐槽很重要的一个原因，它离实际问题的解决太远了）。</p>
+
+<p>Stack Generalization：首先用一系列分类器对原始数据做分类，然后再用一个分类器去聚合这些分类器分类的结果，总体的降低误差。</p>
+
+<p>Blending：和Stack Generalization很相似，相比Stack，它的好处和坏处可以看<a href="http://mlwave.com/kaggle-ensembling-guide/">原文</a>。</p>
+
+<p>具体是怎么做的呢，举个例子，代码在<a href="https://github.com/emanuele/kaggle_pbr/blob/master/blend.py">这里</a>：</p>
+
+<pre><code>np.random.seed(0) # seed to shuffle the train set
+
+n_folds = 10
+verbose = True
+shuffle = False
+
+X, y, X_submission = load_data.load()
+
+if shuffle:
+    idx = np.random.permutation(y.size)
+    X = X[idx]
+    y = y[idx]
+
+skf = list(StratifiedKFold(y, n_folds))
+
+clfs = [RandomForestClassifier(n_estimators=100, n_jobs=-1, criterion='gini'),
+        RandomForestClassifier(n_estimators=100, n_jobs=-1, criterion='entropy'),
+        ExtraTreesClassifier(n_estimators=100, n_jobs=-1, criterion='gini'),
+        ExtraTreesClassifier(n_estimators=100, n_jobs=-1, criterion='entropy'),
+        GradientBoostingClassifier(learn_rate=0.05, subsample=0.5, max_depth=6, n_estimators=50)]
+
+print "Creating train and test sets for blending."
+
+dataset_blend_train = np.zeros((X.shape[0], len(clfs)))
+dataset_blend_test = np.zeros((X_submission.shape[0], len(clfs)))
+
+for j, clf in enumerate(clfs):
+    print j, clf
+    dataset_blend_test_j = np.zeros((X_submission.shape[0], len(skf)))
+    for i, (train, test) in enumerate(skf):
+        print "Fold", i
+        X_train = X[train]
+        y_train = y[train]
+        X_test = X[test]
+        y_test = y[test]
+        clf.fit(X_train, y_train)
+        y_submission = clf.predict_proba(X_test)[:,1]
+        dataset_blend_train[test, j] = y_submission
+        dataset_blend_test_j[:, i] = clf.predict_proba(X_submission)[:,1]
+    dataset_blend_test[:,j] = dataset_blend_test_j.mean(1)
+
+print
+print "Blending."
+clf = LogisticRegression()
+clf.fit(dataset_blend_train, y)
+y_submission = clf.predict_proba(dataset_blend_test)[:,1]
+
+print "Linear stretch of predictions to [0,1]"
+y_submission = (y_submission - y_submission.min()) / (y_submission.max() - y_submission.min())
+</code></pre>
+
+<p>操作步骤：</p>
+
+<p>1.把训练集的数据分组 （即上面的把训练集分为X_train和X_Test）
+2.遍历所有model （即上面的clfs遍历），训练model
+3.对每个model，预测X_train的结果，把结果存储作为第一层的输出
+4.对于测试集的数据采用一样的model预测
+5.把第3步的输出作为输入，和最终的输出一起训练第二层的模型
+6.用第二层的模型最终预测测试集的结果</p>
+
+<p>博客原文还有很多内容，但我没有看得更多，因此先写到这里，感兴趣的话还是推荐阅读<a href="http://mlwave.com/kaggle-ensembling-guide/">原文</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Keras深度学习框架(介绍)]]></title>
+    <link href="http://yoursite.com/blog/2016/06/08/keras-introduction/"/>
+    <updated>2016-06-08T22:14:42+08:00</updated>
+    <id>http://yoursite.com/blog/2016/06/08/keras-introduction</id>
+    <content type="html"><![CDATA[<p>keras是一个高层次的深度学习模块，底层依赖Theano(默认)或TensorFlow调用，封装了Theano中的功能，简化深度学习相关功能的调用。</p>
+
+<p>Sequential : 用于组合一系列layers，是keras最基础的类。
+最常用的网络定义模式如下：</p>
+
+<pre><code>models = Sequential()
+models.add(Dense(32, input_dim=784)) # 添加model1
+models.add(Activation('relu')) # 添加model2
+# 添加其它model
+...
+# 定义模型
+models.compile(optimizer='sgd',loss='categorical_crossentropy', metric=['accuracy'])
+
+# 训练模型
+models.fit(train_x, train_y, nb_epoch, batch_size)
+
+# 输出预测
+y_pred = models.predict_class(test_x)
+</code></pre>
+
+<p>通过非常清晰简单的方式，我们就可以定义一个深度学习网络(models.add)，定义它的优化方式(models.compile)，然后训练模型(models.fit)，最后应用预测(models.predict)。问题的核心仍然在网络构建本身，但通过预定义的model（例如Dense, Activation）使得网络定义本身也得到了简化。</p>
+
+<p>下面本文介绍下keras主要的应用模块。</p>
+
+<p>1.layer本身相关部分</p>
+
+<p>所有layer都有一些公有函数：
+(1) get_weights() 返回层中神经元的权值，numpy.array
+(2) set_weights() 设置层中神经元的权值
+(3) get_config() 返回layer的配置</p>
+
+<p>如果layer是非共享的，那么可以通过</p>
+
+<pre><code>layer.input
+layer.output
+layer.input_shape
+layer.output_shape
+</code></pre>
+
+<p>获取层的输入张量，输出张量，输入形状，输出形状。
+如果layer是共享的，那么通过 get_xx_at(node_index) 获取指定node的信息。</p>
+
+<p>(1)Dense：较常用的一种Neutral Network layer。</p>
+
+<p>定义</p>
+
+<pre><code>keras.layers.core.Dense(output\_dim, 
+init='glorot\_uniform', activation='linear', weights=None ...)
+
+主要参数：
+output_dim：输出向量
+input_dim：输入向量
+activation: 定义传递函数，如果不指定，默认为linear, f(x)=x
+</code></pre>
+
+<p>调用实例，输入节点16个，输出节点32个：</p>
+
+<pre><code>model = Sequential()
+model.add(Dense(32, input_dim=16))
+</code></pre>
+
+<p>(2)Activation: 定义激活函数activation：</p>
+
+<pre><code>keras.layers.core.Activation(activation)
+</code></pre>
+
+<p>输入层和输出层维度保持一致。</p>
+
+<p>Dropout: 在模型训练的时候使得部分节点的权重不更新，包含参数p，取值范围是[0,1]，指定一定比例的训练样本不用于节点更新，避免过拟合。</p>
+
+<pre><code>keras.layers.core.Dropout(p)
+
+主要参数：
+p：[0, 1], 指定一定比例的样本不用于更新
+</code></pre>
+
+<p>其它相关函数可以参考<a href="http://keras.io/layers/core/">这里</a>。</p>
+
+<p>2.卷积相关layer定义
+(1)Convolution1(/2/3)D ：卷积操作，分别针对1维、2维和3维的输入操作。</p>
+
+<pre><code>keras.layers.convolutional.Convolution1D(nb_filter, filter_length, init='uniform', activation='linear', weights=None, border_mode='valid', subsample_length=1, W_regularizer=None, b_regularizer=None, activity_regularizer=None, W_constraint=None, b_constraint=None, bias=True, input_dim=None, input_length=None)
+
+主要参数：
+nb_filter：指定卷积核的个数（等价于输出的维度）
+卷积核的形状：
+    一维是长度：filter_length
+    二维是形状：nb_row, nb_col
+    三维是形状：kernel_dim1/2/3
+输入形状：
+    一维例如：（10,30），前者是样本数量，后者是每个样本的维度
+    二维例如：（3,256,256），前者是样本数量，后面两项是图像的长宽
+</code></pre>
+
+<p>(2)MaxPooling(&frac12;/3)D / AveragePooling(&frac12;/3)D：主要解释下pooling，它有点像是降采样，把一定区域内的特征按max或average的方法变为一个特征，用于降低处理的数据量。</p>
+
+<p>3.optimizer</p>
+
+<p>定义keras模型的优化方法，keras支持两种类型的输入，
+(1) 指定optimizer类的实例，如：</p>
+
+<pre><code>model = Sequential()
+#...
+sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
+model.compile(loss='mean_square_error', optimizer=sgd)
+</code></pre>
+
+<p>(2) 指定optimizer类的名称，如：</p>
+
+<pre><code>model = Sequential()
+model.compile(loss='mean_square_error', optimizer='sgd')
+</code></pre>
+
+<p>可选的optimizer方法包括SGD, RMSprop，Adagrad，Adadelta等，这些方法主要的区别在于learning rate的计算，learning rate作为超参数的一种，在早期的神经网络中并不能通过网络本身学习，而是通过使用者的经验（调参）决定，因此learning rate的计算方法本身也是深度学习重要的研究方向之一。简单的理解（或者说以我的理解），learning rate可以采取固定值（经验参数，策略一），也可以采用前期跨度大，后期跨度小（策略二），类似的不同策略衍生出不同的optimizer，更详细的科学解释可见<a href="https://www.quora.com/What-are-differences-between-update-rules-like-AdaDelta-RMSProp-AdaGrad-and-AdaM">这里</a>。</p>
+
+<p>4.objective</p>
+
+<p>定义keras模型的损失函数。同optimizer，keras也支持两种类型的输入：
+(1) objective的名称，常用的如：</p>
+
+<pre><code>mean_square_error/mse
+binary_crossentropy
+categorical_crossentropy
+</code></pre>
+
+<p>(2) Theano/TensorFlow的函数，类似<a href="https://github.com/fchollet/keras/blob/master/keras/objectives.py">如下</a>：</p>
+
+<pre><code>def mean_squared_error(y_true, y_pred):
+    return K.mean(K.square(y_pred - y_true), axis=-1)
+</code></pre>
+
+<p>5.activation</p>
+
+<p>神经网络中的激活函数（=转移函数），常用的比如：</p>
+
+<pre><code>model = Sequential()
+model.add(Dense(64, activation='tanh'))
+</code></pre>
+
+<p>添加了tanh作为激活函数。这里同样可以传入函数对象：</p>
+
+<pre><code>def tanh(x):
+    return K.tanh(x)
+
+model.add(Dense(64, activation=tanh))
+model.add(Activation(tanh))
+</code></pre>
+
+<p>6.initializations</p>
+
+<p>网络层的初始权值，不同层可以定义不同的权值分布，例如：</p>
+
+<pre><code>model.add(Dense(64, init='uniform'))
+</code></pre>
+
+<p>定义一个包含64个节点，初始权值一致的网络层。</p>
+
+<p>7.compile函数
+objective和optimizer是compile函数必须的两项输入参数，例如：</p>
+
+<pre><code>model = Sequential()
+model.compile(loss='mean_square_error', optimizer='sgd')
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[factorization machine]]></title>
+    <link href="http://yoursite.com/blog/2014/08/17/factorization-machine/"/>
+    <updated>2014-08-17T21:37:17+08:00</updated>
+    <id>http://yoursite.com/blog/2014/08/17/factorization-machine</id>
+    <content type="html"><![CDATA[<p>FM:</p>
+
+<p>factorization machine 是一种针对于 factorization model 的实现工具</p>
+
+<p>factorization model要考虑输入变量$x_i$和$x_j$之间的关系，而且是以一种独立的形式表现的（pairwise interaction）
+    $y(x) = w_0 + \sum<em>{j=1}^{p}w_jx_j + \sum</em>{j=1}^{p}\sum<em>{j'=j+1}^{p}x_jx_j'(\sum</em>{f=1}^{k}v<em>{j,f}v</em>{j',f})$</p>
+
+<p>前面的部分和linear regression中一致，它的主要价值在于后面的部分包含了自变量之间的相互作用关系.在计算中可以转变为：
+    $y(x) = w_0 + \sum<em>{j=1}^{p}w_jx_j + \frac{1}{2}\sum</em>{f=1}^{k}[(\sum<em>{j=1}^{p}v</em>{j,f}x_j)^{2} - \sum<em>{j=1}^{p}v</em>{j,f}^{2}x_j^{2}]$</p>
+
+<p>目标函数：(损失函数)
+    $OPT(s) = argmin<em>\theta\sum</em>{(x,y)\in S} (l(y(x|\theta),y)+\sum<em>{\theta \in \Theta} \lambda</em>\theta\theta^{2})$
+    其中$l$表示损失函数，常用的损失函数定义包括least-square loss($l_2$)和logistic loss，前者用于regression(&ldquo;输出$y$是高斯分布"是最小二乘的等价基础)，后者用于classification。$\lambda$部分表示regularization，防止overfitting。将输入$x$分组，每组有自己的$\lambda$</p>
+
+<p>常用的参数优化计算方法包括：SGD,ALS,MCMC</p>
+
+<ul>
+<li>SGD
+stochastic gradient descent : <a href="http://blog.csdn.net/lilyth_lilyth/article/details/8973972">随机梯度下降</a>
+  对于指定参数的函数，求参数的最优解：
+  $ w<em>{t+1} = w_t - η</em>t \bigtriangledown f(w_t) $
+  这里的求导会对样本中所有点计算，如果样本很大，那么在每一步迭代中计算的消耗均很大（在实际问题中很可能是无法承受的），因此我们需要用一种近似的方法进行替代，有相近的结果同时能大大减少计算量，这就是随机梯度下降的由来。
+  相比于批量梯度下降中：
+  $ \bigtriangledown f(w_t) = \sum_{i=1}^{n}\bigtriangledown f(w_t,x_i)$
+  采用随机梯度下降
+  $ \bigtriangledown f(w_t) = g(w_t) $
+  满足 $ E(g(w_t)) = \bigtriangledown f(w_t) $
+  在每次迭代中用每个样本而非所有样本计算梯度下降的方向。</li>
+</ul>
+
+
+<p>具体到此问题中，
+    $\theta \leftarrow \theta - \eta(\frac{\delta}{\delta\theta}l(y(x),y) + 2\lambda_\theta\theta)$
+    其中$\eta$表示learning rate</p>
+
+<p>SGD方法的问题：</p>
+
+<pre><code>Learning rate : SGD方法是否能够收敛很大程度上取决于learning rate，如果选择太大，那么不能收敛，如果太小，那么收敛太慢。
+Regularization : 表示对于overfit的控制。
+Initialization : 表示初始化条件下factorized interaction参数的确定, 这里作者用的是在N(0,omga)内的随机投点，因此omga也是需要确定的参数。
+</code></pre>
+
+<ul>
+<li><p>ALS (alternating least squares)
+相比于SGD，不需要$\eta$，只需要确定regularization的参数
+但它只能用于regression，不能用于classfication (least square的前提假设是$y$符合Gaussian分布)</p></li>
+<li><p>MCMC
+马尔科夫蒙托卡洛<a href="http://site.douban.com/182577/widget/notes/10567181/note/292072927/">方法</a>
+  蒙托卡洛方法：</p>
+
+<ol>
+<li>将所求问题的解表示为概率统计模型的形式</li>
+<li>用抽样得到概率统计</li>
+</ol>
+</li>
+</ul>
+
+
+<p>蒙特卡洛方法本身要求样本是独立的，而如果样本不独立，那么需要借助马尔科夫链进行抽样，MCMC就是为此出现的。另一方面，MCMC方法要求马氏链在t足够大的时候收敛到一个平稳分布。</p>
+
+<p>reject sampling
+    采样指的是通过一定量的取值，使得取值结果反映采样概率函数的分布。
+    均匀采样是可以通过产生伪随机数实现的，那么任意分布$f(x)$，如何通过采样表达其分布呢？
+    reject sampling方法可参考<a href="http://en.wikipedia.org/wiki/Rejection_sampling">wiki</a>，<a href="http://www.stat.ucla.edu/~dinov/courses_students.dir/04/Spring/Stat233.dir/STAT233_notes.dir/RejectionSampling.pdf">实现原则</a>
+        证明采用这种策略采样得到的结果和希望得到的分布一致，重点在于$P(x\in A)$被转化为$P(x\in T|Accept)$，Accept这件事是通过$U&lt;f(t)/M(t)$表示出来的</p>
+
+<p>Markov Chain</p>
+
+<p>FM是factorization model中的一种处理方法，与其它方法如<a href="https://datajobs.com/data-science-repo/Recommender-Systems-%5BNetflix%5D.pdf">matrix factorization</a>,pairwise interaction tensor factorization,<a href="http://blog.csdn.net/wanglulu2014/article/details/21170111">SVD++</a>可以进行转换。</p>
+
+<p>factorization model : 针对factorization相关的系列算法的统称，它们主要适用于推荐系统，包括SVD++,SVD等。
+    SVD (Singular Value Decomposition)是将一个$N<em>M$的评分矩阵分解为一个$N</em>F$的用户因子矩阵和一个$M*F$的物品因子矩阵。同时考虑评分的偏离度（有些用户倾向于宽松的打分，有些倾向于严格的打分），最终u相对于i的打分$r<em>{u,i}$表示为
+    $r</em>{u,i}=overallMean+b_u+b_i+p_uq_i^{T}$
+    优化其结果：
+    $argmin<em>\alpha\sum</em>{(u,i)\in \alpha}{(r_{u,i}-overallMean+b_u+b_i+p_uq_i^{T})^{2}+\lambda(\Arrowvert b_u<sup>2</sup>\Arrowvert + \Arrowvert b_i<sup>2</sup>\Arrowvert + \Arrowvert p_u<sup>2</sup>\Arrowvert + \Arrowvert q_i<sup>2</sup>\Arrowvert)}$</p>
+
+<p>hyperparameter指的是初始化确定的经验参数，比如regularization中的$\lambda$.</p>
+
+<p>activation function: 指的是通过output signal来反映input的activation level, 在neutral network中用到。</p>
+
+<p>cross-entropy  error:
+    cross-entropy定义: 对于给定的$p(x)$和$q(x)$，定义cross-entropy为：
+    $H(p,q)=-\sum_x{p(x)log(q(x))}$
+    对于分类问题，实际值$t_n$和理论计算值$y_n$的cross-entropy error是$-\sum{p_xlogq_x}$
+    相比而言的另外一种error是classification error，具体参见<a href="\Arrowvert%20b_u^2\Arrowvert">此篇</a></p>
+]]></content>
+  </entry>
+  
+</feed>

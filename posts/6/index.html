@@ -1,0 +1,1305 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="Computing Advertisement Find the best ad for the user in the context.
+(Find the &ldquo;best match&rdquo; between a given user in a given context and &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/20/advertising-class/">
+		
+			Advertising Class</a>
+	</h2>
+	<div class="entry-content">
+		<p>Computing Advertisement</p>
+
+<p>Find the best ad for the user in the context.
+(Find the &ldquo;best match&rdquo; between a given user in a given context and a suitable advertisement)</p>
+
+<p>第一章 基本概念简介</p>
+
+<p>广告类型分类</p>
+
+<ul>
+<li>搜索广告： 百度等等</li>
+<li>展示广告：
+
+<ul>
+<li>Rich media : 指的是广告的形式以html/flash展现，强调交互性</li>
+<li><p>Digital video : 指的是视频广告，比如youku播放视频前的广告内容</p>
+
+<pre><code>  In-stream : 指的是通过播放器展现的广告
+
+      linear video ad : 在视频的开始/结束时播放的
+      non-linear video ad : 在视频中间（比如电视剧之间的插播，或者延迟等待）播放
+</code></pre></li>
+<li>Banner ad : 边栏广告，最典型的是横幅广告，比如新浪首页广告，通常是品牌广告</li>
+<li>Sponsorship ad : 赞助广告</li>
+</ul>
+</li>
+<li>classfied 广告：传统报纸中夹页位置出现的广告</li>
+<li>lead generation : 根据用户做推送</li>
+<li>email</li>
+</ul>
+
+
+<p>广告主分类：
+指的是行业分类，比如零售业，快消业</p>
+
+<p>付费方式：
+CPM：每次展示， 比如一般侧边栏广告或者图像类广告采用此类
+CPC: 每次点击， 比如一般文字类广告
+CPA：每次效果</p>
+
+<p>CTR: click through rate</p>
+
+<p>Textual ad : 比如搜索广告，或者上下文广告
+    Textual ads are heavily related to Search and IR</p>
+
+<p>广告的均衡
+1. 广告主：要的是ROI
+2. 用户：要的是相关性
+3. 媒体：要的是收入
+4. 广告平台：要的是收入和成长
+Ad selection : optimize for a goal that balances the utlites of the four participants.</p>
+
+<p>海量的用户，广告和展示机会
+快速的反应时间 （小于100ms）</p>
+
+<p>解析用户特征（如果搜索广告，那么是强相关的关键词）
+解析广告本身特征
+IR (information retrieval) 对二者进行匹配</p>
+
+<p>Search Engine 对于广告的应用</p>
+
+<ul>
+<li>Ad retrival: match to query/context</li>
+<li>Ordering the ads</li>
+<li>Pricing on a click-through</li>
+</ul>
+
+
+<p>Ad retrival:
+    广告主购买关键字，和query中提取的关键字做匹配</p>
+
+<p>Ordering &amp; pricing the ds:
+    game theory : 每个参与者按照自己的策略进行出价
+    auction theory : 每个人在auction market中的行为
+    mechanism theory : design the rule of a game</p>
+
+<p>auction theory:
+    First-price sealed-bid : 所有人同时最高价取胜
+    Second-price : 所有人同时，最高出价者以次高价取胜
+    English auction : 常见的向高处叫价
+    Dutch auction : 由高向低，直到第一个接受出价者即为成交价</p>
+
+<p>第二章</p>
+
+<p>generize secondary price:
+    bid ranking : 任何第i个人都按第i+1个人的价格出价
+    revenue ranking : 广告按出价和ctr排</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-20T18:56:53+08:00" pubdate data-updated="true">Jul 20th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/advertise/'>advertise</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/11/weiqi-generation/">
+		
+			Weiqi_generation</a>
+	</h2>
+	<div class="entry-content">
+		<h1>围棋棋谱识别</h1>
+
+<p><a href="http://www.lg508.com/game/200019997.aspx">http://www.lg508.com/game/200019997.aspx</a>
+把一个静态的棋谱，通过图像识别重新转换为动态效果；</p>
+
+<p><img src="/images/2014/07/qipu1.png" alt="S1" /></p>
+
+<ul>
+<li><p>棋盘上的棋子定位</p>
+
+<pre><code>方法1：自动定位
+  color to hsv : 然后选择其中的H (Hue)分量
+  做二值化 (做中值滤波)
+  做图形学上的开闭运算 （先腐蚀后膨胀）
+
+方法2：手动定位
+  因为棋盘的大小是固定的，所以棋盘上的361个位置的坐标也是固定的，那么只需要判断每个位置是有没有子，是黑子还是白子，这样的操作相对简单很多
+</code></pre></li>
+</ul>
+
+
+<p><img src="/images/2014/07/qipu2.png" alt="S2" /></p>
+
+<p><img src="/images/2014/07/qipu3.png" alt="S3" /></p>
+
+<ul>
+<li><p>定位区域中存在“黑子”，"白子"或者没有子</p>
+
+<p>  关于分类器，我先将黑白子 和 没有子 做区分：黑白子它的rgb分量接近，而对于没有子的情况，，大部分会出现黄色，黄色的r和g分量远大于b分量，因此可以通过rgb来区分是否有子</p>
+
+<p>  然后再区分黑子和白子，主要通过区域的rgb均值</p></li>
+</ul>
+
+
+<p><img src="/images/2014/07/qipu4.png" alt="S4" /></p>
+
+<ul>
+<li><p>提取有效数字</p>
+
+<p>  棋子中的数字彼此是分离的，因此问题的重点在于去噪。</p>
+
+<ol>
+<li><p>噪声区域的特点是呈现实心的连通域，而数字部分的连通域都是中空的，因此可以利用这一特征进行区分<br/>
+      做联通域提取
+         bw2label
+         regionprops
+    对于每个子连通域，做一次中值滤波，如果还剩下白色，那么说明它是非中空的，抛弃该区域，否则保留该区域</p></li>
+<li><p>引入聚合度的概念：
+  在包含全部目标图像的所在矩形中，如果是噪声，因为光照等原因的会聚问题，造成二值化后1区域是聚集在一起的，可以说是聚合度较高，而0-9则是聚合度较低的.
+  聚合度ratio = S二值化 / S最小包含矩形</p></li>
+<li><p>另外由于数字不会靠边，因此对于与边界有连接的区域自动去除;
+  但是，对于8这样的数字
+  它的ratio也比较大，如果把ratio阈值设的较小则可能忽略它，但如果较大则可能引入其它噪声</p></li>
+<li><p>空洞识别
+  因此需要识别图像中的空洞：
+  空洞特征：图像S中至少存在一点，它的上下左右方向都存在目标像素，而它本身不属于目标像素，如果存在说明有空洞，否则则是没有
+  对于有空洞的图像可以允许ratio更大一些</p></li>
+</ol>
+</li>
+</ul>
+
+
+<p><img src="/images/2014/07/qipu5.png" alt="S5" /></p>
+
+<p><img src="/images/2014/07/qipu6.png" alt="S6" /></p>
+
+<pre><code>上图是随机选择一行提取数据的结果，可见其中除了8没有被提取，其它数字均被成功分割和提取
+关于这一问题，对于4进行扩展：
+    填充，从任意一个点开始，填充0点，如果非闭合，那么一定可以填充所有非1的0点，否则会有部分0点无法填充，计算总共点个数，已知1点个数，判断二者差是否为所求即可
+    利用一个队列去维护，四邻域提取
+</code></pre>
+
+<ul>
+<li><p>棋子内数字识别</p>
+
+<p>  将0到9的数据单独拿出来，提取能够对它们进行分类的特征
+  选择上面提取结果中较为标准者作为标准结果，提取特征训练</p>
+
+<p>  然后将待选图像L切为小块，同时将目标图像S切为小块，计算L和S中白色点个数的协方差阵，协方差最小者为目标</p></li>
+</ul>
+
+
+<p><img src="/images/2014/07/qipu7.png" alt="S7" /></p>
+
+<p><img src="/images/2014/07/qipu8.png" alt="S8" /></p>
+
+<p>现在主要的问题是</p>
+
+<pre><code>1. 6和9有些时候会识别反
+2. 对于高光区域去噪比较困难
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-11T00:55:53+08:00" pubdate data-updated="true">Jul 11th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/11/excel-convertor/">
+		
+			Excel_convertor</a>
+	</h2>
+	<div class="entry-content">
+		<p>最近几天在做的这个项目的需求是这样的（实际上做也就一天不到，然后就是不断的改需求）。客户从某些地方爬取了一些商品数据，存在txt里面（可以认为一行数据是一个item），要导入到指定模板格式的Excel中，简单说txt的一行数据就是excel的一行data（实际上在业务上讲有变体的概念，每个txt在excel中可能对应1到N行），但excel中数据的填写位置要根据模板不同做选择和确定。因为txt里的数据是爬虫直接得到的，可能有些内容不能导入到excel里面，需要提供一个用户修改的界面，比如当用户看到一些图片的时候允许删除它（有版权的水印图片），允许用户修改前缀，另外估计用户是直接抄别人的数据填充自己的网站，所以还有提供价格和折扣价的处理。
+其实整体来讲这个私活没有太高的技术要求，无非是三个部分：解析txt字符串，界面编辑，excel读写，其中txt的解析结果需要存储到数据库里供界面调用处理，然后处理结果再从数据库中转换为excel相关列。比较麻烦的是需要考虑全面，有很多很多细节要处理。（这也是值得吐槽的地方，哎）。因为用户有界面要求，我选择C#作为界面编码部分的语言，主要是因为C#对界面开发有较好的支持，而在解析字符串和读写excel部分，我采用python作为开发语言，原因是对我而言python对于这种原型级别的开发比其它工具快一个数量级（说到底都是为了快点弄完好收钱啊）。
+虽然是不复杂的软件，但也简单画一个架构图说明下。基本一切操作都是围绕数据库的，箭头表示与数据库的关系是insert （解析）， select （excel），或者update / delete （界面控制）</p>
+
+<p>显示效果：</p>
+
+<p><img src="/images/2014/07/excel_convertor.png" alt="S1" /></p>
+
+<p><img src="/images/2014/07/excel_convertor2.png" alt="S2" /></p>
+
+<p>涉及到的技术：</p>
+
+<ol>
+<li><p>C# 通过重定向调用Python</p>
+
+<p>虽然ironpython也是一种选择，但我之前读过类似的文章，所以还是选择了这种方案，原理是起一个进程调用py，然后把输出结果（我这里用的是标准输出）重定向到C#中，主要用到了C#中ProcessStartInfo类</p></li>
+<li><p>python读写数据库 （解析部分写，excel部分读）</p>
+
+<p>用到MySQLdb库。 <a href="http://sourceforge.net/projects/mysql-python/">http://sourceforge.net/projects/mysql-python/</a>  其实没什么好说的，因为建的表也是很简单的table，我把所有txt处理的结果先存到一个对象链表里，然后再insert到数据库里</p></li>
+<li><p>python读写excel （这里说到读写是指python读excel模板写入另一个根据模板生成的excel文件）</p></li>
+</ol>
+
+
+<p>  用到xlwt,xlrd,xlutils库。 <a href="https://pypi.python.org/pypi/xlrd">https://pypi.python.org/pypi/xlrd</a> 但注意它们不支持xlsm。我开始以为xlwt和xlrd就足够支持了，但后来发现不能直接在用xlrd的excel里面写入数据（算是一个小坑吧，因为模板有很多种，我不能写入excel的固定位置，而是要根据字符串内容去查column index，因此在操作逻辑上是要先read template，然后把这些info用于write到一个拷贝模板中，需要用到 wb = copy(rb)）</p>
+
+<ol>
+<li>各种C#控件 （比如当用户选择某行数据时要在界面上显示相应的图片，用户删除某个图片时图片数量变化）</li>
+</ol>
+
+
+<p>以上面的图片为例，用户要去除一些不合格的<a href="http://img.blog.csdn.net/20140118154719406?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlucGluZ3Rh/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">图片</a></p>
+
+<p>简单总结下个人感觉，python的确是快速开发的神器，实际上这也是我最爱的语言，C#很像快餐，虽然没什么营养但确实看的漂亮。以后还是少做这种活了，对自己其实没什么提高，要处理的小问题超级多超级麻烦，钱也不多（更关键是还没到手啊）。。。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-11T00:29:08+08:00" pubdate data-updated="true">Jul 11th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/10/self-introduction/">
+		
+			个人简历</a>
+	</h2>
+	<div class="entry-content">
+		<p>个人信息</p>
+
+<pre><code>褚桐       邮箱：linpingta@163.com          手机：136 2107 0147  
+</code></pre>
+
+<p>教育经历</p>
+
+<pre><code>本科：     清华大学电子工程系                       2006.9 – 2010.7
+研究生：    清华大学电子工程系图像建模仿真方向        2010.9 – 2013.7
+</code></pre>
+
+<p>相关技能</p>
+
+<pre><code>熟练掌握C++，独立设计实现过软件应用(约2w行)，也参与过公司产品级软件开发，对OpenGL/MFC/Qt较为熟悉
+热爱Python，掌握Django并应用进行过一些小型应用和原型的开发
+熟练掌握数据结构，掌握模式识别算法，在图像分割和跟踪方面有实践应用
+对BI/DW的概念，尤其BI层应用开发架构有一定理解
+具有一定的金融和统计知识，掌握SAS，通过CFA 1级及证券从业资格考试
+应用C# /ASP.NET/Matlab进行过项目开发，对前端技术(主要基于Django的交互)和Java(爬虫)有一定了解
+</code></pre>
+
+<p>工作经历</p>
+
+<pre><code>Microstrategy  软件工程师                              2013.8   至今
+作为SQL Engine Team的成员，负责将用户定义在元数据中定义的概念关系转换为SQL语句，采用C++改进公司产品，主要工作内容包括：
+1.  SQL Optimization，负责Transformation逻辑的实现，改变查询结构，减少访问事实表(大表)次数，对特定类型查询提升执行效率约1倍
+2.  参与In-memory Cube生成逻辑，主要负责对SQL并行执行支持和Cube数据支持
+3.  实现placeholder(占位符)逻辑，加强对FreeformSQL的支持
+</code></pre>
+
+<p>实习经历</p>
+
+<ul>
+<li><p>网易游戏公司暑期<a href="https://github.com/linpingta/Document/blob/master/%E5%AF%BC%E8%A1%A8%E6%BC%94%E7%A4%BA_%E8%A4%9A%E6%A1%90.ppt">实习</a>  软件工程师                          2012.7 – 2012.8                    <br/>
+  1.针对倒表检查周期较长的问题，改进Python导表程序，实现多进程导表，提高倒表执行效率
+  2.基于1，开发Excel倒表检查插件并将原先的本地检查更新为C/S结构检查(ASP.NET)，供策划人员使用</p></li>
+<li><p>OopsData公司<a href="https://github.com/linpingta/Document/blob/master/%E6%96%87%E6%A1%A3%E8%81%9A%E7%B1%BB%E9%A2%84%E5%A4%84%E7%90%86%E9%98%B6%E6%AE%B5%E5%8E%9F%E7%90%86%E8%AF%B4%E6%98%8E.doc">实习</a>          研发工程师                        2012.5 -  2012.6                   <br/>
+  开发搜索结果聚类应用(类carrot2)，采用Java爬取百度新闻搜索结果，ICTCLAS分词，搜狗字典提取同义词和去除无效词，TF-IDF做特征词提取，并基于特征词
+  进行文本聚类</p></li>
+<li><p>穆迪公司              软件工程师                         2011.3 -  2011.6
+  就职于Customization组，负责根据用户需求对公司产品定制
+  1.采用ASP.NET开发WebService，实现商业房地产模型的用户定制
+  2.定制公司内部产品，开发Scroecard模型供内部人员使用</p></li>
+</ul>
+
+
+<p>科研经历</p>
+
+<ul>
+<li><p>研究生项目   舰船红外成像跟踪                         2012.5 – 2012.12
+      针对红外成像下有人为干扰的舰船目标进行跟踪，采用mean-shift算法和目标特征识别相结合的方法，对跟踪算法的成功率进行了一定提高。</p></li>
+<li><p>研究生项目   <a href="http://linpingta.github.io/blog/2014/07/01/simulation-structure/">空中红外仿真对抗系统</a>                      2011.2 – 2012.3
+      采用C++设计并实现模块化可扩展的仿真对抗平台，构建点源探测器的工作模型，实现并改进现有跟踪算法，并提供对抗策略的数据分析基础。
+      独力完成整个系统的需求分析，数学建模，软件开发，采用OpenGL进行动画渲染，项目顺利通过验收。</p></li>
+<li><p>研究生项目      多干扰目标仿真系统建模                2009.12 - 2010.6
+    采用C++/CLI和VHDL构建软硬件数据通信模块，设计数据传输格式，实现<a href="https://github.com/linpingta/Document/blob/master/5715_%E6%88%AA%E5%9B%BE1.bmp">软件编码</a>和硬件解码，为识别算法提供数据基础。</p></li>
+</ul>
+
+
+<p>个人项目经历</p>
+
+<ul>
+<li><p><a href="http://linpingta.github.io/blog/categories/rent-analysis/">租房信息分析</a>                                         近期
+      采用crawler4j爬取58和链家租房信息，设计数据存储结构并采用Kettle进行ODS到WH的数据格式转换，基于WH中数据进行可视化展现(d3.js)和简单分析(pandas)</p></li>
+<li><p>清华大学第十一届队式程序设计大赛<a href="https://github.com/linpingta/Document/blob/master/%E7%AC%AC%E5%8D%81%E4%B8%80%E5%B1%8A%E9%98%9F%E5%BC%8F%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1%E5%A4%A7%E8%B5%9B%E8%A7%84%E5%88%99%E8%AF%B4%E6%98%8E.pdf">设计</a>                 2009.10 - 2009.12
+  游戏AI对抗，主要采用状态机设计对抗策略，最终获得第四名</p></li>
+<li><p>清华大学第二届医疗仪器创新设计大赛                   2009.4 – 2009.5
+  采用水平集算法做MRI肿瘤分割</p></li>
+</ul>
+
+
+<p>英语  CET—4：579      CET—6：553        TOEFL：100</p>
+
+<p>我的博客    <a href="http://linpingta.github.io/">http://linpingta.github.io/</a></p>
+
+<p>Github账号  <a href="http://github.com/linpingta">http://github.com/linpingta</a></p>
+
+<ul>
+<li><a href="https://github.com/linpingta/my-blog-redis">my-blog-redis</a>:  Django博客</li>
+<li><a href="https://github.com/linpingta/58RentInfoCrawler">58RentInfoCrawler</a>: 租房信息分析爬虫部分代码</li>
+<li><a href="https://github.com/linpingta/newsmth_ExcelConvertor">newsmth_ExcelConvertor</a>: 水木私活，爬虫结果到指定csv的转换 <a href="http://linpingta.github.io/blog/2014/07/11/excel-convertor/">说明</a></li>
+<li><a href="https://github.com/linpingta/WeiqiGeneration">WeiqiGeneration</a>: 一个识别围棋棋谱的小应用 <a href="http://linpingta.github.io/blog/2014/07/11/weiqi-generation/">说明</a></li>
+</ul>
+
+
+<p>stackoverflow账号 <a href="http://stackoverflow.com/users/2279150/linpingta">http://stackoverflow.com/users/2279150/linpingta</a></p>
+
+<p>社会活动</p>
+
+<pre><code>电子系研究生团委组织部部长                          2011-2012
+电子系硬件部 组织第九届清华硬件设计大赛               2007-2008
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-10T01:13:31+08:00" pubdate data-updated="true">Jul 10th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/introduction/'>introduction</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/08/django-show/">
+		
+			Web数据查询</a>
+	</h2>
+	<div class="entry-content">
+		<p>前期处理的所有数据最终需要反映在数据应用中。我用Django简单搭建了一个Web数据查询页面，支持用户根据</p>
+
+<pre><code>地区（城区、区域、小区）
+时间范围
+租金限制
+楼层限制
+房屋限制
+朝向限制    
+</code></pre>
+
+<p>进行查询。</p>
+
+<p><img src="/images/2014/07/system1.png" alt="S1" /></p>
+
+<p><img src="/images/2014/07/system7.png" alt="S7" /></p>
+
+<p>除时间外的选择均基于jquery的select2插件，时间控件基于jQDateRangeSlider插件实现，主要采用Ajax做前后台的数据交互，整个交互分为“初始化”和“查询”两部分，“初始化”负责加载selector部分信息（区域和小区的信息是根据城区的选择结果通过Ajax加载的），“查询”部分执行selector选择后的SQL，并返回指定格式的json数据</p>
+
+<p><img src="/images/2014/07/system11.png" alt="S8" /></p>
+
+<p><img src="/images/2014/07/system12.png" alt="S8" /></p>
+
+<p>查询结果包括6个页面：（有一个未实现，本身想做饼状图）</p>
+
+<pre><code>1. 报表模块 ：文字角度的数据展示
+</code></pre>
+
+<p><img src="/images/2014/07/system2.png" alt="S2" /></p>
+
+<pre><code>2. 地图模块 ：显示当前查询信息的地理位置
+</code></pre>
+
+<p><img src="/images/2014/07/system8.png" alt="S8" /></p>
+
+<pre><code>3. heatmap : 以地区房屋的size和count为变量显示
+</code></pre>
+
+<p><img src="/images/2014/07/system4.png" alt="S4" /></p>
+
+<pre><code>4. 直方图：显示不同区域的价格对比
+</code></pre>
+
+<p><img src="/images/2014/07/system5.png" alt="S5" /></p>
+
+<pre><code>5. 时间序列： 显示不同区域的价格随时间的变化
+</code></pre>
+
+<p><img src="/images/2014/07/system6.png" alt="S6" /></p>
+
+<p>整体效果：</p>
+
+<p><img src="/images/2014/07/system9.png" alt="S9" /></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-08T22:21:30+08:00" pubdate data-updated="true">Jul 8th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/08/map1/">
+		
+			地图与简单SQL生成</a>
+	</h2>
+	<div class="entry-content">
+		<p>租房信息中非常重要的一个因素是地理位置，因此其与地图联系是顺理成章的事情。在地图上
+给用户直观的感受，会比大量数字的描述更为有力。</p>
+
+<p>百度地图提供了一系列开放接口，基于它们我对应用做了一些尝试。</p>
+
+<p><a href="http://developer.baidu.com/map/static-1.htm#column82">静态图显示</a></p>
+
+<p><a href="http://developer.baidu.com/map/webservice-geocoding.htm">地址与地理坐标转换</a></p>
+
+<p>关于使用百度地图进行数据展示的可能性</p>
+
+<pre><code>(1) 作为java调用，展示静态图
+(2) 采用javascript做动态调用
+</code></pre>
+
+<p>先实现(1) ，包含两个步骤：</p>
+
+<pre><code> 1. 根据地址信息获取经纬度坐标 (不需要此步骤，百度支持根据名称直接读取位置坐标)
+ 2. 传入经纬度信息在静态图中显示
+ 另外需要深入完成的一点就是先根据district获取center信息，然后在该区域内用大图显示每个标点 （否则标点间太容易重合之类）
+</code></pre>
+
+<p><img src="/images/2014/07/map1.png" alt="S1" /></p>
+
+<p>输入相关参数进行展示  <br/>
+后期可以实现关于地图的深入处理： 比如结合地铁站条件搜索，结合与某建筑 （公司地址） 远近 搜索
+考虑用django完成mysql数据库读取和地图展示部分功能</p>
+
+<p><img src="/images/2014/07/map2.png" alt="S2" /></p>
+
+<p>python 连接 mysql : pip install <a href="https://pypi.python.org/pypi/MySQL-python/1.2.4#downloads">MySQL-python</a>
+现在在python下整合的结果，可以把center设置为其它粒度 （考虑百度只允许返回一定长度的url 点标记的数量：20个）</p>
+
+<p><img src="/images/2014/07/map3.png" alt="S3" /></p>
+
+<p><img src="/images/2014/07/map4.png" alt="S4" /></p>
+
+<ol>
+<li>python根据输入读取MySQL中数据，返回查询结果
+  如何根据输入生成join和where部分：
+       一种思路是join部分插入，where部分插入
+       select xxxx from house_rent_info a11 {join mlu_room_type a12 on a11.ddd = a12.ddd}
+       其实这里做的事情很类似SQL Engine，但是非常非常初级的，因为SQL Engine最重要的一件事是把logic concept转换为SQL concept.
+       (这个需求对于非规范化的表不需要考虑，但是对于规范化表而言是十分必要的，如何避免硬编码)</li>
+</ol>
+
+
+<p><img src="/images/2014/07/map5.png" alt="S5" /></p>
+
+<ol>
+<li><p>查询结果组织为url发送给百度地图</p>
+
+<p>  调研关于百度地图动态图的使用</p>
+
+<ol>
+<li>类似（去哪，链家）之类的查询界面
+   经过尝试，发现做一个比较完善的前端界面还是有一定复杂程度的，比如hierarchy之间的显示，根据某选项产生另外一些选项
+   但是前端效果是非常重要的，也是必须添加的</li>
+</ol>
+
+
+<p>  另外对于动态产生SQL的格式也需要研究：
+       SQL最终查询的目标是返回 house_info_detail的house_rent_info_name 和 rent / size 指标
+       其它的都是条件，那么有些条件没有，我认为应该是根据一个SQL模式在其中添加或者删除，比如有district = &lsquo;'则SQL中添加，否则删除</p></li>
+</ol>
+
+
+<p>动态SQL生成算法：</p>
+
+<pre><code> 基础：Table -&gt; child_table_list 以及 join condition for every child_table_list
+      对于input info，找到其mapping的Table class, 
+           先判断该table是否存在于join tree中；如果存在，return (二叉树遍历)
+           否则，找到从该Table到 fact table的路径上该如何join操作；(深度遍历)
+           如果你能找到，对于找到的路径，根据table_list和join condition生成join path tree ，否则丢弃
+      遍历后根据join tree生成 SQL join 部分
+
+ （现在愈发觉得公司的产品还是很NB的，我现在做的只是join，还是直接在physical table上的操作，相比logic table的定义又简单了很多）
+ （实际上我现在在做的就是Penhato的工作，我只需要将数据导入其中即可，所以做展示它肯定好于我，但我要做的是在本应用中支持地图；另外一方面，也是Penhato之类定制化的意义）          
+
+   定义这样结构的意义在于对于多次查询可以自动生成SQL，
+   table &amp; key relationship : 建立一次结构，多次使用
+</code></pre>
+
+<p>记录table间关系的结构</p>
+
+<p><img src="/images/2014/07/map6.png" alt="S6" /></p>
+
+<pre><code>   这里不需要两个key，尽管对于WorkBench生产的key两者不同，但是可以通过src_table + key生成另一个key
+   比如  on mlu_city. CITY_ID = mlu_district.MLU_CITY_DISTRICT_ID ，第2个key
+
+   记录table自身结构，实际上这里的child relationship是有冗余的，但这样做的好处是输入的查询可能是对于非key column的，所以要能够根据输入column name找到相关的table，另外一方面，child_path的查询速度比直接去TableKeyRelationship查询更快因为这样提供了遍历的路径起点
+</code></pre>
+
+<p>实际上在relationship里面不需要放table_name，只需要放sub_table和key_column，其余信息可以通过sub_table和key+column获取</p>
+
+<p><img src="/images/2014/07/map7.png" alt="S7" /></p>
+
+<p>对于基本情况的测试：</p>
+
+<p><img src="/images/2014/07/map8.png" alt="S8" /></p>
+
+<p><img src="/images/2014/07/map9.png" alt="S9" /></p>
+
+<p><img src="/images/2014/07/map10.png" alt="S10" /></p>
+
+<p>针对百度地图API中提供视图center功能 （显示以center为中心，周围一定范围内的内容），必须设法把输入的限制条件作为center的有用信息
+可能输入的限制条件会在多个level上面，(district->local->detail_local，或者pay_type)，也可能和地理无关 (比如只有pay_type)，那么必须要去解析输入，这样的话，实际上输入用 &lt;table,filter> 还是太粗放了，必须将其解析为 &lt;table,operator,filter_answer>然后再把它们组织为string去SQL中查询</p>
+
+<p><img src="/images/2014/07/map11.png" alt="S11" /></p>
+
+<p>最终集成进Django界面后的效果</p>
+
+<p><img src="/images/2014/07/map12.png" alt="S12" /></p>
+
+<p>地铁距离应用</p>
+
+<pre><code>1. 建立静态地铁信息表：（已完成）
+  subway_info { 
+       line_list // record which line the subway station belongs, as there are many crossovers, it may be list
+       name
+       latitude
+       longitude
+  }          
+  存储所有station关于这些的信息
+
+2. 对于用户输入的小区
+  首先进行地理转码
+  利用经纬度进行近似比较 （城区距离），之所以要进行近似比较的主要原因是因为经纬度的计算公式比较费时，我们在这里不需要得到准确结果，只需要知道最接近的对象
+  (根据经纬度计算距离 http://www.cnblogs.com/ycsfwhh/archive/2010/12/20/1911232.html)
+
+3. 对于符合条件的地铁站调用百度API，返回距离
+</code></pre>
+
+<p><img src="/images/2014/07/map13.png" alt="S13" /></p>
+
+<p><img src="/images/2014/07/map14.png" alt="S14" /></p>
+
+<p>现在进一步支持两个小改动：</p>
+
+<pre><code>1. 显示相对于每条线路的最近距离 （因为N多的可选线路对于用户也是一个吸引点）
+2. 只显示一定距离范围内的地铁站 （比如如果5km外有个地铁站，基本可以认为是不存在地铁站的样子）
+</code></pre>
+
+<p>这两条需要对于每条线路均进行系统调用所以消耗会大一些，应该有一个开关设置是否打开它</p>
+
+<p><img src="/images/2014/07/map15.png" alt="S15" /></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-08T21:48:35+08:00" pubdate data-updated="true">Jul 8th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/08/data-quality/">
+		
+			数据质量控制</a>
+	</h2>
+	<div class="entry-content">
+		<p>在爬虫系统中，当前方式是：</p>
+
+<pre><code> 每天，按默认顺序爬虫，爬一定时间，然后把今天爬到的所有数据作为当前房屋租金价格，时间标注为爬虫时间
+</code></pre>
+
+<p>但这种做法的问题是：</p>
+
+<pre><code> 1. 可能多天爬到同一页面，但通过分析（后文）发现发布者不会通过在同一链接源上面更新价格信息而是发布新的页面来处理价格变化，因此任意天爬到的相同页面没有价值
+ 2. 某地区可能今天被爬到的是1000元的房间，昨天爬到的是10000元的房间，在地区分析上讲，不能认为租金的价格下降了90%
+</code></pre>
+
+<p>所以需要</p>
+
+<pre><code> 1. 识别不同页面表示相同信息 （这类数据保存在最低level的数据层上）
+ 2. 增量的爬取
+      问题在于数据页面上本身没有发布时间
+      解决方法：
+           选择页面上所有时间中最早的一个: 
+                对于homelink，选择评价中最早的一条的发布时间作为房屋信息的更新时间
+</code></pre>
+
+<p>以上做法的基础是：当相关人员更新房屋的价格数据时，会创建一个新的页面，而非在原页面上更新</p>
+
+<p>对于1，例如：</p>
+
+<pre><code> 其实只有链接的标题变化，两个链接表示的是同一个房源
+</code></pre>
+
+<p><img src="/images/2014/07/quality1.png" alt="S1" /></p>
+
+<p>另外发现homelink的一个数据特点：比如上面两个房屋，它们会有不同的房源编号，说明即使在homelink自己的系统里面它们也不会被认为是同一个房屋</p>
+
+<p>但还是有相当部分html里面没有时间，这时我选择的是爬取时间作为数据的来源时间</p>
+
+<p>发现更新时间根据最旧评论的方法对于某些页面是无法成功获取数据的，
+比如 <a href="http://beijing.homelink.com.cn/zufang/BJCY87462939.shtml">http://beijing.homelink.com.cn/zufang/BJCY87462939.shtml</a> ，其中没有评论，此时如果选用页面的爬取时间同样会造成数据质量不准确
+发现这些页面通常会有图片，而图片具有包含上传时间的链接，那么从最旧的时间链接中提取时间作为页面的形成时间</p>
+
+<p>正则表达式提取之</p>
+
+<p>的确还存在一部分页面既没有评论也没有房源图片，提取爬取时间
+     例如 <a href="http://beijing.homelink.com.cn/zufang/BJHD87466253.shtml">http://beijing.homelink.com.cn/zufang/BJHD87466253.shtml</a>
+     然后再根据有准确信息的页面和该页面的编号差距估算发布时间 &ndash; 粗略就比都使用爬取时间好
+对于这种数据，采用临近页面的有效时间估算该页面的产生时间</p>
+
+<p>根据flag=1的页面，更新之间flag=0的页面的date time
+     详见RevisePublishTimeInTable.py</p>
+
+<p><img src="/images/2014/07/quality2.png" alt="S2" /></p>
+
+<p>现在爬虫的最大好处是我不用担心今天爬了多少，昨天爬了多少，因为每天爬的内容不会重复，同时爬取的时间无所谓</p>
+
+<p>解决了原先的两个问题：
+     1. 爬取重复内容
+     2. 数据时间维度和爬取时间完全相关</p>
+
+<p>关于星型模型和雪花型模型的区分理解：
+     执行效率和存储效率的均衡</p>
+
+<p>虽然很多情况下，我们更关心执行效率（某种程度上说是我们写SQL的难度），但在某些业务情况下，星型模型的损失是没有必要的
+举例，
+     假如我们对租房系统的查询都是基于“苏州街”和“中关村”这个level的，那么在每条地理纬度表中都存储“北京”这个level的column，会造成一列数据多余 （假设99%的查询都是低level的，那么存储高level的数据是没有必要的），如果考虑系统每天的数据量有数百G，那么这一列的损耗要大于去在1%条件下做join带来的时间便利</p>
+
+<p>多个level的fact table
+     对于数据系统建立更困难（因为在导入数据时需要保证数据一致性），但是在使用效率上更为高效 （计算高level的数据时没有必要从底层去获取数据）</p>
+
+<p>关于ODS到WH的转换可见blog中Kettle部分。</p>
+
+<p>时间维度：年，季度，月，日，星期 （实际上我当前爬取的数据没有达到一定的积累）；上个月，上年，上星期等
+地理维度：城市，区，地，小区
+产品维度：比如几室几厅，几楼，绿化率
+销售维度：经纪人信息</p>
+
+<p>首先事实表中应该只有fact信息，其次关于如何划分维度，实际上这是一个业务决定的因素：业务上相关的内容被划分为一个维度，它对应在一张宽表上，因为同一维度的东西彼此间的交互会更多，避免join操作</p>
+
+<p>数据仓库的价值在于非规范化带来的灵活性，以及数据积累的多样性</p>
+
+<p>我觉得对于数据仓库的建立，首先应该回答问题：你希望用它来回答什么问题</p>
+
+<pre><code> 1. 房屋类型对比：某地区中不同类型的房屋的平均租赁价 （这里的类型指的是面积）
+ 2. 时间对比：某地区中不同类型的房屋租赁价的时间变化
+ 3. 地区对比：不同地区同类型的房屋
+</code></pre>
+
+<p>另外建模的基本是形成报表，而另外一方面的发展就是data visualization 数据可视化 （比如dashboard，app等等）</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-08T21:37:43+08:00" pubdate data-updated="true">Jul 8th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/07/crawler/">
+		
+			爬虫</a>
+	</h2>
+	<div class="entry-content">
+		<h2>爬虫</h2>
+
+<p>   我分析系统的数据源来自58的租房版块和链家的租房信息，实际上也对我爱我家的租房信息做了
+   简单爬取，但是因为这些数据源的爬虫从技术角度并没有革新（不存在AJAX动态加载的数据），
+   过多的数据源只是工程量上的重复（加载哪个div中的数据），因此并没有做过多的扩展。</p>
+
+<p>   我采用Java的<a href="">crawler4j</a>作为爬虫框架，<a href="http://jsoup.org/">jsoup</a>作为html解析工具。
+   因为这些网站比较规则，同时我也是入门级的爬虫学习者，因此关于爬虫和html解析本身并没
+   有很多可以说明的东西，基本上照着API文档去做就可以了。</p>
+
+<p>   爬虫数据必须按照数据库中的规范导入数据库，因此我的url解析包含以下两个模块：</p>
+
+<ol>
+<li>html parser</li>
+<li>database store</li>
+</ol>
+
+
+<p>   二者通过dict联系</p>
+
+<pre><code>参考58数据：
+Count: 1 max_floor 3
+Count: 2 greent_rate
+Count: 3 open_company
+Count: 4 pay_num 1
+Count: 5 service_company
+Count: 6 direction 南
+Count: 7 space_num 1
+Count: 8 info_source 58
+Count: 9 city 北京
+Count: 10 size 20
+Count: 11 curr_floor 2
+Count: 12 open_time 0000-00-00
+Count: 13 loan_num 1
+Count: 14 wash_num 1
+Count: 15 agent_tel
+Count: 16 Price 500
+Count: 17 houseDetailDesc 暖气热18度土桥地铁张家湾中心小学高档公寓独立卫浴出租
+Count: 18 local 梨园
+Count: 19 district 通州
+Count: 20 agent_name
+Count: 21 room_num 1
+Count: 22 local_detail 芳草园
+</code></pre>
+
+<p>   详细代码可参考<a href="https://github.com/linpingta/58RentInfoCrawler">这里</a></p>
+
+<p>当时随手写下的一些遇到的问题:</p>
+
+<p><img src="/images/2014/07/table1.png" alt="S1" />
+<img src="/images/2014/07/table2.png" alt="S2" /></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-07T23:49:51+08:00" pubdate data-updated="true">Jul 7th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/07/design/">
+		
+			租房信息数据分析</a>
+	</h2>
+	<div class="entry-content">
+		<h2>租房信息数据分析</h2>
+
+<p>租房问题特点</p>
+
+<pre><code>1. 有比较广泛的应用需求 
+2. 存在独家房源 （整合多个房源的原因）
+3. 一锤子买卖 （价格和对应条件可视为唯一的影响因素）
+</code></pre>
+
+<p>系统设计目标</p>
+
+<pre><code>1. 包含来自多源租房网站信息的数据分析
+2. 结合地图应用进行数据展示
+3. 累积时间性数据，进行时间趋势分析
+4. 由于数据可能的不准确性，自动机器人询问中介功能
+5. 结合文本分析功能，回答用户的查询问题
+</code></pre>
+
+<p>数据来源：</p>
+
+<pre><code>1. 58同城 http://bj.58.com/zufang/15912026565766x.shtml
+2. 链家 http://beijing.homelink.com.cn/zufang/BJCY86776038.shtml
+</code></pre>
+
+<p>数据特点：</p>
+
+<pre><code>优点
+
+1. 数据更新快，可以提供更充足的数据，时间相关性强使得数据更市场化
+2. 数据来源广泛
+3. 数据含义明确，存在简单的验证机制（中关村总比天通苑的租金高）
+
+缺点
+
+实际上租房信息并非足够好，因为两点：
+1. 网上信息可能不准确，中介给出陈旧信息，garbage-in,garbage-out，相比餐馆，住宿，
+在租房市场上这个问题尤为严重
+
+此问题可以通过目标4进行采用格式化的询问处理
+
+2. 评论很少，不同于”旅游类网站“，评论信息几乎不可用，而这点恰巧是最多被参考的信息
+</code></pre>
+
+<p>系统设计内容</p>
+
+<pre><code>1. 数据表设计
+2. 爬虫
+3. ODS到WH的转换
+4. 地图应用
+5. 可视化
+6. 数据分析
+7. Django网站
+</code></pre>
+
+<p>实现效果</p>
+
+<pre><code>完成设计目标中1,2,3部分    
+4，5是更高级的应用，需要更多的时间
+</code></pre>
+
+<p>为什么不做二手房市场的分析</p>
+
+<pre><code>1. 数据爬取的方法一致，可以迁移
+2. 避免重复操作，毕竟不是专业的精力有限
+3. 我有租房的需求，没有买房的需求
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-07T22:55:09+08:00" pubdate data-updated="true">Jul 7th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/07/table-design/">
+		
+			数据表设计</a>
+	</h2>
+	<div class="entry-content">
+		<h2>数据表设计</h2>
+
+<p>对于租房问题，我想最基本的分析需求包括：</p>
+
+<pre><code>(1) 查询某地区(region)某面积范围下(size)的租金价格： 此点应该是用户最开始关心的内容
+(2) 比较两地区的租金价格
+    select region_id, size, price from table where region_id = xxx and size  between x1 and x2;     
+(3) 某地区的租金随时间的变化关系 （时间维度应用）     
+(4) 房子尺寸与租金的关系，房屋朝向与租金的关系 （产品维度应用）
+</code></pre>
+
+<p>建立支持分析的数据表。对于租房信息的分析，非常适合数据仓库系统的特征</p>
+
+<pre><code>面向主题：租房
+集成：这点主要指异构数据库的数据源分析，还是推荐microstrategy的产品吧
+非更新的：中介通常会发布一个新的房源信息（新的url）而非更新已有url中数据
+时间累积的：租房系统中的数据包含同一地区不同时间的发布信息
+</code></pre>
+
+<p>按照kimball的理论，采用非规范化的、维度的描述分析问题。</p>
+
+<p>但另外一方面，对于获取的数据（网页爬取数据），通常具有较大的数据量，非规范化需要更多的存储空间（重复数据）
+因此我的设计决定对于爬取数据（ODS层）和分析数据（WH层）采用不同的数据存储方式：</p>
+
+<pre><code>在ODS层采用规范化的数据范式
+在WH层采用半规范化的存储方式
+</code></pre>
+
+<p>但这里这样做还有另外两个原因（考虑小本经营，搞两套表然后去转还是要花一些时间的）：</p>
+
+<pre><code>1. 学习Kettle，或者说ETL工具的使用
+2. 实践microstrategy的产品理念 （半规范化）
+</code></pre>
+
+<p>那么对于基本分析中的需求：
+    (1) 地理位置信息
+    (2) 小区信息
+    (3) 时间信息
+    (4) 房屋信息</p>
+
+<p>做一些简单扩展说明：</p>
+
+<pre><code>(1) 地理位置信息 ，例如 北京 - 海淀 - 西二旗 - 当代xx家园
+地理信息是一个自然的继承关系          
+ LU_CITY :  CITY_ID, CITY_NAME
+ LU_DISTRICT : CITY_ID, DISTRICT_ID, DISTRICT_NAME
+ LU_LOCAL : CITY_ID, DISTRICT_ID, LOCAL_ID, LOCAL_NAME
+ LU_DETAIL_LOCAL : CITY_ID, DISTRICT_ID, LOCAL_ID, DETAIL_LOCAL_ID, DETAIL_LOCAL_NAME
+
+(2) 小区信息：绿化率，供暖方式，开发商，开发时间， 具体地址
+ LU_DETAIL_LOCAL:  再添加 GREEN_RATE, WARM_TYPE, OPEN_TIME, OPEN_COMPANY_ID, SERVICE_COMPANY_ID
+ LU_OPEN_COMPANY:  存储比如 xxx开发商信息
+ LU_SERVICE_COMPANY: 存储比如 xxx物业信息
+
+中介信息：姓名 联系方式 简介 (与房屋是多对多关系)
+ LU_AGENT: name, tel, introduction
+
+教育信息 （尽管对租房用处不大，比如是否学区）          
+EDUCATION
+
+(3) 时间信息：
+在爬取层，时间信息并不需要过多的扩展，只需要存储房源的发布时间和爬取时间（发布时间
+用于一定时间范围内的分析，爬取时间用于比较信息准确性），所以这部分在WH转换层做说明
+在爬取层我只是把它作为最低level的事实表的一个字段做保存
+
+(4) 房屋信息
+
+    名称   租金  户型  面积  朝向 楼层  楼龄 装修时间 信息来源  付款方式
+      HOUSE_RENT_INFO ：
+           HOUSE_ID HOUSE_NAME ROOM_TYPE_ID STAIR_TYPE_ID DIRECTION_TYPE INFO_SOURCE_ID PAY_TYPE_ID
+           DECORATE_TIME 
+           RENT_M   SIZE_M          
+
+      户型信息表
+      LU_ROOM_TYPE:  ROOM_TYPE_ID, ROOM_NUM, SPACE_NUM (几室几厅)
+
+      楼层信息表
+      LU_STAIR_TYPE:  STAIR_TYPE_ID, STAIR_NUM, MOST_STAIR_NUM (6/12)
+
+      信息来源表
+      LU_INFO_SOURCE:  INFO_SOURCE_ID, INFO_SOURCE_NAME  (链家)
+
+      付款方式表
+      LU_PAY_TYPE: PAY_TYPE_ID, PAY_NUM, LOAN_NUM (押一付三)
+</code></pre>
+
+<p>从事后的完成情况看，(1),(3),(4)与应用结合比较紧密，(2)的应用做的并不好。</p>
+
+<p>一些相关的设计问题：</p>
+
+<pre><code> 1. 比如对于绿化率，有些网站会写明百分比，有些网站则是用描述性，（通常是高，好，或者无描述），实际描述的是同一个概念，但是数据的整合遇到一定困难，这应该是ETL要处理的一部分内容
+ 比如对于装修，有些网站会写2008年，有些会写五年以内，实际上是一回事，或者比如6楼中部，和3楼实际上是一回事，但是在处理前需要统一
+      或许这就是为什么数据库可以存储分类数据，而数据仓库中的数据必须经过汇总处理
+
+ 2. 对于频繁查询的东西是否需要固化信息？
+ 比如户型，单独是可以存在的，也可以存在房屋列中 -- 最终决定作为ID单独存在
+
+ 3. 如何在数据库里实现同步插入呢
+      比如对下面三个表，在选取数据时能满足join操作要求，但在插入数据时候如何方便建表？
+
+      应该写类似如下的存储过程
+
+      if city.name doesn't exist, insert city.name, auto_increment city.id,  record city.id;
+      else select city.id from LU_CITY where city.name = input_name
+
+ 4. 如何确定哪些属性是表固有，哪些属性应该分不同表 -- 
+ 关于建模的信息我拟参考ER模型相关知识
+      ER： 实体集，关系集，属性
+      是用实体集还是属性，如果是一对一关系，那么用属性，否则用实体集
+           比如身份证，年龄，作为人的属性
+      其实是实体集还是属性的分别是很模糊的，如果比较清楚的区分自然而然可以区分，而不清楚的应该本身就允许多种设计关系的存在，
+      户型可以作为房屋的属性，也可以作为单独的实体然后通过ID联系     
+
+ 5. 数据表的设计可能会随着业务的变化而变化
+      比如 学区房 信息， 当前是不需要的，但是如果是买房业务，学区房应该作为一个单独的条目存在
+
+ 6. 比如题目中的信息是很难挖掘的，因为没有规范的格式，但同时也是很重要的，因为它基本说明房屋attractive的地方
+ 例如：
+      随机抽取不同网站的题目，暂时只保存不处理
+</code></pre>
+
+<p>具体建模</p>
+
+<p><img src="/images/2014/07/table_design.png" alt="SOFTWARE_STRUCTURE" /></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-07T22:51:43+08:00" pubdate data-updated="true">Jul 7th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+<nav id="pagenavi">
+    
+        <a href="5" class="prev">Prev</a>
+    
+    
+        <a href="7" class="next">Next</a>
+    
+</nav>
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

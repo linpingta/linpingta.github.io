@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: by-talk | linpingta's blog]]></title>
+  <link href="http://yoursite.com/blog/categories/by-talk/atom.xml" rel="self"/>
+  <link href="http://yoursite.com/"/>
+  <updated>2020-06-24T10:13:34+08:00</updated>
+  <id>http://yoursite.com/</id>
+  <author>
+    <name><![CDATA[linpingta]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Back to Github]]></title>
+    <link href="http://yoursite.com/blog/2015/03/01/back-to-blog/"/>
+    <updated>2015-03-01T10:15:26+08:00</updated>
+    <id>http://yoursite.com/blog/2015/03/01/back-to-blog</id>
+    <content type="html"><![CDATA[<p>14年下半年换了一份移动广告行业的工作，生活变得紧张而充实，github基本也没有时间维护和更新了。</p>
+
+<p>从农历上算，新的一年算是刚刚开始~ 新的一年仍然希望能学习更多的东西，也希望能把更多的东西系统的整理出来，作为自己成长的总结。</p>
+
+<p>鉴于我的工作性质，博客里会定期对工作中的得失做总结，谈谈对RTB，对facebook广告优化，以及可能涉及的移动广告方方面面做一些思考（公司内部资料除外），另外对我喜欢的一些东西（C++，python,广告或者股票策略）做一些总结和分享。</p>
+]]></content>
+  </entry>
+  
+</feed>

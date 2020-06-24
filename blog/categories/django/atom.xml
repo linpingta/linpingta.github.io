@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: django | linpingta's blog]]></title>
+  <link href="http://yoursite.com/blog/categories/django/atom.xml" rel="self"/>
+  <link href="http://yoursite.com/"/>
+  <updated>2020-06-24T10:13:34+08:00</updated>
+  <id>http://yoursite.com/</id>
+  <author>
+    <name><![CDATA[linpingta]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[为Django博客添加Elasticsearch搜索]]></title>
+    <link href="http://yoursite.com/blog/2016/10/04/django-elasticsearch/"/>
+    <updated>2016-10-04T18:56:56+08:00</updated>
+    <id>http://yoursite.com/blog/2016/10/04/django-elasticsearch</id>
+    <content type="html"><![CDATA[<p>翻翻自己的markdown文件，发现上一篇关于Django的文章已经是大概两年前了。虽然文章没有更新，但由于前一阵开始把博客从Github上迁移回自己写的Django网站，相关工作还是做了一些的，这篇博客算是一篇关于Elasicsearch应用的快手博客。</p>
+
+<p>简介
+Elasticsearch是基于Luence开发的实时搜索框架，它提供分布式可扩展的服务，以RESTful API的形式提供对外服务，官网地址在<a href="https://www.elastic.co/products/elasticsearch">这里</a>。</p>
+
+<p>安装
+下载地址在<a href="https://www.elastic.co/downloads/elasticsearch">这里</a>，安装步骤也可以按官网设置，启动服务后，Elasticsearch默认通过9200端口对外提供服务，我采用的版本是2.4.1</p>
+
+<p>博客添加搜索
+这是应用的主要内容，为了达到这一目的，我们要完成以下几件事：
+1.将博客内容添加进Elasticsearch索引
+2.在博客内添加搜索访问逻辑</p>
+
+<p>假设我们的博客model如下：</p>
+
+<pre><code>class Blog(models.Model):
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    pub_date = models.DateField()
+    tags = models.ManyToManyField(Tag)
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+</code></pre>
+
+<ol>
+<li><p>添加索引
+采用Elasticsearch的<a href="https://elasticsearch-py.readthedocs.io/en/master/">Python客户端</a>，创建index名为linpingta-blog,type为article的访问索引，使用bulk方法批量建立索引：</p>
+
+<pre><code>  from elasticsearch import Elasticsearch
+  from elasticsearch import helpers
+  from blogs.models import Blog
+
+  if __name__ == '__main__':
+      es = Elasticsearch()
+
+      # create index
+      blogs = Blog.objects.all()
+      actions = []
+      count = 0
+      for blog in blogs:
+              print blog.id, blog.title.encode("utf-8")
+              action = {
+                      "_index": "linpingta-blog",
+                      "_type": "article",
+                      "_id": blog.id,
+                      "_source": {
+                              "title": blog.title,
+                              "content": blog.content,
+                              "author": blog.author.name
+                      }
+              }
+              actions.append(action)
+              count = count + 1
+              if count &gt; 500:
+                      helpers.bulk(es, actions)
+                      actions = []
+                      count = 0
+
+      if count &gt; 0:
+              helpers.bulk(es, actions)
+</code></pre>
+
+<p>索引建立完毕后，可以做简单的本地验证：(</p>
+
+<pre><code>  search_word = "python"
+  res = es.search(index="linpingta-blog", body={
+          "query": {
+                  "match":{
+                          "content": search_word
+                  }
+          }
+  })
+  print "Got %d Hits" % res["hits"]["total"]
+  for hit in res['hits']['hits']:
+          print ("%(author)s: %(title)s" % hit["_source"]).encode("utf-8")
+</code></pre></li>
+</ol>
+
+
+<p>输出结果：</p>
+
+<pre><code>Got 34 Hits
+褚桐: Python修饰器
+褚桐: excel_convertor
+...
+</code></pre>
+
+<p>2.博客内添加访问逻辑
+在相应页面内添加form，在接受form的views方法里调用Elasticsearch，再将搜索到的博客标题对应到博客，返回给展示页面</p>
+
+<p>blog.html：</p>
+
+<pre><code>&lt;form class="m-blog-search" action="/blogs/search/" method="post"&gt;
+    {\% csrf_token \%}
+    &lt;input id="search_word" type="text" name="search_word" placeholder="博客标题搜索..."&gt;
+    &lt;input type="submit" value="搜索"&gt;
+&lt;/form&gt;
+</code></pre>
+
+<p> views.py</p>
+
+<pre><code>def search(request):
+    if request.method == 'POST':
+        search_word = request.POST['search_word']
+        es = Elasticsearch()
+        res = es.search(index="linpingta-blog", body={
+                "query": {
+                        "match":{
+                                "title": search_word
+                        }
+                }
+        })
+        blogs = []
+        for hit in res['hits']['hits']:
+                title = hit['_source']['title']
+                blog = Blog.objects.get(title=title)
+                blogs.append(blog)
+        context = { 'blogs': blogs }
+            return render_to_response('blogs/search_result.html', context=context)
+    else:
+        return HttpResponseRedirect('/blogs/')
+</code></pre>
+
+<p>3.其它
+Elasticsearch自带的中文分词功能比较简陋，网上一般采用<a href="https://github.com/medcl/elasticsearch-analysis-ik">ik</a>提供中文搜索的支持。但因为网络原因，配合2.4.1版本的ik一直不能正常下载，考虑时间成本，最后只能暂时先放弃。如文章开头所说，这篇博客只是举了一个Elasticsearch的实例，没有涉及Elasticsearch的原理，这点有待以后有机会再做学习。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[django-blog]]></title>
+    <link href="http://yoursite.com/blog/2014/07/03/django-blog/"/>
+    <updated>2014-07-03T23:07:53+08:00</updated>
+    <id>http://yoursite.com/blog/2014/07/03/django-blog</id>
+    <content type="html"><![CDATA[<h1><a href="https://github.com/linpingta/my-blog-redis">django blog system</a></h1>
+
+<p>最开始的目标只是想试用下redis的威力。然后根据redis通常的应用场景（比如获取最热词条，获取
+人人关系）（这些在简单的Blog中没有用武之地）在开发过程中对设计做了一些简单扩展，博客系统实现如下
+功能：</p>
+
+<pre><code>1. 用户登录 （没有做注册页，因为也不是真的要用，但是登录需要有，因为好友关系是
+建立在当前浏览用户不同的基础上，没有当前账户的概念，很难描述好友关系）
+2. Archive展示 展示基本的blog信息，包含两部分：
+    全部blog的展示 （按照“喜欢”程度排序）
+    个人blog的展示  (按照发布时间排序)
+3. Blog详细信息，允许评论
+4. 发布新的Blog
+5. 允许对博客点赞
+6. 允许对博客收藏
+7. 允许对博客按标签过滤
+</code></pre>
+
+<p>设计的不足
+    最重要的一点是，没有和redis紧密联系。虽然redis可以作为Django的cache层，但是从网上的资料看，本身可以控制的内容极少，基本可以理解是django本身cache的一种替代。
+    所以项目可以理解为简单Django的系统</p>
+
+<pre><code>其它不足：
+1. 现在的博客系统非常简陋，有用户和评论的概念，但只允许新增博客，不允许删除和修改自己的博客
+2. Tag过滤的bug （解释见下）
+3. 标题的限制，因为要用将标题作为url跳转的参数，参数如果有空格或者其它字符可能会导致错误    
+</code></pre>
+
+<p>关于功能2：</p>
+
+<pre><code>对于首页，无论是否登录，无论是谁登录，看到的东西都是一样的
+对于自主页，首先要求用户登录，同时只显示自己的部分
+</code></pre>
+
+<p>关于功能5：</p>
+
+<pre><code>需要对于博客有一个like功能：如果通过博客里的字段实现，那么没有办法查到谁lik
+另外需要避免重复like
+</code></pre>
+
+<p>关于功能6：</p>
+
+<pre><code>需要对于author有一个收藏的功能：需要另外一个table存储author和blog，表示author喜欢的blog
+</code></pre>
+
+<p>关于功能4：</p>
+
+<pre><code>对于编辑博客，只允许有非空标题和内容者发布，对于标签，支持分号分隔不同的标签
+（目前不支持标签自动提示功能）
+</code></pre>
+
+<p>关于功能7：</p>
+
+<pre><code>支持在发布日志时对标签计数变化
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Publish Django Website]]></title>
+    <link href="http://yoursite.com/blog/2014/03/24/publish-django-website/"/>
+    <updated>2014-03-24T18:29:43+08:00</updated>
+    <id>http://yoursite.com/blog/2014/03/24/publish-django-website</id>
+    <content type="html"><![CDATA[<p>Django生产环境配置</p>
+
+<p>一. Django + Apache</p>
+
+<p>Django本身提供了一套开发测试服务器，但考虑到实际应用的需求（并发性的支持），需要将Django部署到Apache上。下面是部署的操作步骤</p>
+
+<p>假设你已经安装了<a href="https://www.djangoproject.com/download/">Django</a>和<a href="http://httpd.apache.org/download.cgi">Apache</a>,我使用的是Django1.6.2和Apache2.2</p>
+
+<p>1.安装mod_wsgi</p>
+
+<p>根据官网介绍，"The aim of mod_wsgi s to implement a simple to use Apache module which can host any Python application which supports the Python WSGI interface"。mod_wsgi主要支持Python应用在Apache上面的部署。
+在官网上支持的源代码下载<a href="http://modwsgi.googlecode.com/files/mod_wsgi-3.3.tar.gz">mod_wsgi</a>，需要自己编译产生mod_wsgi.so，如果在windows上出于方便考虑也可以直接使用编译好的<a href="http://www.lfd.uci.edu/~gohlke/pythonlibs/#mod_wsgi">二进制文件</a>
+将生成的mod_wsgi.so文件拷贝到Apache目录的module文件夹内。同时在http.conf中加载该模块</p>
+
+<pre><code>LoadModule wsgi_module modules/mod_wsgi-win32-ap22py27-3.3.so
+</code></pre>
+
+<p>2.配置Django应用
+在Django app的根目录创建一个文件夹apache，其中设置配置文件django.wsgi (也可以不建文件夹直接把django.wsgi放在外面)，django.wsgi文件内容如下：</p>
+
+<pre><code>import os
+import sys
+
+path = 'F:/GitHub/xxx' # replace this to your dir
+if path not in sys.path:
+    sys.path.append(path)
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'xxx.settings' # path of settings.py
+
+import django.core.handlers.wsgi
+application = django.core.handlers.wsgi.WSGIHandler()
+</code></pre>
+
+<p>其中需要修改的内容是path和django setting路径，这里请修改成你自己的</p>
+
+<p>3.配置http.conf
+VirtualHost是在同一台机器上搭建属于不同域名或者基于不同IP的网站，设置的标准格式如下（即http.conf中的注释内容）</p>
+
+<pre><code># &lt;VirtualHost *:80&gt;
+#    ServerAdmin webmaster@dummy-host.example.com
+#    DocumentRoot /www/docs/dummy-host.example.com
+#    ServerName dummy-host.example.com
+#    ErrorLog logs/dummy-host.example.com-error_log
+#    CustomLog logs/dummy-host.example.com-access_log common
+#&lt;/VirtualHost&gt;
+</code></pre>
+
+<p>其中ServerAdmin指定网站的域名，DocumentRoot指定网站的根目录，如果需要多个应用，那么简历多个VirtualHost。因为我并不打算在计算机上配置多个应用，因此我并没有设置VirtualHost。
+我在http.conf中的设置主要有三部分：
+1. 设置WSGIScriptAlias，WSGIScriptAlias指定包含WSGI脚本的路径，使得mod_wsgi在加载处理时能够调用python的相关应用。</p>
+
+<pre><code>WSGIScriptAlias / F:/GitHub/xxx/apache/django.wsgi
+</code></pre>
+
+<ol>
+<li><p>设置Django程序的访问路径权限</p>
+
+<p> <Directory F:/GitHub/muni.python/apache/>
+     Options +ExecCGI
+     Order deny,allow
+     Allow from all
+ </Directory></p></li>
+<li><p>设置静态文件路径及权限</p>
+
+<p> Alias /static/ F:/GitHub/xxx/static/
+ <Directory F:/GitHub/xxx/static/>
+     Order deny,allow
+     Allow from all
+ </Directory></p></li>
+</ol>
+
+
+<p>完成以上的设置，重启Apache，通过<a href="http://localhost:80%E8%AE%BF%E9%97%AE%E5%AF%B9%E5%BA%94Django">http://localhost:80%E8%AE%BF%E9%97%AE%E5%AF%B9%E5%BA%94Django</a> urls.py中 url(r'^$&lsquo;,'app.views.index&rsquo;,name=&lsquo;index&rsquo;)对应的url</p>
+
+<p>二. 外网访问</p>
+
+<p>如果只是部署好服务器，那么只能支持内网的访问，外网仍然无法进行访问。我用笔记本连家里的无线路由宽带上网，那么需要如下的配置:
+1. 设置无线路由的映射
+重启无线路由，在配置中“转发规则”->&ldquo;虚拟服务器&rdquo;->&ldquo;添加新条目"，把添加无线路由的IP （比如192.168.1.100）
+查询自己的<a href="http://www.ip138.com/">真实IP</a>，比如123.123.123.123</p>
+
+<ol>
+<li>设置非80端口
+这点操作比较简单，主要是好像对联通80等标准端口会被屏蔽，因此在http.conf中设置一个非常用的端口，比如我设置的是30509</li>
+</ol>
+
+
+<p>外网访问 <a href="http://123.123.123.123:30509/">http://123.123.123.123:30509/</a> 完成</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Django Auth]]></title>
+    <link href="http://yoursite.com/blog/2014/02/19/django-auth/"/>
+    <updated>2014-02-19T00:16:57+08:00</updated>
+    <id>http://yoursite.com/blog/2014/02/19/django-auth</id>
+    <content type="html"><![CDATA[<p>用户认证：采用Djanog内置的authorization. Django.contrib.auth</p>
+
+<p>在urls.py里实现url和view的关联</p>
+
+<pre><code>(r'^login/$','app.views.login_views',name='myLogin'),
+(r'^logout/$','app.views.logout_views',name='myLogout'),
+</code></pre>
+
+<p>在views.py中实现authorization操作</p>
+
+<pre><code>def login_views(request):
+    # user authenticate
+    user = authenticate(user=request.POST['username'],password=request.POST['password'])
+    if user is not None:
+        login(request)
+    else:
+        print '#log fail#'
+
+def logout_views(request):
+    logout(request)
+
+def index(request):
+    if request.user.is_authenticated(): # if user logged in already
+        # success operation
+    else:
+        # failed operation
+</code></pre>
+
+<p>在template中实现url跳转</p>
+
+<pre><code>
+    &lt;div class="content-head-nav"&gt;
+        &lt;form action={ url 'myLogin' } method='post' class="content-head-form"&gt;
+            { csrf_token }
+            &lt;input name='username' class="input-small" type="text" placeholder="用户名"&gt;
+            &lt;input name='password' class="input-small" type="password" placeholder="密码"&gt;
+            &lt;button class="btn btn-danger" type="submit"&gt;登录&lt;/button&gt;
+        &lt;/form&gt;
+    &lt;/div&gt;
+  
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[South]]></title>
+    <link href="http://yoursite.com/blog/2014/01/29/south/"/>
+    <updated>2014-01-29T00:57:57+08:00</updated>
+    <id>http://yoursite.com/blog/2014/01/29/south</id>
+    <content type="html"><![CDATA[<h1>Django数据迁移</h1>
+
+<p>South组件</p>
+
+<p>在使用Django model模块时，遇到的一个问题是，可能我们开始设计的ORM随着开发和功能变化不再
+符合要求，需要增加，删除或者更新字段，此时如果直接修改models.py的字段是不够的，因为会提示
+column相关的error，South的主要作用就是实现这种model结构变化后的数据库更新。</p>
+
+<p>south托管app的数据库后，再执行manage.py syncdb不会处理该app中的model，migrate命令负责
+对于托管的app进行数据库更新。</p>
+
+<p>south的使用可以分为两大类：</p>
+
+<ol>
+<li><p>models中有定义（或者没有），但数据库中没有相应的表定义</p>
+
+<p> # 初始化，创建migration目录
+ # 此操作会在数据库中创建app的models中定义的表，同时创建south_migrationhistory表
+ # 另外会在app的目录下创建一个migration的目录
+ manage.py shcemamigration appname &ndash;initial</p>
+
+<p> # 如果models发生了变化，进行更新
+ manage.py schemamigration appname &ndash;auto
+ managy.py migrate appname # 实际更新数据库</p></li>
+<li><p>models和数据库中均已有了定义</p>
+
+<p> # 此时不同于1，需要先将有表定义的数据库转为migration托管的状态
+ manage.py syncdb # 在数据库中创建south_migrationhistory
+ managy.py convert_to_south appname # 在app的目录下创建migration的目录创建表</p>
+
+<p> # 如果modesl发生了变化，和1的更新操作一致</p></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+</feed>

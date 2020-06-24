@@ -1,0 +1,153 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Django Comment  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="Django Comments (下文因为octopress的生成语法，去掉了所有%) Django自带Comments库，开启操作： 1. 在INSTALLED_APPS中添加 django.contrib.comment 和 django.contrib.site （如果不加后者会出现' &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Django Comment</h2>
+	<div class="entry-content"><h1>Django Comments</h1>
+
+<p>(下文因为octopress的生成语法，去掉了所有%)</p>
+
+<p>Django自带Comments库，开启操作：</p>
+
+<pre><code>1. 在INSTALLED_APPS中添加 django.contrib.comment 和 django.contrib.site （如果不加后者会出现'site'
+has a relation with model &lt;class 'django.contrib.sites.model.Site'&gt;）
+2. 更新数据库, manage.py syncdb
+3. 加入comments模块 (u'^comment/',include('django.contrib.comments.urls'))
+</code></pre>
+
+<p>在模板中使用comments</p>
+
+<pre><code>load comments
+</code></pre>
+
+<p>查看当前评论 （comment都是基于object存在的）</p>
+
+<pre><code>1. 查看评论数量： 
+ get_comment_count for blog as comment_count 
+&lt;p&gt;Count &lt;/p&gt;
+
+2. 显示评论
+ render_comment_list for blog 
+
+3. 自定义评论
+ get_comment_list for blog as comment_list 
+
+ for i in comment_list 
+ endfor
+
+4. 显示评论提交表单
+ get_comment_form for blog as form 
+
+&lt;form action=" comment_form_target " method="post"&gt;
+     csrf_token 
+
+&lt;/form&gt;
+</code></pre>
+
+<p>comment_form_target 会返回comment系统中的提交对应的url (实际上url对应的views，views中的操作和存储都是在
+comment系统中处理的)</p>
+
+<p>&ldquo;Setting&rdquo; object has no attribute &lsquo;SITE_ID&rsquo;</p>
+
+<pre><code>在调用 get_comment_count 的时候出现以上错误，解决方案是在settings.py里面添加SITE_ID=1
+</code></pre>
+
+<p>Missing content_type or object_pk field</p>
+
+<p><a href="http://blog.csdn.net/bigconvience/article/details/7626437">解决方法</a></p>
+
+<p>在csrf_token下面添加</p>
+
+<pre><code>     csrf_token 
+</code></pre>
+
+<p>关于Django模板配置的原则：因为Django的模板允许继承，我通常用bare_base.html来构建结构，用base.html继承
+bare_base.html来实现模块的通用功能，然后不同模块再继承base.html来实现各自不同的功能。</p>
+
+<p>默认comments提交后，会跳转到comments默认的页面，此时处理方法有两种：</p>
+
+<pre><code>1. 定制跳转页面
+在app目录下template/comment中重建跳转页面
+
+2. 强制跳转到另外一个页面
+默认的url是 /comment/posted/?c=1 所以在url中使其跳转到另外一个页面 （Django在做url
+匹配时，会跳转到第一个符合正则的页面）
+
+url(r'^comments/posted/','blog_redis.views.submit_comment',name='mySubmitComment'),
+
+然后再在submit_comment中实现跳转
+
+def submit_comment(request):
+    return HttpResponseRedirect('/blog/archive')
+</code></pre>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-01-22T23:06:03+08:00" pubdate data-updated="true">Jan 22nd, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/django/'>django</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

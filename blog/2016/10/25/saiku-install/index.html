@@ -1,0 +1,158 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>saiku安装及基础配置  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="背景 saiku是一个开源的OLAP分析平台，在我们的项目中逐渐发现，除了基础的数据报表需求，以及数据挖掘需求外，也需要考虑把部分查询交互起来，一方面可以减少报表方面的压力，另外一方面也可以快速对数据进行验证，毕竟通过界面拖拽的方法相比直接写SQL还是要方便很多的。
+在公司的另外一个项目里， &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Saiku安装及基础配置</h2>
+	<div class="entry-content"><h4>背景</h4>
+
+<p>saiku是一个开源的OLAP分析平台，在我们的项目中逐渐发现，除了基础的数据报表需求，以及数据挖掘需求外，也需要考虑把部分查询交互起来，一方面可以减少报表方面的压力，另外一方面也可以快速对数据进行验证，毕竟通过界面拖拽的方法相比直接写SQL还是要方便很多的。
+在公司的另外一个项目里，saiku已经有比较成熟的应用，因此我们选择saiku作为我们需求处理的工具（尽管客观说saiku社区版还是有自己的问题的）。</p>
+
+<h4>文档地址</h4>
+
+<pre><code>http://wiki.meteorite.bi/display/SAIK/Saiku+Features
+</code></pre>
+
+<h4>下载</h4>
+
+<p>通过wget下载最新的saiku社区版，目前版本是3.8.8：</p>
+
+<pre><code>wget www.meteorite.bi/downloads/saiku-latest.zip
+</code></pre>
+
+<h4>启动安装注册</h4>
+
+<p>下载后进入saiku-server目录，通过./start-saiku.sh可以启动saiku（同理，通过./stop-saiku.sh关闭saiku）。如果正常，启动后通过你机器的8080端口 (浏览器里visit <a href="http://your_IP:8080">http://your_IP:8080</a>)，可以访问到的saiku的登陆页面。</p>
+
+<p>默认情况下，saiku的管理员账户和密码均是admin，但直接登陆后，会提示：</p>
+
+<pre><code>Could not find license, please get a free license from http://licensing.meteorite.bi. You can upload it at http://server:8080/upload.html
+</code></pre>
+
+<p>这种情况是因为目前即使是社区版，也需要在saiku上注册：</p>
+
+<pre><code>http://licensing.meteorite.bi/licenses
+</code></pre>
+
+<p>访问上述网址，可能会提示用户登陆，需要先注册用户。
+登陆后，可以看到：</p>
+
+<pre><code>LICENCE
+    Create new licence
+    List all licences
+COMPANY
+    Create new company
+    List all companies
+</code></pre>
+
+<p>这样的目录结构，我的情况是，需要先创建一个company，然后再创建licence （company在licence中是必选的），licence的hostname就填写你机器的IP（我没有试过其它是否可以），下载licence文件到本地，然后再通过<a href="http://your_IP:8080/upload.html%E5%B0%86%E8%BF%99%E4%B8%AAlicence%E6%96%87%E4%BB%B6%E6%8F%90%E4%BA%A4%E4%B8%8A%E5%8E%BB%EF%BC%8C%E6%95%B4%E4%B8%AA%E6%B3%A8%E5%86%8C%E8%BF%87%E7%A8%8B%E5%B0%B1%E5%AE%8C%E6%88%90%E4%BA%86%E3%80%82">http://your_IP:8080/upload.html%E5%B0%86%E8%BF%99%E4%B8%AAlicence%E6%96%87%E4%BB%B6%E6%8F%90%E4%BA%A4%E4%B8%8A%E5%8E%BB%EF%BC%8C%E6%95%B4%E4%B8%AA%E6%B3%A8%E5%86%8C%E8%BF%87%E7%A8%8B%E5%B0%B1%E5%AE%8C%E6%88%90%E4%BA%86%E3%80%82</a>
+注册完成后，通过admin/admin可以登陆进入saiku。</p>
+
+<h4>端口设置</h4>
+
+<p>默认情况下，saiku启动在8080端口，如果需要更改，可以修改saiku-server/tomcat/conf/server.xml里的port配置，比如把8080全部替换为9090。</p>
+
+<h4>权限控制</h4>
+
+<p>saiku server的权限控制主要通过tomcat设置：</p>
+
+<pre><code>tomcat/webapps/saiku/WEB-INF
+</code></pre>
+
+<p>其中applicationContext-saiku.xml会引用applicationContext-spring-security.xml，后者默认会采用jdbc设置，在applicationContext-spring-security-jdbc.xml中配置dataSource：</p>
+
+<pre><code>      &lt;bean id="dataSource"                class="org.springframework.jdbc.datasource.DriverManagerDataSource"&gt;
+            &lt;property name="driverClassName" value="com.mysql.jdbc.Driver" /&gt;
+            &lt;property name="url"                        value="jdbc:mysql://your_IP:3306/admin" /&gt;
+            &lt;property name="username" value="your_name" /&gt;
+            &lt;property name="password" value="your_password" /&gt;
+    &lt;/bean&gt;
+</code></pre>
+
+<h4>数据源连接</h4>
+
+<p>在saiku中，我们需要通过预定义的Cube来指定数据访问。Cube是OLAP中的一个逻辑概念，通过对物理数据表的描述，将数据划分为dimension和metric（在saiku中为measure）。saiku中的Cube通过xml描述，具体含义可以参考<a href="http://mondrian.pentaho.com/documentation/schema.php#Cubes_and_dimensions">这里</a>，后续有机会我会详细介绍。
+因此，假设我们已经建立好Cube对应的xml，以及数据库中对应的fact表和dimension表，那么我们还需要告诉saiku如何找到它们。
+通过在tomcat/webapps/saiku/WEB-INF/classes/saiku-datasources中新建文件配置：</p>
+
+<pre><code>type=OLAP
+name=xxx
+driver=mondrian.olap4j.MondrianOlap4jDriver
+location=jdbc:mondrian:Jdbc=Jdbc:mysql://xxx/dbname;Catalog=&lt;your_xml_path&gt;
+</code></pre>
+
+<p>其中type一般是OLAP，name表示你Cube的名词，driver选择<a href="http://community.pentaho.com/projects/mondrian/">mondrian</a>，它是saiku内部使用的数据处理引擎，支持MDX查询 （从这个角度说，saiku更像是查询平台），location里分别指定xml位置和mysql连接方式。</p>
+
+<p>配置完成后，重启saiku，你需要的数据已导入。</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-10-25T11:56:21+08:00" pubdate data-updated="true">Oct 25th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/data/'>data</a>, <a class='category' href='/blog/categories/saiku/'>saiku</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

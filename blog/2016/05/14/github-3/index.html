@@ -1,0 +1,139 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>如何设置Github博客(三) 主题  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="Github Blog, GA, SEO, CNAME"> <meta name="keywords" content="Github Blog, GA, SEO, CNAME">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">如何设置Github博客(三) 主题</h2>
+	<div class="entry-content"><p>在建立Github博客后，通过xxx.github.io可以访问相应的博客目录。通过CNAME设置，我们把xxx.github.io绑定到指定的域名，然后我们又为博客添加了搜索引擎优化，数据统计支持，评论支持。。。当我们可以开心访问自己的博客时，未免还有一点小缺憾：博客的主题过于常见（想想大家都在用Octopress的默认主题），那么如何定制自己博客的主题，让自己的博客有所与众不同？</p>
+
+<p>方法一. 添加Octopress<a href="https://github.com/imathis/octopress/wiki/3rd-Party-Octopress-Themes">第三方主题</a></p>
+
+<p>在上述网页中，找到希望的主题，然后按如下方法添加主题：</p>
+
+<pre><code>$ cd octopress
+$ git submodule add GIT_URL .themes/THEME_NAME
+$ rake install['THEME_NAME']
+$ rake generate
+</code></pre>
+
+<p>Octopress默认会创建.theme文件夹，用于存储网站使用的主题。默认主题，即其中的.theme/classic的子文件夹。加载第三方模板，实际上就是把指定的模板拷贝到.theme/NEWTHEME文件夹中。</p>
+
+<p>方法二.配置Octopress<a href="http://octopress.org/docs/theme/">默认主题</a></p>
+
+<p>1.定制主题
+编辑source/_includes/custom中的内容，其中的每个html都可以视为对上层目录对应html文件内容的override编辑。例如_include/navigation.html：</p>
+
+<pre><code>&lt;ul class="subscription" data-subscription="rss"&gt;
+  &lt;li&gt;&lt;a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"&gt;RSS&lt;/a&gt;&lt;/li&gt;
+
+&lt;/ul&gt;
+
+&lt;form action="https://www.google.com/search" method="get"&gt;
+  &lt;fieldset role="search"&gt;
+    &lt;input type="hidden" name="q" value="site:yoursite.com" /&gt;
+    &lt;input class="search" type="text" name="q" results="0" placeholder="    "/&gt;
+  &lt;/fieldset&gt;
+&lt;/form&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="/"&gt;Blog&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="/archives"&gt;Archive&lt;/a&gt;&lt;/li&gt;
+</code></pre>
+
+<p></ul></p>
+
+<p>其中最后一句包含custom中的navigation.html，编辑该文件，定义导航栏中只有archives一项：</p>
+
+<pre><code>&lt;ul class="main-navigation"&gt;
+  &lt;li&gt;&lt;a href="/blog/archives"&gt;博客&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+
+<p>2.更改样式
+(1)更改layout布局
+编辑sass/custom/_layout.scss，它继承自sass/base/_layout.scss，其中包含!default的变量都可以在custom中进行override编辑。</p>
+
+<p>(2)更改color颜色
+编辑sass/custom/_colors.scss，其中定义了很多设置变量，比如：</p>
+
+<pre><code>//$header-bg: #263347; 
+</code></pre>
+
+<p>默认状态是注释的，可以取消后观察header背景的变化，也可以定义自己的header-bg，例如：</p>
+
+<pre><code>$header-bg: #004d32
+</code></pre>
+
+<p>将背景色更新为深绿色。</p>
+
+<p>方法一可以认为是一种更深层次的定制，方法二可以认为是如何创建方法一中模板的方法说明，前者的优点在于更大的变化，但问题在于很多模板已经不再维护和更新了，所以后续处理会复杂。</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-05-14T15:25:55+08:00" pubdate data-updated="true">May 14th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github/'>github</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

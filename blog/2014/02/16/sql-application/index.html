@@ -1,0 +1,97 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>SQL应用  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="参考
+http://stackoverflow.com/questions/21770257/querying-sql-server-2005 需求：
+根据original table : timemilemaker 08:00 101.2 08:45 109.8 09:15 109.8 09: &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">SQL应用</h2>
+	<div class="entry-content"><p>参考
+<a href="http://stackoverflow.com/questions/21770257/querying-sql-server-2005">http://stackoverflow.com/questions/21770257/querying-sql-server-2005</a></p>
+
+<p>需求：
+根据original table : timemilemaker
+    08:00 101.2
+    08:45 109.8
+    09:15 109.8
+    09:30 111.0
+    10:00 114.6
+生成new table 如下
+    08:00-08:45 101.1-109.8
+    08:45-09:15 109.8-109.8
+    09:15-09:30 109.8-111.0
+    09:30-10:00 111.0-114.6
+所以重点是要根据现有列插入新列，方法是用select子句，通常select子句出现在from或where里面作为derived table，但这种情况下可以出现在select里面去选择特殊行</p>
+
+<pre><code>select t1.*, (select t1.time from timemilemaker t2 where t2.time &gt; t1.time order by t1.time) as newtime ...
+</code></pre>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-02-16T19:53:32+08:00" pubdate data-updated="true">Feb 16th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/stackoverflow/'>stackoverflow</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

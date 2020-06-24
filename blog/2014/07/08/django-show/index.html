@@ -1,0 +1,133 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Web数据查询  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="前期处理的所有数据最终需要反映在数据应用中。我用Django简单搭建了一个Web数据查询页面，支持用户根据 地区（城区、区域、小区）
+时间范围
+租金限制
+楼层限制
+房屋限制
+朝向限制 进行查询。 除时间外的选择均基于jquery的select2插件， &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Web数据查询</h2>
+	<div class="entry-content"><p>前期处理的所有数据最终需要反映在数据应用中。我用Django简单搭建了一个Web数据查询页面，支持用户根据</p>
+
+<pre><code>地区（城区、区域、小区）
+时间范围
+租金限制
+楼层限制
+房屋限制
+朝向限制    
+</code></pre>
+
+<p>进行查询。</p>
+
+<p><img src="/images/2014/07/system1.png" alt="S1" /></p>
+
+<p><img src="/images/2014/07/system7.png" alt="S7" /></p>
+
+<p>除时间外的选择均基于jquery的select2插件，时间控件基于jQDateRangeSlider插件实现，主要采用Ajax做前后台的数据交互，整个交互分为“初始化”和“查询”两部分，“初始化”负责加载selector部分信息（区域和小区的信息是根据城区的选择结果通过Ajax加载的），“查询”部分执行selector选择后的SQL，并返回指定格式的json数据</p>
+
+<p><img src="/images/2014/07/system11.png" alt="S8" /></p>
+
+<p><img src="/images/2014/07/system12.png" alt="S8" /></p>
+
+<p>查询结果包括6个页面：（有一个未实现，本身想做饼状图）</p>
+
+<pre><code>1. 报表模块 ：文字角度的数据展示
+</code></pre>
+
+<p><img src="/images/2014/07/system2.png" alt="S2" /></p>
+
+<pre><code>2. 地图模块 ：显示当前查询信息的地理位置
+</code></pre>
+
+<p><img src="/images/2014/07/system8.png" alt="S8" /></p>
+
+<pre><code>3. heatmap : 以地区房屋的size和count为变量显示
+</code></pre>
+
+<p><img src="/images/2014/07/system4.png" alt="S4" /></p>
+
+<pre><code>4. 直方图：显示不同区域的价格对比
+</code></pre>
+
+<p><img src="/images/2014/07/system5.png" alt="S5" /></p>
+
+<pre><code>5. 时间序列： 显示不同区域的价格随时间的变化
+</code></pre>
+
+<p><img src="/images/2014/07/system6.png" alt="S6" /></p>
+
+<p>整体效果：</p>
+
+<p><img src="/images/2014/07/system9.png" alt="S9" /></p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-08T22:21:30+08:00" pubdate data-updated="true">Jul 8th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

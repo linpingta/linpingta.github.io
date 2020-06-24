@@ -1,0 +1,177 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Celery got an unexpected keyword argument 'socket_connect_timeout'  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="这是一次问题的错误记录，celery在机器A上可以正常工作，但在机器B上启动时 celery worker -A app --loglevel=info 会遇到如下问题： File "/usr/local/lib/python2.7/site-packages/celery-3.1.23-py2. &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Celery Got an Unexpected Keyword Argument 'Socket_connect_timeout'</h2>
+	<div class="entry-content"><p>这是一次问题的错误记录，celery在机器A上可以正常工作，但在机器B上启动时</p>
+
+<pre><code>celery worker -A app --loglevel=info
+</code></pre>
+
+<p>会遇到如下问题：</p>
+
+<pre><code>  File "/usr/local/lib/python2.7/site-packages/celery-3.1.23-py2.7.egg/celery/worker/consumer.py", line 376, in connect
+    callback=maybe_shutdown,
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 369, in ensure_connection
+    interval_start, interval_step, interval_max, callback)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/utils/__init__.py", line 246, in retry_over_time
+    return fun(*args, **kwargs)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 237, in connect
+    return self.connection
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 742, in connection
+    self._connection = self._establish_connection()
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/connection.py", line 697, in _establish_connection
+    conn = self.transport.establish_connection()
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/virtual/__init__.py", line 809, in establish_connection
+    self._avail_channels.append(self.create_channel(self))
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/virtual/__init__.py", line 791, in create_channel
+    channel = self.Channel(connection)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 464, in __init__
+    self.client.info()
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/utils/__init__.py", line 325, in __get__
+    value = obj.__dict__[self.__name__] = self.__get(obj)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 908, in client
+    return self._create_client(async=True)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 861, in _create_client
+    return self.AsyncClient(connection_pool=self.async_pool)
+  File "/usr/local/lib/python2.7/site-packages/kombu-3.0.35-py2.7.egg/kombu/transport/redis.py", line 882, in __init__
+    self.connection = self.connection_pool.get_connection('_')
+  File "/usr/local/lib/python2.7/site-packages/redis/connection.py", line 455, in get_connection
+    connection = self.make_connection()
+  File "/usr/local/lib/python2.7/site-packages/redis/connection.py", line 464, in make_connection
+    return self.connection_class(**self.connection_kwargs)
+TypeError: __init__() got an unexpected keyword argument 'socket_connect_timeout'
+</code></pre>
+
+<p>网上关于此问题的主要讨论来自：
+<a href="https://github.com/celery/celery/issues/2903">https://github.com/celery/celery/issues/2903</a></p>
+
+<p>但感觉大多数讨论并没有指明问题的解决方法。重新查看错误日志，看到问题最终出现在 /redis/connection.py中，即python redis客户端模块中，其中Connection类的构造函数如下：</p>
+
+<pre><code>class Connection(object):
+"Manages TCP communication to and from a Redis server"
+description_format = "Connection&lt;host=%(host)s,port=%(port)s,db=%(db)s&gt;"
+
+def __init__(self, host='localhost', port=6379, db=0, password=None,
+             socket_timeout=None, encoding='utf-8',
+             encoding_errors='strict', decode_responses=False,
+             parser_class=DefaultParser):
+    self.pid = os.getpid()
+    self.host = host
+    self.port = port
+    self.db = db
+    self.password = password
+    self.socket_timeout = socket_timeout
+    self.encoding = encoding
+    self.encoding_errors = encoding_errors
+    self.decode_responses = decode_responses
+    self._sock = None
+    self._parser = parser_class()
+</code></pre>
+
+<p>再对比可以运行机器中相应源代码：</p>
+
+<pre><code>class Connection(object):
+    "Manages TCP communication to and from a Redis server"
+    description_format = "Connection&lt;host=%(host)s,port=%(port)s,db=%(db)s&gt;"
+
+    def __init__(self, host='localhost', port=6379, db=0, password=None,
+                 socket_timeout=None, socket_connect_timeout=None,
+                 socket_keepalive=False, socket_keepalive_options=None,
+                 retry_on_timeout=False, encoding='utf-8',
+                 encoding_errors='strict', decode_responses=False,
+                 parser_class=DefaultParser, socket_read_size=65536):
+        self.pid = os.getpid()
+        self.host = host
+        self.port = int(port)
+        self.db = db
+        self.password = password
+        self.socket_timeout = socket_timeout
+        self.socket_connect_timeout = socket_connect_timeout or socket_timeout
+        self.socket_keepalive = socket_keepalive
+        self.socket_keepalive_options = socket_keepalive_options or {}
+        self.retry_on_timeout = retry_on_timeout
+        self.encoding = encoding
+        self.encoding_errors = encoding_errors
+        self.decode_responses = decode_responses
+</code></pre>
+
+<p>可以看到在新版本的redis中才会支持socket_connect_timeout字段。</p>
+
+<p>因为问题的解决办法是：升级redis到2.10以上版本</p>
+
+<pre><code>pip install redis --upgrade
+</code></pre>
+
+<p>这个解决方案我也补充在 <a href="https://github.com/celery/celery/issues/2903">https://github.com/celery/celery/issues/2903</a> 的最后了。s</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-06-24T10:52:17+08:00" pubdate data-updated="true">Jun 24th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/celery/'>celery</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

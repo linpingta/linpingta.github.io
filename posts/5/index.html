@@ -1,0 +1,1236 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="只要是稍微大一些的python项目，肯定就不会只包含一个python文件。这篇博客就是关于项目中python文件管理的一些概念说明。 _init_.py文件
+在directory中包含此文件，表示这个directory是一个module。假设我们的directory名称为lib, &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/05/28/python-path-questions/">
+		
+			Python 路径相关的小问题</a>
+	</h2>
+	<div class="entry-content">
+		<p>只要是稍微大一些的python项目，肯定就不会只包含一个python文件。这篇博客就是关于项目中python文件管理的一些概念说明。</p>
+
+<ol>
+<li><p>_<em>init_</em>.py文件
+在directory中包含此文件，表示这个directory是一个module。假设我们的directory名称为lib, 里面包含子文件file1.py, file2.py，那么如果想在其它文件中访问file1.py中的类或者函数，需要两个步骤：</p>
+
+<ol>
+<li>添加lib目录为module，即在其中创建一个空的<strong>init</strong>.py文件</li>
+<li>添加lib目录到sys.path，使得调用对象可以在搜索目录中找到此模块</li>
+</ol>
+</li>
+</ol>
+
+
+<p>一旦目录可访问，调用者可以通过</p>
+
+<pre><code>from file1 import * 
+</code></pre>
+
+<p>来访问其中定义的函数和类</p>
+
+<p>2.sys.path
+直接在py文件中打印sys.path，可能会得到类似下面的目录列表：</p>
+
+<pre><code>['/home/test/path_test', '/usr/local/lib/python2.7/dist-packages/mccabe-0.3.1-py2.7.egg', '/usr/local/lib/python2.7/dist-packages/pep8-1.5.7-py2.7.egg', '/usr/local/lib/python2.7/dist-packages/pyflakes-1.0.0-py2.7.egg', '/usr/lib/python2.7', '/usr/lib/python2.7/plat-x86_64-linux-gnu', '/usr/lib/python2.7/lib-tk', '/usr/lib/python2.7/lib-old', '/usr/lib/python2.7/lib-dynload', '/usr/local/lib/python2.7/dist-packages', '/usr/lib/python2.7/dist-packages', '/usr/lib/python2.7/dist-packages/PILcompat', '/usr/lib/python2.7/dist-packages/gtk-2.0', '/usr/lib/pymodules/python2.7']
+</code></pre>
+
+<p>其中第一项（即sys.path[0])是调用文件的父目录，后面的所有项来自PYTHONPATH环境变量的定义。
+仍然举上面lib的例子，如果调用文件test.py和lib目录平级，那么因为sys.path[0]包含了当前目录，通过</p>
+
+<pre><code>from lib.file1 import *
+</code></pre>
+
+<p>可以直接访问file1中定义的类和函数。
+但是如果调用文件test.py定义在一个与lib目录平级的目录（比如bin目录）中，那么直接按上面书写，因为lib目录并不是bin目录的子目录，因此python解释器不知道如何找到该文件，返回错误。
+此时的解决方法是考虑直接把lib目录添加到sys.path中，类似如下：</p>
+
+<pre><code>import sys, os
+basepath=os.path.abspath(os.path.dirname(sys.path[0]))
+sys.path.append(os.path.join(basepath, 'lib'))
+</code></pre>
+
+<p>3.sys和os.的path函数
+sys模块相关函数主要是与python解释器交互，os模块相关函数主要是与操作系统交互。os本身包含很多功能，比如调用shell脚本（os.system），这里只限制在os.path常用几个函数的功能上进行说明。</p>
+
+<p>分组来看：
+(1).os.path.abspath返回当前路径的绝对路径；os.path.relpath返回当前路径的相对路径。
+(2).os.path.split(a)将当前路径拆分为两个部分，前面的是文件的路径，后面的是文件名（也可能是目录和子目录）；os.path.join正相反；os.path.dirname返回的是其中前面的部分，os.path.basename返回的是其中后面的部分。
+(3).os.path.isfile判断输入字符串是否是一个文件；os.path.isdir判断输入字符串是否是一个目录；os.path.exists判断路径是否存在
+(4).os.path.getmtime获取文件最后一次更新的时间；os.path.getatime获取文件最后一次访问的时间。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-05-28T16:39:48+08:00" pubdate data-updated="true">May 28th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/04/24/nginx/">
+		
+			Nginx简单配置</a>
+	</h2>
+	<div class="entry-content">
+		<p><a href="http://nginx.org/en/">nginx</a>作为世界上最大的Http服务器之一，在各个领域有广泛的应用。。。貌似是废话，这篇blog只是想从最功利的应用角度说明怎么搞一个nginx server，然后让它为我们的网站服务，关于nginx的服务原理（非阻塞，多进程）等，网上有很多优秀的文章介绍，不在本文涉及范围内。</p>
+
+<p>下文操作均以Ubuntu14.04为例</p>
+
+<p>一. 安装与启动</p>
+
+<p>安装：</p>
+
+<pre><code>apt-get install nginx
+</code></pre>
+
+<p>启动：</p>
+
+<pre><code>service nginx start/stop/restart
+</code></pre>
+
+<p>启动成功后，可以通过 <a href="http://yourIP">http://yourIP</a> 访问nginx默认页面</p>
+
+<p>安装完毕后，nginx默认是启动的 （通过 ps -aux | grep nginx 可以找到对应的master和worker进程），但需要注意的是，nginx默认监听80端口，如果服务器上已安装了apache且已启动，在访问<a href="http://yourIP">http://yourIP</a> 时将得到apache目录，而非nginx目录。</p>
+
+<p>二. 页面服务</p>
+
+<p>nginx服务路径在 /etc/nginx下，假设你希望创建example.com/index.html提供对外服务，可以按以下步骤配置：</p>
+
+<p>在/var/www下创建目录：</p>
+
+<pre><code>mkdir -p /var/www/example.com/html/index.html
+</code></pre>
+
+<p>在index.html中编辑内容：</p>
+
+<pre><code>&lt;html&gt;
+    &lt;head&gt;
+            &lt;title&gt;Welocme to Example&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+            &lt;h1&gt;Welcome to Example Body&lt;/h1&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>保证目录可被访问：</p>
+
+<pre><code>chmod 755 /var/www
+chown -R $USER:$USER /var/www/example.com/html
+</code></pre>
+
+<p>拷贝/etc/nginx/sites-available/defaults为新页面的配置文件：</p>
+
+<pre><code>cp /etc/nginx/sites-available/default /etc/nginx/sites-available/example.com
+</code></pre>
+
+<p>编辑配置文件example.com
+1. 通过不同端口提供服务
+假设以8081作为对外服务的端口：</p>
+
+<p>默认配置：</p>
+
+<pre><code>    listen 80 default_server;
+    listen [::]:80 default_server ipv6only=on;
+
+    root /usr/share/nginx/html;
+</code></pre>
+
+<p>更新配置：</p>
+
+<pre><code>    listen 8081 default_server;
+    listen [::]:8081 default_server ipv6only=on;
+
+    root /var/www/example.com/html;
+    index index.html index.htm;
+</code></pre>
+
+<ol>
+<li><p>通过不同domain提供服务
+在保证域名有效的前提下
+ 默认配置</p>
+
+<p> root /usr/share/nginx/html;
+ server_name localhost;</p></li>
+</ol>
+
+
+<p>更新配置</p>
+
+<pre><code>root /var/www/example.com/html;
+server_name example.com www.example.com;
+</code></pre>
+
+<p>更新后将sites-available中的example.com软链到sites-enable中，重启服务。</p>
+
+<p>三. 反向代理
+nginx和apahce作为世界上最流行的服务器，在工作方式上不同，在使用场景上也是各有利弊。。一种常用的服务方式是nginx在前端提供静态文件服务，同时作为反向代理连接后端的apache提供动态服务。具体做法如下：</p>
+
+<p>假设你的apache服务在8080端口，修改 location / 内容如下：</p>
+
+<pre><code>    location / {
+            # First attempt to serve request as file, then
+            # as directory, then fall back to displaying a 404.
+            try_files $uri $uri/ =404;
+            # Uncomment to enable naxsi on this location
+            # include /etc/nginx/naxsi.rules
+            proxy_pass http://localhost:8080;
+            proxy_read_timeout 300;
+            proxy_connect_timeout 300;
+            proxy_redirect     off;
+
+            proxy_set_header   X-Forwarded-Proto $scheme;
+            proxy_set_header   Host              $http_host;
+            proxy_set_header   X-Real-IP         $remote_addr;
+    }
+</code></pre>
+
+<p>此时如果遇到css/js没有加载的情况，需增加对应的location对象：</p>
+
+<pre><code>    location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
+    {
+      root PARENT_PATH_FOR_RESOURCE; # 例如 /var/www/example.com/
+      if (-f $request_filename) {
+            expires 1d;
+            break;
+      }
+    }
+
+    location ~ .*\.(js|css)$
+    {
+      root PARENT_PATH_FOR_RESOURCE;
+      if (-f $request_filename) {
+            expires 1d;
+            break;
+      }
+    }
+</code></pre>
+
+<p>四. 其它说明</p>
+
+<p>1.nginx -s signal : (stop/quit/reload/reopen):
+    nginx -s quit : 等待当前任务执行完毕后结束nginx进程</p>
+
+<p>nginx模块/变量定义： 以空格分隔，简单赋值以分号结尾，block赋值以{}包含内容。</p>
+
+<p>2.模块包含关系：
+    配置文件中最外面的模块称为main模块，http和events模块包含于main模块，server模块包含于http模块，location模块包含于server模块。</p>
+
+<p>3.URL Mapping</p>
+
+<p>/ 表示最宽泛的匹配，任意其它不匹配的url请求都会请求到/data/www中：</p>
+
+<pre><code>location / {
+    root /data/www;
+}
+</code></pre>
+
+<p>/images/ 表示请求中/images/的内容均会发送到 /data/images中：</p>
+
+<pre><code>location /images/ {
+    root /data/images;
+}    
+</code></pre>
+
+<p>~ .(gif|jpg|png)$ 表示用正则匹配，包含以上后缀的文件请求会被用在 /data/images 中查找：</p>
+
+<pre><code>location ~ \.(gif|jpg|png)$ {
+    root /data/images;
+}
+</code></pre>
+
+<p>proxy_pass 用于代理服务，向根目录的请求会被转发到本机的8080端口</p>
+
+<pre><code>location / {
+    proxy_pass http://localhost:8080;
+}
+</code></pre>
+
+<p>这篇blog几乎没有涉及任何nginx服务原理方面的介绍，也没有涉及nginx模块配置的功能，并非说明这些内容不重要（恰恰相反），主要是因为网上已经有很多详细的介绍，本文只是立足于糙快猛的使用nginx和看到效果，但最终要想深入了解nginx和使用好它，还是要多阅读经典的内容，部分blog:</p>
+
+<ol>
+<li><a href="http://nginx.org/en/docs/">http://nginx.org/en/docs/</a></li>
+<li><a href="https://www.digitalocean.com/community/tags/nginx?type=tutorials">https://www.digitalocean.com/community/tags/nginx?type=tutorials</a></li>
+</ol>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-04-24T19:53:09+08:00" pubdate data-updated="true">Apr 24th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/nginx/'>nginx</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/04/11/advertise-tiny-topic/">
+		
+			原生广告与信息流广告</a>
+	</h2>
+	<div class="entry-content">
+		<p>上周清明放假，处理事情比较多，没有写博客。最近两周主要在修复和改进之前系统的问题，同时开放新的自动投放系统（还花了一些时间弄股票），技术上并没有很深入的研究哪个问题（看看Django可能算个问题），想想本周还是需要补充博客的内容，所以相对务虚一些，对原生广告和信息流广告做一些调研吧。</p>
+
+<p>从<a href="http://wiki.mbalib.com/wiki/%E5%8E%9F%E7%94%9F%E5%B9%BF%E5%91%8A">wiki</a>上看，原生广告是一种<em>营销理念</em>，而非<em>广告形式</em>，它讲的是将广告内容与网站和app本身的设计相结合，使得广告成为网站和app的一部分。
+<em>营销理念</em>在这里是重要的，我想这也是去解释原生广告和信息流广告区别的入口：它们是在不同层次描述问题（就像HTTP和TCP一样），原生广告是一种理念，而信息流广告是它的一种具体实现形式，而且从某种程度看，是目前为主最佳的实现形式。
+从广告诞生之日起，如何能够让用户接受感知广告而不产生反感就是广告公司研究的重点。我们评价一个广告创意的好坏，尤其在投放前评价，主要的依据就是它是否会引起用户的反感。广告在一定程度上是对用户原先行为的打断，不论是电视上（当你在看电视剧时要插播的电视广告），还是在手机上（当你打开游戏或过了一关后出现的插屏广告），用户对于它们本身的看法一定是负向的，就如同到医院的人总是心情不好的，这种不好并非医生引起，但很大程度上要医生去承担。。，在如何降低用户的负向情绪上，移动广告面临很大的问题，这也是最开始移动开发面临的变现问题之一。Banner，插屏和开屏是当前解决这一问题的主流尝试，某种程度上也提供了移动开发的初始动力，但不可否认的是，Banner广告对于用户体验是一种破坏，想象下在一个阅读应用中，每次翻页都会在下面弹出一条广告，它并不会吸引用户的眼光，而且在不合理的页面设计下会让用户对应用产生反感。所以，从这点来讲，移动广告变现方式的探索并没有走到终点。</p>
+
+<p>回到原生广告的概念上，把广告和媒体内容相结合，在移动端有限的屏幕尺寸上变得更为可能。信息流广告可以认为是这方面的具体实践者，在国外有Facebook，有Twitter，还有像Pinterest这样将广告与图片应用结合的网站，在国内比如新闻客户端，比如微博和微信，另外据说一些类似手机助手类的工具也会在应用中插入广告。</p>
+
+<p>一点干货是，从实际的广告投放角度看，信息流广告（这里主要指今日头条提供的Adx）在单位应用安装成本上要优于其它Adx，而Facebook移动应用推广的成本要更低（这里的比较并不完全科学，因为Facebook的移动应用是投放给国外用户，而如头条这样的Adx则是投放给国内用户）。</p>
+
+<p>从另外一个方面讲，信息流广告也有它自身的限制，那就是它只能应用于内容类应用，无论是Facebook还是新闻客户端，它作为媒体本身的主题是提供富文本的内容，那么广告作为一种内容载体插入其中是很方便的（比如头条的大图广告），但像游戏或桌面服务类应用，媒体本身并不能提供这样的载体，至少目前还没有看到类似信息流这样成功的案例。</p>
+
+<p>视频是另外一个特殊的例子，在这方面前贴广告其实有不错的表现（视频就相当于是看电视嘛），另外比较有趣的是我在爱奇艺的视频里见到过“你看到主人公的衣服好看，视频会显示对应的淘宝链接”，不知道效果如何。</p>
+
+<p>或许将来，我们也可以在游戏里遇到游戏人物穿的是某品牌的衣服，喝的是某品牌的水，广告真的可以出现在游戏内容中（游戏的互动性要远远强于社交内容类应用），移动广告的形式远远还没有发展到终点~</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-04-11T11:20:42+08:00" pubdate data-updated="true">Apr 11th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/advertise/'>advertise</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/03/28/state-pattern/">
+		
+			State Pattern</a>
+	</h2>
+	<div class="entry-content">
+		<p>今天要介绍的问题是工作中遇到的一处设计问题。简单来说，我们希望模拟用户的一系列行为，一个例子可以理解为一个人从公司到家，可以先做地铁再做公交，也可以先做公交再走路甚至在骑车，或者中途要做什么事情，必须经过某点，这里的用户行为可能是固定模式，但是在不同条件下有不同表现的，而用户的行为，或者说决策是需要支持灵活输入的，而每种行为被拆分为一系列步骤后，步骤间的转换也是灵活可配置的。这里的例子多少有点奇怪，但由于公司工作的特点，我想重点说明的并不是业务逻辑，而是如何去实现一种状态机。</p>
+
+<p>关于这个问题，设计模式中的状态模式可以大显身手了。</p>
+
+<p>当应用程序开发时，可能会根据不同的情况作出不同的处理，最简单的处理方法是用if &hellip; else 语句来囊获所有的处理情况。然而，如果系统非常复杂（或者说用户有不断提出新条件的需求），总不能每个新需求就在代码里新加一个else吧，或者说如果用户需求是系列性彼此依赖的（完成一系列行为要做A，B，C），那么用else无法解决问题。</p>
+
+<p>状态模式立足于灵活的解决上述问题，提供系统更强的扩展性，关于这部分的例子比如<a href="http://alaric.iteye.com/blog/1938400">红绿灯</a>或者<a href="http://blog.csdn.net/hguisu/article/details/7557252">电梯</a></p>
+
+<p>给出我的一个python实现：</p>
+
+<pre><code>class Context(object):
+    def __init__(self):
+        self.status = ConcreteStatusA()
+        self.value = 1
+    def set_status(self, status):
+        self.status = status
+    def change_status(self):
+        return self.status.change_status(self)
+    def operate(self):
+        return self.status.operate(self)
+
+class Status(object):
+    def __init__(self):
+        pass
+    def change_status(self, group):
+        pass
+    def operate(self, group):
+        pass
+
+class ConcreteStatusA(Status):
+    def __init__(self):
+        pass
+    def change_status(self, group):
+        print 'Call Status A'
+        if group.value == 1:
+            group.value = 2
+            group.set_status(ConcreteStatusB())
+            return True
+        return False
+    def operate(self, group):
+        print 'Operate A'
+        if group.value == 1:
+            print group.value
+
+class ConcreteStatusB(Status):
+    def __init__(self):
+        pass
+    def change_status(self, group):
+        print 'Call Status B'
+        return False
+    def operate(self, group):
+        print 'Operate B'
+</code></pre>
+
+<p>感觉设计模式在处理实际问题中是有很大作用的，之前做广告创建时用到了工厂，上周文章中Manager.dict用到了代理模式，作为一个非java程序员，今天又了解了spring设计中的控制反转，仍然有很多需要学习和实践。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-03-28T11:04:40+08:00" pubdate data-updated="true">Mar 28th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/design-pattern/'>design pattern</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/03/21/python-manager-dict/">
+		
+			Python Manager Dict</a>
+	</h2>
+	<div class="entry-content">
+		<p>今天想介绍的是Python Manager dict，原因在于工作中遇到的一个问题，它的抽象化模式类型：</p>
+
+<pre><code>from multiprocessing import Manager
+def f(d):
+    d[1] = 1
+    d[2] = {}
+    d[2][2] = 3
+if __name__ == '__main__':
+    d = Manager.dict() # 进程间共享dict
+    p = Prcoess(target=f, args=(d,))
+    p.start()
+    p.join()
+    print d
+</code></pre>
+
+<p>我们期望的输出是：</p>
+
+<pre><code>#output d: {1:1, 2:{2:3}}
+</code></pre>
+
+<p>但实际的输出是：</p>
+
+<pre><code>#output d: {1:1, 2:{}}
+</code></pre>
+
+<p>在实际问题中，因为涉及到进程间的数据共享，以及对于共享dict的添加和删除元素操作，然而，最终的输出并不符合设想，这里是什么问题呢？</p>
+
+<p>首先，先简单介绍下Python中在进程间共享状态的方式：
+    最常用的进程通信方式是Queue或者Pipe，共享状态并不是一种好的并行编程方式(when doing concurrent programming, it&rsquo;s usually best to avoid using shared state as far as possible)，但如果需要支持这种方式，Python提供了两种基础方法：
+    (1) shared memory 共享内存
+    (2) server process 服务进程</p>
+
+<p>其中第一种方式例子如下：（支持Value和Array）</p>
+
+<pre><code>from multiprocessing import Process, Value, Array
+def f(n, a):
+    n.value = 3.1415927
+    for i in range(len(a)):
+        a[i] = -a[i]
+if __name__ == '__main__':
+    num = Value('d', 0.0)
+    arr = Array('i', range(10))
+    p = Process(target=f, args=(num, arr))
+    p.start()
+    p.join()
+    print num.value
+    print arr[:]
+</code></pre>
+
+<p>第二种方式就是本文提到的Manager.dict，首先通过Manager对象用代理模式产生dict，它具有dict的特性，同时在进程间共享，相比shared memory, 它在数据结构上有更大的灵活性，但代价是速度会更慢。</p>
+
+<p>这里，Manager对象用代理模式产生dict，这也是最开始问题的根源，代理模式是设计模式的一种，它为其它对象提供一种代理以控制对象的访问，比如需要控制真实对象的访问权限或者在真实对象调用前做一些处理。Manager.dict本身是一个proxied object。</p>
+
+<p>关于这个问题的详细讨论可见<a href="https://bugs.python.org/issue6766">这里</a>，我对这个问题的理解是，如果你是对Manager.dict做赋值操作，那么这种操作是在真实对象上发生的，而如果你对Manager.dict的值对象做操作（删除，添加），那么dict克隆了一个新对象，所有的操作均发生在新对象上，而原始对象不会被修改。</p>
+
+<p>变通方法：
+如上所述，赋值操作是发生在真实对象上的，因此可以先对希望的对象做操作，然后再赋值就好了。。回到最初的问题，解决方案：</p>
+
+<pre><code>def f(d):
+    d[1] = 1
+    t = {}
+    t[2] = 3
+    d[2] = t
+</code></pre>
+
+<p>其实有点麻烦的，但也是暂时的处理方案了。。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-03-21T09:56:44+08:00" pubdate data-updated="true">Mar 21st, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/03/14/decorator-in-python/">
+		
+			Python修饰器</a>
+	</h2>
+	<div class="entry-content">
+		<p>一. 定义</p>
+
+<p>Python修饰器(Decorator)是一种高级Python语法。在设计模式中，修饰器模式使得函数保持原有的对外接口，同时可以动态的添加新的功能，比较常见的例子是Java中IO Stream的操作。关于Python Decorator是否与修饰器模式相同在<a href="http://www.artima.com/weblogs/viewpost.jsp?thread=240808">此文</a>中有讨论，作者认为Python Decorator更类似C中的宏，原文：</p>
+
+<pre><code>Indeed, you can use Python decorator to implement the Decorator pattern, but that's an extremely limited use of it. Python decorator, I think, are best equaled to macros.
+</code></pre>
+
+<p>我的理解是作者的意思是Python Decorator可以实现一些内置的函数流程控制，不过这点并没有理解很深刻。</p>
+
+<p>从Stackoverflow排名很高的一篇<a href="http://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python/1594484#1594484">提问</a>看，由于Python中一切皆对象的设计原则，函数同样是一种对象，因此允许function call function的形式存在，也就是出于原函数功能不可改变的设计考虑（也可能是没有源码），提供增强版功能的调用：(本文大部分实例来自stackoverflow问题答复，有兴趣可详细参考)</p>
+
+<pre><code>def doSomethingBefore(func): 
+    print "I do something before then I call the function you gave me"
+print func()
+doSomethingBefore(scream)
+</code></pre>
+
+<p>而decorator实际是把上述的手写编码调用方式修改为一种更为优雅的方式：</p>
+
+<pre><code>def doSomethingBefore(func):
+    def _doSomething(*args, **kw):
+        # do sth
+        func(*args, **kw)
+    return _doSomething
+@doSomethingBefore
+my_func()
+</code></pre>
+
+<p>二. 语法</p>
+
+<p>1.最简单的语法（摘自stackoverflow上答复）</p>
+
+<pre><code># The decorator to make it bold
+def makebold(fn):
+    # The new function the decorator returns
+    def wrapper():
+        # Insertion of some code before and after
+        return "&lt;b&gt;" + fn() + "&lt;/b&gt;"
+    return wrapper
+
+    @makebold
+    def say():
+        return "hello"
+    print say()
+    # output: &lt;b&gt;hello&lt;/b&gt;
+</code></pre>
+
+<p>代码是自解释的。</p>
+
+<p>2.传入参数</p>
+
+<pre><code>def decorator(function):
+    def _decorate(name, *args, **kw):
+        print 'Decorate  %s Begin' % name
+        res = function(*args, **kw)
+        print 'Decorate  %s End' % name
+        return res
+    return _decorate
+def f(count):
+    print 'Make Count %d' % count
+@decorator
+def f2(count):
+    print 'Make Count %d' % count
+f(10)
+print '\n'
+f2('linpingta', 10)
+</code></pre>
+
+<p>传入name参数作为decorator处理，其余参数作为function本身处理应用，这里用变参的原因是可能decorator需要去做的是一段公共的操作，具体可见“三。场景及其它”，不需要为每个函数实现一段单独的参数传递。</p>
+
+<p>3.应用于类函数</p>
+
+<p>具体见stackverlow的回答，主要要在decorator中加入self参数。</p>
+
+<p>三. 场景及其它</p>
+
+<p>在我工作中遇到的一个decorator应用场景是，我在对Facebook广告API调用时，由于网络以及各种原因，都可能出现失败的情况。如果这种失败是由于逻辑设计问题，那么需要相关的错误处理，但如果这种错误由于网络连接操作（比如短时间内Facebook API调用过于频繁），那么经过一段时间的等待重试就可以解决。而且网络状态或者API调用的错误是无法预知的，因此重试机制有必要存在。
+在这里的设计中，我使用了decorator实现Facebook侧和数据库侧的重试逻辑，同时考虑API参数彼此不同，因此使用变参形式（见二.2）</p>
+
+<p>从Python语言本身看，比如@staticmethod, @classmethod
+从Django应用看，它的caching机制和权限控制是通过decorator实现的</p>
+
+<p>总体而言，Decorator是一种Python常用的工具，可以在需要的时候考虑它。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-03-14T09:26:59+08:00" pubdate data-updated="true">Mar 14th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/03/07/python-facebook-ads-api-introduction/">
+		
+			Python Facebook Ads Api简介</a>
+	</h2>
+	<div class="entry-content">
+		<p>一. Facebook Ads功能简介</p>
+
+<p>据报道，Facebook作为世界最大的社交网站，其绝大部分收入均来自广告。不同于一般移动端/PC广告的常见形式，Facebook广告采用信息流方式(News Feed)推送广告，这一点上，在国内相似的公司还有微博，人人，QQ，头条等，另外多说一点，尽管我并没有深入理解这种广告形式的特点，但从投放效果看，信息流广告作为一种较新兴的广告模式有更好的转化指标，可能在将来会更加吸引广告主的注意。</p>
+
+<p>Facebook具有自己的广告管理平台，但在其生态系统下，同样生存着很多相关应用的公司。从广告角度讲，Facebook提供了广告对外的访问接口（目前主流的有直接拼Http请求，PHP SDK和Python SDK三种，javascript SDK在部分类型的应用中也有实现），给广告主或代理公司更多的控制权限。</p>
+
+<p>通过<a href="https://developers.facebook.com/">Ads API</a>, 用户可以实现:
+(1)<a href="https://developers.facebook.com/docs/marketing-api/adcreative/v2.2">创意</a>的创建
+(2)广告的创建（在Facebook的层级中广告包含<a href="https://developers.facebook.com/docs/marketing-api/adcampaign/v2.2">camapign</a>, <a href="https://developers.facebook.com/docs/marketing-api/adset/v2.2">adset</a>和<a href="https://developers.facebook.com/docs/marketing-api/adgroup/v2.2">ad</a>三个级别），删除，修改和读取
+(3)投放效果的<a href="https://developers.facebook.com/docs/marketing-api/adstatistics/v2.2">统计</a>
+(4)<a href="https://developers.facebook.com/docs/marketing-api/adreportstats/v2.2">报表</a>的支持</p>
+
+<p>关于Facebook Ads中对象的概念，可参看<a href="https://developers.facebook.com/docs/marketing-api/getting-started">Getting started on the Ads Management API</a></p>
+
+<p>阅读上面的内容，大致可以了解Facebook广告体系中的基本概念，但Facebook广告投放还有很多有趣的而我没有深入了解的概念，比如<a href="https://www.facebook.com/pages/How-to-Make-a-fanpage/154116888814">粉丝页</a>，比如<a href="https://developers.facebook.com/docs/marketing-api/lookalike-audience-targeting/v2.2">相似用户定向</a>，以及需要时间说明的概念，比如<a href="https://developers.facebook.com/docs/graph-api/reference/v2.2/user">Account和User</a>的关系，这些以后有机会再做了解和说明。</p>
+
+<p>二. 模块结构</p>
+
+<p>SDK可以从<a href="https://github.com/facebook/facebook-python-ads-sdk">这里</a>下载。下载后可以选择setup.py安装，也可以将facebookads作为单独的模块置于程序可访问的路径下。</p>
+
+<p>facebookads中包含如下文件：</p>
+
+<pre><code>* object.py : Facebook广告系统中对象概念在python中的对应，比如AdCampaign对应Facebook Ads中的campaign，AdUser对应Facebook Ads中的user
+* mixin.py : object.py中对象的公用接口，比如HasStatus表示继承它的类具有状态
+* api.py ：负责https请求的包装和响应的接收
+    请求通过 FacebookAdsApi类中的call函数实现
+    响应被记录为FacebookResponse对象返回
+* exception.py : 异常处理类，继承自python Exception
+* session.py ：维护http连接， Facebook Ads API中绝大部分的调用都需要调用权限(access_token), sesssion保存会话信息
+* bootstrap.py / spec.py: 没有实际用过，不了解
+</code></pre>
+
+<p>Facebook Python SDK开发采用<a href="https://github.com/facebook/facebook-python-ads-sdk">CRUD模式</a>, 所有对象均继承自AbstractObject，被请求的对象继承自AbstractCrudObject(它本身也是AbstractObject的子类)，比如AdAccount对象是AbstractObject而非AbstractCrudObject，AbstractCrudObject包含以下四个基础方法：</p>
+
+<pre><code>* remote_create : 创建对象（比如在Facebook侧创建campaign）
+* remote_read ：读取对象信息
+* remote_update : 更新对象信息
+* remote_delete : 删除对象
+</code></pre>
+
+<p>以上操作最终会封装对象相关的信息，通过FacebookAdsApi.call向Facebook侧发送http请求:</p>
+
+<pre><code>def call(self, method, path, params=None, headers=None, files=None):
+    '''
+    参数：
+        methods: 指的是HTTP请求类型，比如DELETE/GET/POST，根据上层的调用不同不同
+        path: tuple对象，被翻译为 graph_url/tuple[0]/tuple[1]...
+        其中graph_url是https://graph.facebook.com
+        params: JSON对象，请求实际的内容
+    返回：
+        FacebookResponse对象，也是对于http response的封装
+</code></pre>
+
+<p>最终组合成的http请求类型：</p>
+
+<pre><code>graph.facebook.com/v2.2/act_ACCOUNTID/stats?start_time=xxx&amp;end_time=xxx&amp;access_token=xxxx
+</code></pre>
+
+<p>在实际应用中,</p>
+
+<p>（1）经常会有类似“获取当前推广活动Campaign下所有的广告系列Adsets”的需求，Facebook Python SDK提供如下的函数：</p>
+
+<pre><code>def get_ad_sets(self, fields=None, params)
+</code></pre>
+
+<p>调用方式：</p>
+
+<pre><code>for adset in campaign.get_ad_sets([
+    AdSet.Field.id,
+    AdSet.Field.name,
+    AdSet.Field.targeting,
+]):                                # 返回adsets，其中每个adsets包含id, name和targeting信息
+    print adset[AdSeet.Field.id] 
+    print adset[AdSeet.Field.name]
+    print adset[AdSeet.Field.targeting] 
+</code></pre>
+
+<p>（2）另外一种常用的请求方式是<a href="https://developers.facebook.com/docs/marketing-api/batch-requests">Batch Request</a>，即批量的发送请求。它的基本原理是把多条http请求（比如创建多个Ad，每个Ad的创建都是一条http请求）合并为一条请求发送给Facebook，Facebook将所有的响应合并后返回。</p>
+
+<p>在Python SDK中，主要由FacebookAdsApiBatch负责批量请求的发送，具体的代码可见其add和execute函数, 前者负责请求的拼接，后者负责请求的实际发送。</p>
+
+<p>调用实例：</p>
+
+<pre><code>from functools import partial
+
+def create_ads(self, adsets, creative_ids, api):
+    ''' batch version of ad creation'''
+    try:
+        api_batch = api.new_batch()
+        def callback_success(response, adset_id):
+            print adset_id
+        def callback_failure(response, adset_id, error_reasons = [])
+            response_error = response.error()
+            e_dict = {}
+            e_dict['http_status'] = response_error.http_status()
+            e_dict['api_error_message'] = response_error.api_error_message()
+            error_reasons.append(e_dict)
+        error_reasons = []
+        for adset in adsets:
+            callback_success = partial(callback_success, adset_id = adset[AdSet.Field.id])
+            callback_failure = partial(callback_failure, aset_id = adset[AdSet.Field.id], error_reasons = error_reasons)
+            ad.update({
+                AdGroup.Field.name: 'xxx',
+                AdGroup.Field.campaign_id: adset[AdSet.Field.id]
+            })
+            ad.remote_create(batch=api_batch, success=callback_success, failure=callback_failure)
+        api_batch.execute()
+</code></pre>
+
+<p>需要说明的是，<strong>批量请求在系统设计的初期最好有所考虑</strong>，这是因为Facebook对于API的调用次数和频率都有一定的限制，当需要进行大量请求时（比如读取所有广告的统计信息），短期频繁的调用可能会引发以下两个错误：(名称可能不完全一致)</p>
+
+<pre><code>(1) User Call Limit Reached
+(2) Make too many calls in certain time
+</code></pre>
+
+<p>由于通常广告系统本身也有并行需求，因此尽早考虑批量API，在调用时做两级并行（应用本身CPU级别并行和https请求拼接）对于系统性能的提高是很有好处的。</p>
+
+<p>三. 调用实例</p>
+
+<p>较常用的实例可见Python SDK中的examples目录。examples基本包含了所有Ad的调用实例，可以作为编码的最主要参考，这里仅结合实际应用做一些简单的补充。</p>
+
+<p>(1) 调用结构</p>
+
+<pre><code>def run():
+    session = FacebookSession(app_id, app_secret, access_token) # 这三项在创建广告APP的时候应该可以被获取
+
+    api = FacebookAdsApi(session) # 设置api session
+    FacebookAdsApi.set_default_api(api) # 设置默认api, 对象调用如remote_create/delete等操作会使用默认api
+    # do your call
+</code></pre>
+
+<p>(2) 统计API</p>
+
+<pre><code>account = AdAccount('act_&lt;ACCOUNT_ID&gt;')
+fields = ['action'] # 获取Action信息，Facebook允许定义多种Action，具体可见官网说明，这里也可以填写其它API允许的字段，对于某些API调用，不填写将只返回id
+params = {
+    'adgroup_ids' : ids, # JSON object here
+    'start_time' : start_time,
+    'end_time' : end_time,
+}
+# 根据params限定的请求，返回包含field的结果
+stats = account.get_ad_group_stats(fields=fields, params=params) 
+</code></pre>
+
+<p>四. 其它</p>
+
+<p>Facebook Ads API的调用存在一些陷阱，比如最近遇到的<a href="https://github.com/facebook/facebook-python-ads-sdk/issues/35">批量创建异常</a>, (这里也推荐 <a href="https://github.com/facebook/facebook-python-ads-sdk/issues">https://github.com/facebook/facebook-python-ads-sdk/issues</a> 作为一个常见问题查找的地方)，但更多的问题来自调用方式的错误，这一点可以注意保存FacebookResponse信息查找问题。</p>
+
+<p>常见的问题如：
+    (1) User Call Limit Reach，调用次数达到上限，通常过几分钟调用可成功，因此系统应该支持重试机制，毕竟网络因素是难以忽略的
+    (2) Api Call too mang times 同上，修改为批处理模式
+    (3) Connection reset by peer 通常是网络连接不稳定，重试处理</p>
+
+<p>还有其它很多问题，在工作中需要进一步探索，以上谈到问题不正确的地方欢迎指正，邮箱linpinga@163.com，谢谢</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-03-07T14:28:54+08:00" pubdate data-updated="true">Mar 7th, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/facebook/'>facebook</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/03/01/back-to-blog/">
+		
+			Back to Github</a>
+	</h2>
+	<div class="entry-content">
+		<p>14年下半年换了一份移动广告行业的工作，生活变得紧张而充实，github基本也没有时间维护和更新了。</p>
+
+<p>从农历上算，新的一年算是刚刚开始~ 新的一年仍然希望能学习更多的东西，也希望能把更多的东西系统的整理出来，作为自己成长的总结。</p>
+
+<p>鉴于我的工作性质，博客里会定期对工作中的得失做总结，谈谈对RTB，对facebook广告优化，以及可能涉及的移动广告方方面面做一些思考（公司内部资料除外），另外对我喜欢的一些东西（C++，python,广告或者股票策略）做一些总结和分享。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-03-01T10:15:26+08:00" pubdate data-updated="true">Mar 1st, 2015</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/by-talk/'>by-talk</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/08/17/factorization-machine/">
+		
+			Factorization Machine</a>
+	</h2>
+	<div class="entry-content">
+		<p>FM:</p>
+
+<p>factorization machine 是一种针对于 factorization model 的实现工具</p>
+
+<p>factorization model要考虑输入变量$x_i$和$x_j$之间的关系，而且是以一种独立的形式表现的（pairwise interaction）
+    $y(x) = w_0 + \sum<em>{j=1}^{p}w_jx_j + \sum</em>{j=1}^{p}\sum<em>{j'=j+1}^{p}x_jx_j'(\sum</em>{f=1}^{k}v<em>{j,f}v</em>{j',f})$</p>
+
+<p>前面的部分和linear regression中一致，它的主要价值在于后面的部分包含了自变量之间的相互作用关系.在计算中可以转变为：
+    $y(x) = w_0 + \sum<em>{j=1}^{p}w_jx_j + \frac{1}{2}\sum</em>{f=1}^{k}[(\sum<em>{j=1}^{p}v</em>{j,f}x_j)^{2} - \sum<em>{j=1}^{p}v</em>{j,f}^{2}x_j^{2}]$</p>
+
+<p>目标函数：(损失函数)
+    $OPT(s) = argmin<em>\theta\sum</em>{(x,y)\in S} (l(y(x|\theta),y)+\sum<em>{\theta \in \Theta} \lambda</em>\theta\theta^{2})$
+    其中$l$表示损失函数，常用的损失函数定义包括least-square loss($l_2$)和logistic loss，前者用于regression(&ldquo;输出$y$是高斯分布"是最小二乘的等价基础)，后者用于classification。$\lambda$部分表示regularization，防止overfitting。将输入$x$分组，每组有自己的$\lambda$</p>
+
+<p>常用的参数优化计算方法包括：SGD,ALS,MCMC</p>
+
+<ul>
+<li>SGD
+stochastic gradient descent : <a href="http://blog.csdn.net/lilyth_lilyth/article/details/8973972">随机梯度下降</a>
+  对于指定参数的函数，求参数的最优解：
+  $ w<em>{t+1} = w_t - η</em>t \bigtriangledown f(w_t) $
+  这里的求导会对样本中所有点计算，如果样本很大，那么在每一步迭代中计算的消耗均很大（在实际问题中很可能是无法承受的），因此我们需要用一种近似的方法进行替代，有相近的结果同时能大大减少计算量，这就是随机梯度下降的由来。
+  相比于批量梯度下降中：
+  $ \bigtriangledown f(w_t) = \sum_{i=1}^{n}\bigtriangledown f(w_t,x_i)$
+  采用随机梯度下降
+  $ \bigtriangledown f(w_t) = g(w_t) $
+  满足 $ E(g(w_t)) = \bigtriangledown f(w_t) $
+  在每次迭代中用每个样本而非所有样本计算梯度下降的方向。</li>
+</ul>
+
+
+<p>具体到此问题中，
+    $\theta \leftarrow \theta - \eta(\frac{\delta}{\delta\theta}l(y(x),y) + 2\lambda_\theta\theta)$
+    其中$\eta$表示learning rate</p>
+
+<p>SGD方法的问题：</p>
+
+<pre><code>Learning rate : SGD方法是否能够收敛很大程度上取决于learning rate，如果选择太大，那么不能收敛，如果太小，那么收敛太慢。
+Regularization : 表示对于overfit的控制。
+Initialization : 表示初始化条件下factorized interaction参数的确定, 这里作者用的是在N(0,omga)内的随机投点，因此omga也是需要确定的参数。
+</code></pre>
+
+<ul>
+<li><p>ALS (alternating least squares)
+相比于SGD，不需要$\eta$，只需要确定regularization的参数
+但它只能用于regression，不能用于classfication (least square的前提假设是$y$符合Gaussian分布)</p></li>
+<li><p>MCMC
+马尔科夫蒙托卡洛<a href="http://site.douban.com/182577/widget/notes/10567181/note/292072927/">方法</a>
+  蒙托卡洛方法：</p>
+
+<ol>
+<li>将所求问题的解表示为概率统计模型的形式</li>
+<li>用抽样得到概率统计</li>
+</ol>
+</li>
+</ul>
+
+
+<p>蒙特卡洛方法本身要求样本是独立的，而如果样本不独立，那么需要借助马尔科夫链进行抽样，MCMC就是为此出现的。另一方面，MCMC方法要求马氏链在t足够大的时候收敛到一个平稳分布。</p>
+
+<p>reject sampling
+    采样指的是通过一定量的取值，使得取值结果反映采样概率函数的分布。
+    均匀采样是可以通过产生伪随机数实现的，那么任意分布$f(x)$，如何通过采样表达其分布呢？
+    reject sampling方法可参考<a href="http://en.wikipedia.org/wiki/Rejection_sampling">wiki</a>，<a href="http://www.stat.ucla.edu/~dinov/courses_students.dir/04/Spring/Stat233.dir/STAT233_notes.dir/RejectionSampling.pdf">实现原则</a>
+        证明采用这种策略采样得到的结果和希望得到的分布一致，重点在于$P(x\in A)$被转化为$P(x\in T|Accept)$，Accept这件事是通过$U&lt;f(t)/M(t)$表示出来的</p>
+
+<p>Markov Chain</p>
+
+<p>FM是factorization model中的一种处理方法，与其它方法如<a href="https://datajobs.com/data-science-repo/Recommender-Systems-%5BNetflix%5D.pdf">matrix factorization</a>,pairwise interaction tensor factorization,<a href="http://blog.csdn.net/wanglulu2014/article/details/21170111">SVD++</a>可以进行转换。</p>
+
+<p>factorization model : 针对factorization相关的系列算法的统称，它们主要适用于推荐系统，包括SVD++,SVD等。
+    SVD (Singular Value Decomposition)是将一个$N<em>M$的评分矩阵分解为一个$N</em>F$的用户因子矩阵和一个$M*F$的物品因子矩阵。同时考虑评分的偏离度（有些用户倾向于宽松的打分，有些倾向于严格的打分），最终u相对于i的打分$r<em>{u,i}$表示为
+    $r</em>{u,i}=overallMean+b_u+b_i+p_uq_i^{T}$
+    优化其结果：
+    $argmin<em>\alpha\sum</em>{(u,i)\in \alpha}{(r_{u,i}-overallMean+b_u+b_i+p_uq_i^{T})^{2}+\lambda(\Arrowvert b_u<sup>2</sup>\Arrowvert + \Arrowvert b_i<sup>2</sup>\Arrowvert + \Arrowvert p_u<sup>2</sup>\Arrowvert + \Arrowvert q_i<sup>2</sup>\Arrowvert)}$</p>
+
+<p>hyperparameter指的是初始化确定的经验参数，比如regularization中的$\lambda$.</p>
+
+<p>activation function: 指的是通过output signal来反映input的activation level, 在neutral network中用到。</p>
+
+<p>cross-entropy  error:
+    cross-entropy定义: 对于给定的$p(x)$和$q(x)$，定义cross-entropy为：
+    $H(p,q)=-\sum_x{p(x)log(q(x))}$
+    对于分类问题，实际值$t_n$和理论计算值$y_n$的cross-entropy error是$-\sum{p_xlogq_x}$
+    相比而言的另外一种error是classification error，具体参见<a href="\Arrowvert%20b_u^2\Arrowvert">此篇</a></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-08-17T21:37:17+08:00" pubdate data-updated="true">Aug 17th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/machine-learning/'>machine learning</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/07/26/motion-tracking-in-image-sequence/">
+		
+			Motion Tracking in Image Sequence</a>
+	</h2>
+	<div class="entry-content">
+		<h1>Motion Trackng算法研究</h1>
+
+<ul>
+<li><p>来源
+视频跟踪问题的应用十分广泛，比如军事跟踪或者交通识别。这次研究的背景问题来自一个具体的
+应用需求: 对于马路上固定摄像头下统计彩色图像中的车流量，并区分其中的客车和公交车。关于
+这部分的应用设计打算另文阐述，本文主要阐述在调研此问题解决方案时接触到的一个很好的多目标视频跟踪框架<a href="http://www.stats.ox.ac.uk/~wauthier/tracker/">Motion Tracking in Image Sequences</a>。</p></li>
+<li><p>多目标视频跟踪框架
+  图像检测和分割针对单帧图像，而跟踪问题涉及多帧图像间的交互。然而在多帧图像中，既存在新目标的进入（目标提取和初始化）也存在旧目标的运动（目标状态变换），必须对目标进行区分。相对于单目标跟踪问题中“检测+(预测)+跟踪”，多目标跟踪包括“检测+预测+匹配+跟踪”。</p></li>
+</ul>
+
+
+<p>Motion Tracking in Image Sequences包括以下结构：来自<a href="http://www.robots.ox.ac.uk/~cvrg/hilary2002/vsam-pami-tracking.pdf">这篇文章</a></p>
+
+<pre><code>1. 目标提取
+    Background model estimation + Connected components
+2. 目标预测
+    Kalman filter
+3. 多目标匹配
+    Munkers Algorithm (匈牙利算法) 
+</code></pre>
+
+<ul>
+<li><p>目标提取 (Object extraction)</p>
+
+<p>  这一步的主要目的是从当前帧中提取有效的前景区域并对其根据连通域分割描述。</p>
+
+<ul>
+<li>Background model estimation
+这种方法不同于“背景相减法”，它的强大之处在于可以适应背景自身的变化。“背景相减法”必须包括一个标准背景 (standard_background_image)，那么它的选择主要有两种策略：(设当前帧为ImmageN)
+
+<ol>
+<li>用第一帧做背景</li>
+<li><p>用第N-K帧做背景
+前者对于环境中背景本身的光照变化没有抵御能力，后者虽然有一定的抵御能力，但是K的选择基本是经验性的，假如很不幸恰好选择的第N-k帧包括一定的噪声（可能哪帧图片曝光不好），那么之后的跟踪基本一定失败，在背景选择上，上述两种方法都是hard-code，即背景来自且只来自某一个时间的图像。
+相比于“背景相减法”的hard-code，Background model estimation更像是soft-code，如果一个目标持续的存在于原先的背景中（比如开入场景然后停下的车），经过一段时间的学习，它会转换为背景。作者在<a href="http://www.stats.ox.ac.uk/~wauthier/tracker/tracker-synopsis.pdf">文中</a>提到的一个实验是对于固定摄像头下一天出现的目标识别，白天和夜晚光线的变化可以很好的被此模型学习。
+它的具体做法如下：</p>
+
+<p>  以像素为单位进行研究（如果是彩色图像就是RGB三通道），假设每个像素点在t时刻的颜色为 Xt = I(x0,y0,t)，那么从1~t内像素的颜色序列为 {X1,&hellip;,Xt}，Xt被视为不同μ和Σ下混合高斯的叠加：
+P(Xt) = Σ w(t,i) * η(Xt,μi,Σi)
+（具体的公式神马的还是直接看<a href="http://www.robots.ox.ac.uk/~cvrg/hilary2002/vsam-pami-tracking.pdf">原文</a>，打字有些不方便）
+之后的操作分为预测和改进（和EM很像），判断当前Xt和哪个Gaussian比较吻合（小于2.5Σ），找到最吻合的Gaussian，标记相应的Index，如果都不满足要求，则当前位置属于foreground,用当前Xt计算的μ和Σ去替换原先与其最接近的Gaussian（给一个学习的机会）。
+对于未选定的Index，不更新它的μ和Σ。对于选定的Index(即最接近描述对象的原先背景区域)，更新它的μ，Σ以及权重w。
+具体公式之类的还是需要看下原文，我对这种做法的理解是，如果当前像素值很像背景，那么首先认定它为背景，然后根据它的值对于背景进行更新，因此对于细微的背景变化，它能够达到调整背景区域的目的。而如果当前像素值不是背景（不属于所有的Gaussian），那么认定它为前景，同时给它一个更新为背景的机会（也并不是直接替换，因为相应的Gaussian初始权重很小，需要不断学习匹配才能累加它的权重）</p></li>
+<li><p>Connected Components
+这部分倒没有太多好讲的，主要就是对于当前帧中前景区域的划分和描述（object_size, object_pos, object_boundary, label），产生的有效内容（比如object_size>N）被称为observations，即当前帧可能的object区域。</p></li>
+</ol>
+</li>
+</ul>
+</li>
+<li><p>目标预测</p>
+
+<p>  目标跟踪相比单帧的图像分割，最大的一个区域在于利用帧间信息。这里采用<a href="http://blog.csdn.net/lanbing510/article/details/8828109">Kalman filter</a>对已有的object的状态进行预测。这句话里，“已有”指的是根据以前帧中observation产生的object，因此observation是有转换为object的能力的，但显然要区分哪些是新的对象。而“状态”包括object的pos_x,pos_y,vel_x,vel_y和obj_size。根据历史信息预测的object和当前帧分割出的observation，是下一步匹配的基础。</p></li>
+<li><p>多目标匹配</p>
+
+<ul>
+<li><a href="http://www.renfei.org/blog/bipartite-matching.html">匈牙利算法</a></li>
+</ul>
+
+
+<p>  匈牙利算法的目的是解决二分图的最大匹配，所谓二分图，就是图中没有奇数条边的环的图。最大匹配是指在图中被匹配的边数最多。它的核心是每次遇到从非匹配点到非匹配点的交错路径时，就进行一次翻转，因为每次翻转都可以增多匹配个数。
+  在此问题中object和observation可以认为是二分图的两侧，具体的工作模式我还需要再做一些理解。</p></li>
+</ul>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-26T23:28:42+08:00" pubdate data-updated="true">Jul 26th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/image/'>image</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+<nav id="pagenavi">
+    
+        <a href="4" class="prev">Prev</a>
+    
+    
+        <a href="6" class="next">Next</a>
+    
+</nav>
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

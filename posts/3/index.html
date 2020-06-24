@@ -1,0 +1,1268 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="工作中用到的NoSQL主要是Redis，但MongoDB作为一种很重要的NoSQL数据库，对它一直也有好奇，这里简单（实际是非常简单）的梳理下MongoDB的相关知识，如果以后用到再做深入了解。 一. MongoDB vs Redis
+1. MongoDB是基于文档的存储， &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/05/25/mongodb-introduction/">
+		
+			Mongodb-introduction</a>
+	</h2>
+	<div class="entry-content">
+		<p>工作中用到的NoSQL主要是Redis，但MongoDB作为一种很重要的NoSQL数据库，对它一直也有好奇，这里简单（实际是非常简单）的梳理下MongoDB的相关知识，如果以后用到再做深入了解。</p>
+
+<p>一. MongoDB vs Redis
+1. MongoDB是基于文档的存储，Redis是基于键值的存储
+2. MongoDB更接近传统SQL，Redis更接近Memcached
+3. MongoDB更适合持久化存储，Redis适合做缓存
+4. MongoDB更适合复杂的查询，Redis适合简单的查询</p>
+
+<p>二. MongoDB定义
+基于文档的存储，比较适于文档类型的信息存储，比如一篇包含评论的博客，可以把博客视为一种文档，评论视为其中的子文档保存在文档中。</p>
+
+<p>MongoDB中的一条记录就是一个文档，MongoDB的文档很类似JSON对象，文档中value的内容可能是另外一个文档，组合或者文档的组合。</p>
+
+<p>一条文档记录的格式如下，很类似一个JSON对象：</p>
+
+<pre><code>{
+    name:"linpingta",
+    age:27,
+    work:'Y',
+    groups: ['BJ', 'China']
+}
+</code></pre>
+
+<p>三. MongoDB安装与启动</p>
+
+<p>MongoDB的官网看起来有点乱，似乎有很多商业应用方面的产品，下载可以参考<a href="https://www.mongodb.com/download-center#community">这里</a>。</p>
+
+<p>安装完成后，在命令行运行mongod，默认将在本机的20717端口对外提供服务。</p>
+
+<p>四.客户端支持</p>
+
+<p>MongoDB官方支持主要语言的客户端，包括C++/Java/Python/NodeJS/C#。</p>
+
+<p>五.特性</p>
+
+<p>1.high performance：高性能的持久化存储
+2.replica set：高可用，支持复制，数据冗余
+3.horizontal scalability：支持数据的水平扩展
+4.rich query language：CRUD操作</p>
+
+<p>六.数据结构</p>
+
+<p>MongoDB通过BSON格式存储文档记录，保存在collection中。一个database中可能包含多个collection，每个collection则包含了具体的document。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-05-25T21:15:57+08:00" pubdate data-updated="true">May 25th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/mongodb/'>mongodb</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/05/15/github-4/">
+		
+			Github博客--Octopress功能分析</a>
+	</h2>
+	<div class="entry-content">
+		<p>用Octopress搭建技术博客是一个很省事的方案，在完成基本环境的配置外，写新博客只需要几项命令操作：</p>
+
+<pre><code>1. rake new_post['title']  : 创建title名称的新博客
+2. rake generate ：生成博客列表
+3. rake preview ：本地预览博客
+4. rake deploy ：将本地博客部署到remote端
+</code></pre>
+
+<p>的确很简单。。但是再看看Octopress的本地目录：</p>
+
+<pre><code>---octopress
+    ---.theme
+        --classic
+        --other_template
+    ---_deploy
+    ---plugin
+    ---public
+    ---sass
+    ---source
+        --_includes
+            --head.html
+            --header.html
+            --...
+            --asides
+            --custom
+            --post
+        --_layouts
+        --_posts
+            -- new post1
+            -- new post2
+        --archives
+        --assets
+        --blogs
+        --fonts
+        --images
+        --javascript
+        --stylesheets
+        --CNAME
+        --404.markdown
+        --atom.xml
+        --index.html
+        --robot.txt
+    ---Rakefile
+    ---_config.yml
+</code></pre>
+
+<p>好吧，我只是列举了一些比较主要的文件，可以说，Octopress的目录文件又多，深度又深，虽然简单的几个rake命令可以完成博客部署功能，但是。。这些目录究竟是什么意思，rake命令究竟执行了什么操作，希望在这篇博客里能够对Octopress的操作做更多说明：</p>
+
+<p>1.Octopress和Jekyll的区别
+Octopress是基于Jekyll开发的，可以认为是后者的高层定制。</p>
+
+<p>2.Octopress本地目录结构
+(1) _config.yml ：模板语言中模板变量的定义位置</p>
+
+<pre><code>基本配置
+url: http://linpingta.github.io
+title: 褚桐 博客
+subtitle: 谁似临平山上塔，亭亭，迎客西来送客行
+author: 褚桐
+simple_search: http://google.com/search
+description: Python 移动&amp;海外广告
+
+附加配置
+# 定义GA信息
+# Google Analytics
+google_analytics_tracking_id: UA-75323645-1
+
+# 定义Disqus评论信息
+# Disqus Comments
+disqus_short_name: linpingta
+disqus_show_comment_count: true
+</code></pre>
+
+<p>(2) Rakefile：所有rake命令的定义位置，例如常用的rake generate，实际执行的操作是：</p>
+
+<pre><code>desc "Generate jekyll site"
+task :generate do
+  raise "### You haven't set anything up yet. First run `rake install` to set up an Octopress theme." unless File.directory?(source_dir)
+  puts "## Generating Site with Jekyll"
+  system "compass compile --css-dir #{source_dir}/stylesheets"
+  system "jekyll"
+end
+</code></pre>
+
+<p>并没有仔细研究过其中函数的含义，但是在定义keyword和description的时候，可能需要编辑Rakefile。</p>
+
+<p>(3)目录和文件
+.themes：Octopress中定义的主题，默认主题是.themes/classic，其它添加的主题也会放在.themes/xxx中。
+对于每个主题，都包含sass和source两个文件夹，前者定义的是样式(style)，后者定义的是主题(theme)。</p>
+
+<p>_deploy：Octopress编译生成的文件目录，用于push到Github上。</p>
+
+<p>public：Octopress的本地目录，在执行rake deploy的时候，会被public内容复制到_deploy目录，rake deploy：</p>
+
+<pre><code>## Copying public to _deploy
+cp -r public/. _deploy
+cd _deploy
+
+...
+commit
+</code></pre>
+
+<p>sass/source：Octopress的默认目录，前者定义的是样式(style)，后者定义的是主题(theme)。在执行rake generate的时候，会把source和sass的内容拷贝到public目录中。</p>
+
+<p>(4)source和sass目录内部说明
+source/_posts：文章定义位置，在执行rake new_post[&lsquo;&rsquo;]的时候，会在此位置生成文章。
+source/_includes：网站html格式定义</p>
+
+<pre><code>    source/\_includes/xxx.html
+    source/\_includes/custom/xxx.html
+</code></pre>
+
+<p>后者是对前者内容的override，比如navigation.html，
+_include/navigation.html:</p>
+
+<pre><code>    &lt;ul class="subscription" data-subscription="rss"&gt;
+  &lt;li&gt;&lt;a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"&gt;RSS&lt;/a&gt;&lt;/li&gt;
+
+&lt;/ul&gt;
+
+&lt;form action="https://www.google.com/search" method="get"&gt;
+  &lt;fieldset role="search"&gt;
+    &lt;input type="hidden" name="q" value="site:yoursite.com" /&gt;
+    &lt;input class="search" type="text" name="q" results="0" placeholder="Search"/&gt;
+  &lt;/fieldset&gt;
+&lt;/form&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="/"&gt;Blog&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="/archives"&gt;Archive&lt;/a&gt;&lt;/li&gt;
+</code></pre>
+
+<p></ul></p>
+
+<p>_include/custom/navigation.html:</p>
+
+<pre><code>&lt;ul class="main-navigation"&gt;
+  &lt;li&gt;&lt;a href="/blog/archives"&gt;博客&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+
+<p>希望通过这篇文章能够对Octopress的工作过程更多说明，这样不会被它繁复的目录结构吓到。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-05-15T16:44:34+08:00" pubdate data-updated="true">May 15th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github/'>github</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/05/14/github-3/">
+		
+			如何设置Github博客(三) 主题</a>
+	</h2>
+	<div class="entry-content">
+		<p>在建立Github博客后，通过xxx.github.io可以访问相应的博客目录。通过CNAME设置，我们把xxx.github.io绑定到指定的域名，然后我们又为博客添加了搜索引擎优化，数据统计支持，评论支持。。。当我们可以开心访问自己的博客时，未免还有一点小缺憾：博客的主题过于常见（想想大家都在用Octopress的默认主题），那么如何定制自己博客的主题，让自己的博客有所与众不同？</p>
+
+<p>方法一. 添加Octopress<a href="https://github.com/imathis/octopress/wiki/3rd-Party-Octopress-Themes">第三方主题</a></p>
+
+<p>在上述网页中，找到希望的主题，然后按如下方法添加主题：</p>
+
+<pre><code>$ cd octopress
+$ git submodule add GIT_URL .themes/THEME_NAME
+$ rake install['THEME_NAME']
+$ rake generate
+</code></pre>
+
+<p>Octopress默认会创建.theme文件夹，用于存储网站使用的主题。默认主题，即其中的.theme/classic的子文件夹。加载第三方模板，实际上就是把指定的模板拷贝到.theme/NEWTHEME文件夹中。</p>
+
+<p>方法二.配置Octopress<a href="http://octopress.org/docs/theme/">默认主题</a></p>
+
+<p>1.定制主题
+编辑source/_includes/custom中的内容，其中的每个html都可以视为对上层目录对应html文件内容的override编辑。例如_include/navigation.html：</p>
+
+<pre><code>&lt;ul class="subscription" data-subscription="rss"&gt;
+  &lt;li&gt;&lt;a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"&gt;RSS&lt;/a&gt;&lt;/li&gt;
+
+&lt;/ul&gt;
+
+&lt;form action="https://www.google.com/search" method="get"&gt;
+  &lt;fieldset role="search"&gt;
+    &lt;input type="hidden" name="q" value="site:yoursite.com" /&gt;
+    &lt;input class="search" type="text" name="q" results="0" placeholder="    "/&gt;
+  &lt;/fieldset&gt;
+&lt;/form&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="/"&gt;Blog&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="/archives"&gt;Archive&lt;/a&gt;&lt;/li&gt;
+</code></pre>
+
+<p></ul></p>
+
+<p>其中最后一句包含custom中的navigation.html，编辑该文件，定义导航栏中只有archives一项：</p>
+
+<pre><code>&lt;ul class="main-navigation"&gt;
+  &lt;li&gt;&lt;a href="/blog/archives"&gt;博客&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+
+<p>2.更改样式
+(1)更改layout布局
+编辑sass/custom/_layout.scss，它继承自sass/base/_layout.scss，其中包含!default的变量都可以在custom中进行override编辑。</p>
+
+<p>(2)更改color颜色
+编辑sass/custom/_colors.scss，其中定义了很多设置变量，比如：</p>
+
+<pre><code>//$header-bg: #263347; 
+</code></pre>
+
+<p>默认状态是注释的，可以取消后观察header背景的变化，也可以定义自己的header-bg，例如：</p>
+
+<pre><code>$header-bg: #004d32
+</code></pre>
+
+<p>将背景色更新为深绿色。</p>
+
+<p>方法一可以认为是一种更深层次的定制，方法二可以认为是如何创建方法一中模板的方法说明，前者的优点在于更大的变化，但问题在于很多模板已经不再维护和更新了，所以后续处理会复杂。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-05-14T15:25:55+08:00" pubdate data-updated="true">May 14th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github/'>github</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/04/21/dpa-ad/">
+		
+			DPA Ad</a>
+	</h2>
+	<div class="entry-content">
+		<p>本篇blog是DPA广告的一个简单介绍，主要阐述一些容易疑惑的问题，具体API操作和完整的操作还需要参考<a href="https://www.facebook.com/business/help/397103717129942?sr=3&amp;query=dynamic%20product%20ad&amp;sid=1zBRPgENv8I6Vf6LK">FB文档</a>。</p>
+
+<p>为什么是DPA (dynamic product ad)？</p>
+
+<pre><code>dynamic指的是产品信息动态展现，不同的用户可能看到不同产品的广告。
+product即产品，这类广告用于电商产品的投放。
+所以这也是DPA广告的基础：因为dynamic，所以要在网站埋点（否则怎么知道哪个用户喜欢哪个产品），因为product，所以要先创建product catalog才能投放广告。
+</code></pre>
+
+<p>Product Catalog/Feed/Set区别</p>
+
+<pre><code>catalog是一个产品目录，feed是里面的产品集合，每个feed是一个产品的全部信息，他们是一对多关系，类似campaign和adset。
+set是一个广告投放的概念，一个catalog中可以有多个set，每个set中可以有多个产品，真实创建广告时，需要指定的是set信息。
+feed需要是满足一定的格式csv或者其它文件，包含的信息包括SKU产品的状态（是否在售），描述，图片链接，网站链接，标题和价格等信息，这些信息最终会用于创意模板的填充
+</code></pre>
+
+<p>Pixel</p>
+
+<pre><code>app有一套类似的event定义，没有细看，这里只说网站埋点的事情。
+首先pixel是account级别的，在admanager tools里面可以创建pixel。创建后的pixel要和创建的product catalog关联。
+pixel本身是一段js代码，要把它加到要埋点的网页中，同时要对应到具体的逻辑上面。所谓对应，指的是，如果要汇报"add to cart"事件，那么相应的js需要在网站上用户实际点击了"add to cart"后触发，因此这里的工作需要工程师支持，毕竟你得知道如何触发相关逻辑的代码才行。
+pixel默认的行为只有page view, 但FB要求你至少添加三类基本事件的逻辑：
+(1) viewcontent：用户查看页面
+(2) addtocart：添加到购物车
+(3) purchase：购买
+这些行为发生时，会通过js汇报给FB，FB会依赖这些数据创建product audience
+</code></pre>
+
+<p>Product audience</p>
+
+<pre><code>来自事件汇报，把基础事件进行组合，比如“添加了购物车但没有购买”的用户作为投放对象，那么有了"add to cart"和"purchase"事件后，可以创建相应的audience。
+需要注意的是，audience是DPA广告必须的（否则也没有必要费劲埋点之类的）。
+这样也可以看出DPA是比较适合做重定向的。
+</code></pre>
+
+<p>创建广告</p>
+
+<pre><code>创建campaign：和install广告类似，当然objective不同
+创建adset：此时要指定product audience为投放对象，要指定product set为广告产品的来源集合，DPA会将product set中合适的产品展示给合适的用户（依赖machine learning）
+创建ad/creative：不同于install广告需要指定广告的image_url，creative要指定的是creative template和product set，前者是创意模板，后者是模板中填充内容的来源。也就是说，有了product feed的title, image_url, website_url等信息，可以自动产生创意，而这个创意会在不同的投放人群上选择不同的product feed
+</code></pre>
+
+<p>DPA vs 其它广告</p>
+
+<pre><code>我的理解是，DPA是用来投电商的，但不是投电商一定要用DPA。从上述过程可以看到，DPA的创建过程是比较麻烦的，它的价值在于：
+(1) 效果可追踪，因为它的广告不是宣传你的网站，而是具体到了一个细致的产品售卖
+(2) 人群优选：重定向，或者其它交叉定向（买了啤酒的人更容易买。。）
+但它是不能覆盖那些没有访问你网站的用户的，因此如果你的目标是宣传你的电商网站，而不是追踪产品售卖结果的话，选择其它广告，而不是DPA
+</code></pre>
+
+<p>7.使用步骤</p>
+
+<pre><code>(1) 创建产品集合product catalog
+(2) 创建FB像素并埋点到网站
+(3) 依赖(1)创建product set
+(4) 依赖(2)创建product audience
+(4) 定义创意模板，添加product set
+(5) adset依赖product set和product audience, ad依赖product set和creative template，这些都有了，可以创建DPA广告
+</code></pre>
+
+<p>参考文档
+<a href="https://developers.facebook.com/docs/facebook-pixel/pixel-with-ads/dynamic-product-ads#how-to-obtain-a-Facebook-Pixel-ID">https://developers.facebook.com/docs/facebook-pixel/pixel-with-ads/dynamic-product-ads#how-to-obtain-a-Facebook-Pixel-ID</a>
+<a href="https://developers.facebook.com/docs/marketing-api/dynamic-product-ads/v2.5">https://developers.facebook.com/docs/marketing-api/dynamic-product-ads/v2.5</a>
+<a href="https://developers.facebook.com/docs/marketing-api/dynamic-product-ads/product-audiences/v2.5">https://developers.facebook.com/docs/marketing-api/dynamic-product-ads/product-audiences/v2.5</a>
+<a href="https://developers.facebook.com/docs/marketing-api/dynamic-product-ads/ads-management/v2.5">https://developers.facebook.com/docs/marketing-api/dynamic-product-ads/ads-management/v2.5</a></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-04-21T18:56:56+08:00" pubdate data-updated="true">Apr 21st, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/advertise/'>advertise</a>, <a class='category' href='/blog/categories/facebook/'>facebook</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/04/04/redis-pub-sub-python/">
+		
+			Redis-pub-sub-python</a>
+	</h2>
+	<div class="entry-content">
+		<p>Redis Pub/Sub</p>
+
+<p>一.定义
+<a href="http://redis.io/topics/pubsub">pubsub</a>指的是发布者将消息发布到指定通道，并不清楚（或者说不关心）订阅者，同时订阅者也指定接收通道接收消息，并不关心具体的发布者。通过这样的方法，实现发布者和订阅者之间的解耦。</p>
+
+<p>二.Redis原语</p>
+
+<p>1.订阅channe1到channel3的三个频道：</p>
+
+<pre><code>subscribe channel1 channel2 channel3
+</code></pre>
+
+<p>2.向channel1发布消息"hello_world"：</p>
+
+<pre><code>publish channel1 "hello_world"
+</code></pre>
+
+<p>3.channel1接收消息格式：</p>
+
+<pre><code>message channel1 REAL_MESSAGE
+</code></pre>
+
+<p>其中第一项是消息类别，第二项是频道名称，第三项是实际接收的消息</p>
+
+<p>4.unsubscribe结束对所有频道的订阅，在客户端调用</p>
+
+<p>5.pattern-matching pub/sub
+根据正则做消息订阅，接收所有以news开头频道的消息：</p>
+
+<p>psubscribe news<em>
+如果这里用的是subscribe，那么只能接收到名为"news</em>&ldquo;频道的消息，而不是以news开头所有频道的消息。</p>
+
+<p>三.python版本实现</p>
+
+<p>1.pubilsh.py
+实现发布的功能是比较简单的（当然也是在原型条件下，没有考虑接收者的消息反馈和重发），代码基本只有三行：</p>
+
+<pre><code>import redis
+
+r = redis.Redis(host='localhost')
+r.publish('ch1', 'hello world')
+</code></pre>
+
+<p>这里publish的返回值是当前这个频道subscribe的数量</p>
+
+<p>2.阻塞subscribe.py
+实现阻塞版本的消息接收需要使用listen函数：</p>
+
+<pre><code>import redis
+
+r = redis.Redis(host='localhost')
+pubsub = r.pubsub()
+pubsub.subscribe('ch1')
+
+for item in pubsub.listen():
+    print item
+</code></pre>
+
+<p>如果需要实现轮询的效果，可以在for外面再套一层while循环；listen的返回值格式如下：</p>
+
+<pre><code>{'pattern': None, 'type': 'message', 'channel': 'ch1', 'data': 'hello,wolrd'}
+</code></pre>
+
+<p>其中有效部分为item[&ldquo;data&rdquo;]。</p>
+
+<p>3.非阻塞subscribe.py
+在subscribe的接口层面，这是不成立的，但是可以在语言层面通过多线程实现：独立的线程负责接收接口消息，主线程可以做自己的事情。</p>
+
+<pre><code>import redis
+import threading
+import time
+
+def subscriber():
+    r = redis.Redis(host='localhost')
+    sub = r.pubsub()
+    sub.subscribe('a1')
+    while True:
+        for item in sub.listen():
+            print item
+
+
+if __name__ == '__main__':
+
+    t = threading.Thread(target=subscriber)
+    t.setDaemon(True)
+    t.start()
+    while 1:
+        print 'waiting'
+        time.sleep(10)
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-04-04T16:37:41+08:00" pubdate data-updated="true">Apr 4th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>, <a class='category' href='/blog/categories/redis/'>redis</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/04/04/weixin-account/">
+		
+			微信订阅号vs服务号vs企业号</a>
+	</h2>
+	<div class="entry-content">
+		<p>虽然在上一篇<a href="http://linpingta.cn/blog/2016/03/25/weixin/">博客</a>中对订阅号做了简单的探讨，但现在看来当时对订阅号功能概念理解不深，这里结合微信平台提供的另外两种公众号：服务号和企业号，再对问题做一下说明。</p>
+
+<p>我想初次接触微信开发的人（比如我），总是会对使用哪种类型的公众号产生困惑，毕竟公众号绑定邮箱，同时确认类别后不可再做更改。首先要说明的是，如果你是个人开发者，那么只能绑定订阅号，因为服务号和企业号都需要企业或政府机关的相关资质。反过来说，如果你是企业开发者，订阅号也是有它自己的意义的，具体阐述如下：</p>
+
+<p>先把微信官方关于不同账号区别的<a href="https://kf.qq.com/faq/140806zARbmm140826M36RJF.html">链接</a>放在这里，其实这个链接看懂了，本文下面的内容是可以考虑不看的。。。</p>
+
+<p>但是，既然看到了这里，那么可以再听我阐述下不同账号的区别：
+1.订阅号：主要是消息发布，具体表现上，它提供了每天1条的群发功能，适用的场景是服务群体用户，用户更多的是读取信息，而不是交互信息。
+2.服务号：主要用于客户服务，首先在群发功能上，服务号每月最多只有4条群发消息，相比订阅号每天1条的限制，服务号并不适合发布文章吸引用户，因为群发的频率太低了，它更适合的是和用户做交互，具体表现上，它的消息会像好友消息一样出现，而不是像订阅号一样都出现在一个名叫“订阅号”的群组内，同时它很适合交流，就像好友聊天一样，还有最重要的一点是，它提供了订阅号不能提供的高级功能，比如语音和支付，使得用户交互的形式可以更为多样。
+3.企业号：主要用于企业客户的服务，这里的概念相比服务号，重点强调了企业，实际上也是它和服务号的区别之处：安全和特殊。安全是指，企业号的关注着必须要进行身份验证（不同于服务号只要用户关注了就可以使用），企业号的内容禁止转发；特殊是指，企业号的关注人数有上限限制，你可以为企业号做一些定制方面的应用。</p>
+
+<p>综上所述，如果你是要做企业宣传，那么应该选择订阅号；如果你是要做toC的用户服务，那么应该选择服务号；如果你是要做toB的客户服务（或者内部使用），那么应该选择企业号。</p>
+
+<p>服务号和企业号都有300元/年的管理费用，订阅号如果不认证是没有的。</p>
+
+<p>另外补充一点API的说明：API是针对功能提供的，而不是针对账号提供的。换句话说，只要你的公众号有这种服务功能，那么API就可以做相关支持，因此在API学习方面，并不需要每种账号单独做学习。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-04-04T10:13:23+08:00" pubdate data-updated="true">Apr 4th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/weixin/'>weixin</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/03/25/weixin/">
+		
+			微信公众平台--订阅号开发初探</a>
+	</h2>
+	<div class="entry-content">
+		<p>背景
+本来的计划是希望将一些爬虫聚合的数据通过微信作为出口推送给相关的用户，公司多少也有点类似的需求，因此今天花了一点时间做了相关调研。</p>
+
+<p>1.基础概念
+    1.1 开放平台 vs 公众平台</p>
+
+<p>这里有必要阐述微信两种平台的不同之处，因为尽管从名称上看，技术人员应该选择开放平台作为开发基础，但网上大多数微信开发的入门文章都是基于公众平台的开发（我猜想与开放平台推出时间较晚有关）。</p>
+
+<p>开发平台：针对App开发者，主要用于App内容向微信的分享
+公众平台：微信本身的订阅号和服务号之类开放，以及部分html5开放</p>
+
+<p>理解比较粗浅，但重点是，开放平台(<a href="https://open.weixin.qq.com">https://open.weixin.qq.com</a>) 不同于公众平台(<a href="https://mp.weixin.qq.com">https://mp.weixin.qq.com</a>)。</p>
+
+<p>1.2 服务号 vs 订阅号
+微信公众平台本身提供订阅号和服务号两种类型的公众号，具体功能上，订阅号强调于单方面的信息输出，允许每天一次的向用户推送消息，服务号强调于用户交互，并不会有太多的群发机会，而是更多根据用户输入做反馈交互。</p>
+
+<p>2.注册订阅号</p>
+
+<p>这里我选择的是订阅号，原因有二：
+    (1) 如“背景”所言，我希望向用户定期做消息推送，并没有想太多交互方面的内容（并不排除会有）
+    (2) 好像个人只能申请订阅号</p>
+
+<p>创建订阅号的步骤按照<a href="https://mp.weixin.qq.com/cgi-bin/readtemplate?t=register/step1_tmpl&amp;lang=zh_CN">网站</a>提示步骤执行即可，几点注意：
+    (1) 每个邮箱仅能申请一种帐号：公众号或企业号
+    (2) 选择订阅号或者服务号后不可修改
+    (3) 如果选择非个人类别的订阅号，比如企业政府，那么需要提供各种相关资质（比如营业执照），好吧这里我只能选个人</p>
+
+<p>我注册了一个围棋相关的账号，看到这里可以考虑关注下试试~
+<img src="https://mp.weixin.qq.com/misc/getqrcode?fakeid=2399977679&amp;token=1326491733&amp;style=1" alt="enter image description here" /></p>
+
+<p>注册完账号后，你就可以在订阅号的后台看到这个账号的基础信息，基本的功能包括：
+    (1) 群发消息 （每天一条）
+    (2) 自动回复
+    (3) 自定义菜单
+    注意第(2)和(3)项在开发者模式下失效。</p>
+
+<p>3.订阅号接入后端服务器</p>
+
+<p>实话说，如果你只是想有一个订阅号，然后去使用它，那么并不需要写什么代码，大多数账号也是在这种状态下维护的。</p>
+
+<p>那么如果你想接入开发者后台去做一些自动的操作，这时候才涉及到程序开发。</p>
+
+<p>基础内容首先参考<a href="https://mp.weixin.qq.com/wiki/17/2d4265491f12608cd170a95559800f2d.html">微信接入文档</a>，它对认证相关说明已经比较清楚了，这里只强调一个概念，再附上一段认证的python/Django代码（毕竟官方的认证样例是php的）。</p>
+
+<p>概念一：从架构上说，用户在微信客户端的操作会先发到腾讯服务器，然后再由腾讯服务器发送到你指定的url，同时你的处理（比如用户回复）也会经过腾讯服务器返回给用户。因此接入文档要求你有一个url，80端口有效，用户接收腾讯服务器发来的认证请求，并通过返回值让腾讯服务器知道你的服务器可用。</p>
+
+<p>清楚这一点后，就可以知道后端服务器并不限于用什么语言，什么服务器，重点是你有一个可用的url，可以做request/response服务就ok。</p>
+
+<p>概念二：腾讯服务器向你服务器发送的请求，只有验证有效的请求是GET，其余用户交互均是POST请求。</p>
+
+<p>网上有比较多关于如何在SAE上搭建应用的例子，我因为有自己的服务器资源，所以还是选择在自己的服务器上提供服务。</p>
+
+<p>创建一个django服务，提供验证服务：</p>
+
+<pre><code>from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import hashlib
+
+token = 'shoutan_weiqi'
+
+@csrf_exempt
+def index(request):
+    print request
+    if request.method == 'GET':
+        signature = request.GET.get('signature', None)
+        timestamp = request.GET.get('timestamp', None)
+        nonce = request.GET.get('nonce', None)
+        echostr = request.GET.get('echostr', None)
+        check_list = [token, timestamp, nonce]
+        check_list.sort()
+        checkstr = ''.join(check_list)
+        if hashlib.sha1(checkstr).hexdigest() == signature:
+            return HttpResponse(echostr)
+        else:
+            return HttpResponse('fail')
+    else:
+        pass
+</code></pre>
+
+<p>认证成功后可以在公众号后台页面看到app_id和app_secret （好熟悉，和Facebook API一样一样的）。启动你的服务器配置。。。</p>
+
+<p>我没有再深入研究的槽点在于“接口权限”，按照微信后台的说法，如果是没有认证的订阅号，只能自动回复消息，不能群发消息，另外一方面，个人订阅号不支持认证。。。也可能是我研究不够深入，但如果这样的效果，肯定暂时不能满足我文初提到的需求，所以只能暂时搁置了。</p>
+
+<p>本文算是微信公众平台很浅显的一个介绍，更多好的详细的文章，一方面参考官方文档，另外一方面多用google哈~</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-03-25T23:37:37+08:00" pubdate data-updated="true">Mar 25th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/weixin/'>weixin</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/03/20/celery-tips/">
+		
+			Celery: 建议资料汇总</a>
+	</h2>
+	<div class="entry-content">
+		<p>这篇博客是网上关于Celery的一些使用建议方面的资料汇总。</p>
+
+<p><a href="https://denibertovic.com/posts/celery-best-practices/">CELERY - BEST PRACTICES</a>
+1. Don&rsquo;t use the database as your AMQP Broker
+不要用数据库作为AMQP的broker，虽然Celery支持这样做，但是数据库可能会因此导致更差的IO性能，进而影响实际提供的服务
+2. Use more Queues (ie. not just the default one)
+把不同的任务扔到不同的队列中处理，因为他们的处理时间和优先级不同
+3. Use priority workers
+同2.
+4. Use Celery&rsquo;s error handling mechanisms
+在任务函数的定义中，注意异常处理，包括try&hellip;except,  设置重试次数和重试间隔
+5. Use Flower
+Flower: <a href="http://celery.readthedocs.org/en/latest/userguide/monitoring.html#flower-real-time-celery-web-monitor">Real-time Celery web-monitor</a>
+6. Keep track of results only if you really need them
+只有在你需要的时候才关注任务执行的结果，设置CELERY_IGNORE_RESULT = True
+7. Don&rsquo;t pass Database/ORM objects to tasks
+不要把ORM对象传入task</p>
+
+<p><a href="https://library.launchkit.io/three-quick-tips-from-two-years-with-celery-c05ff9d7f9eb#.ewpt0c9eo">Three quick tips from two years with Celery</a>
+1. Set a global task timeout
+默认情况下，task不会结束，有必要设置全局的timeout时间，以免由于网络或者其它原因出现无法结束的任务。
+2. Use -Ofair for your preforking workers
+任务会在worker启动后分配，而不是预先分配，避免某个task执行时间过长导致worker的利用不充分
+3. Use exponential retry delays
+类似上一篇文章的第4项，且看起来没有它优雅</p>
+
+<p><a href="https://blog.jixee.me/7-tips-for-working-with-celery/">7 Tips for Working with Celery</a>
+1. Set up Task Timeout
+设置任务的超时时间，同上
+2. Set the Number of Clients
+意义不大
+3. -Ofair Task Distribution for Preforking Workers
+同上
+4. Setup Retry Delays
+同上
+5. JSON Serializer for Inoperability
+用JSON作为序列化方式
+6. Celery In Development
+7. Configure a Broker
+意义不大</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-03-20T10:02:52+08:00" pubdate data-updated="true">Mar 20th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/celery/'>celery</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/03/19/github-2/">
+		
+			如何设置Github博客(二) 域名/GA/SEO</a>
+	</h2>
+	<div class="entry-content">
+		<p>虽然本篇的题目是“如何设置Github博客(二)”，但是它距“如何设置Github博客”已经有两年多的时间，所以不能指望它们的文字风格有太多相似性。这篇博客的初衷，主要是经过了这样长的时间和断断续续的写作，我又想给自己的博客添加一些基础的功能，顺手把相关的内容做下记录和总结。</p>
+
+<p>一. 域名
+Github博客默认使用的域名是"xxx.github.io"（比如我的就是<a href="linpingta.github.io">linpingta.github.io</a>，对于访问而言这是足够的（你不用care服务器的设置，管理和安全，这也是Github博客相比WP或者自建博客的一些优点，当然WP仍然是主流哈），但有时候你希望有一些有特色的域名，毕竟xiaozhang.github.io, xiaowang.github.io实在不容易让别人记住你，那么这时候就需要对Github博客做一些域名上的设置了。</p>
+
+<p>设置步骤如下：
+1. 首先你得有个域名。这方面相关的推荐很多，国外似乎比较常用到<a href="https://tw.godaddy.com/offers/default.aspx?tmskey=1dom_03&amp;isc=gofhltw01&amp;countrview=1&amp;currencytype=TWD&amp;mkwid=shlvVob7r_pcrid_101432078566_pkw_godaddy_pmt_e_pdv_c&amp;cvosrc=ppc.google.godaddy&amp;cvo_crid=101432078566&amp;matchtype=e&amp;gclid=CjwKEAjw8bO3BRDp0bP_vL-7_lASJACL_d6wJhQqBcJzWvIivpatDyjppUcTvkNPm9TUCXLQBOll0xoC_2Xw_wcB">godaddy</a>，国内比较常用的是万网。因为我先在阿里云上买了一个云主机，所以就选择了从阿里处（似乎就是万网）购买域名linpingta.cn。
+关于域名怎么选，云服务器用哪家，网上的资料和争论都很多，这方面我比较小白，只是说下我怎么做，重点的是，最终你有了个域名。
+2. 关联域名到Github主页
+如果你的域名是一级域名，比如 linpingta.cn，那么在域名服务商处（即阿里云），增加一条A record，让它指向192.30.252.153或者192.30.252.154 （应该是Github的服务器）
+如果你的域名是二级域名，比如 blog.linpingta.cn，那么在域名服务商处，增加一条CNAME record，让你的域名指向xxx.github.io (我这里就是linpingta.github.io)
+3. octopress中设置
+在source目录下增加一个名为CNAME的文件，里面只有一行，就是你的域名，比如我的内容是linpingta.cn</p>
+
+<p>以上设置完毕后，应该可以通过新域名访问xxx.github.io中的内容</p>
+
+<p>二. SEO与GA
+关于GA的内容，我想这篇<a href="http://812lcl.com/blog/2013/10/29/octopresstian-jia-tong-ji-yu-seo/">博客</a>介绍已经很详细了，这方面我只想补充四个字：亲测可用</p>
+
+<p>关于SEO，同样可以参考上面的文章，我只补充一些操作的说明：</p>
+
+<ol>
+<li>为何要替换source/_includes/head.html内容？</li>
+</ol>
+
+
+<p>由其源码可知，octopress实际使用的是一种模板语言，如果设置了page的keywords，那么就添加keywords关键字用于SEO，否则会默认使用前150个字符作为keywords。</p>
+
+<pre><code>{\% if page.keywords %}&lt;meta name="keywords" content="Github Blog, GA, SEO, CNAME"&gt;...
+</code></pre>
+
+<p>经过修改后，keywords的设置实际上变成了如果没有设置page.keywords
+(就是下面第2个问题中要填写的内容)，那么就会使用site.keywords，那么site.keywords又在哪里呢？可以通过对_config.yml文件的定义实现：</p>
+
+<pre><code># add site keyword/description
+keywords: python, Facebook Ad, C++, linux
+description: Chutong's Blog for Python and Programming Ads, as well as other related
+</code></pre>
+
+<p>从这个角度看，octopress或者说jekell使用的模板和Django的模板很像，你可以通过向_config.yml中添加site级别的模板定义，也可以通过每个新博客添加page级别的模板定义。</p>
+
+<p>2.如何为新博客增加keyword和description两项默认值？</p>
+
+<p>默认情况下，当运行rake new_post[&lsquo;your-blog&rsquo;]时，会产生包含如下内容的your-blog.markdown文件：</p>
+
+<pre><code>---
+layout: post
+title: "your-blog"
+date: 2016-03-19 13:21:24 +0800
+comments: true
+categories: 
+---
+</code></pre>
+
+<p>我们需要做的是于上述字段类似，添加keywords和description两个字段：</p>
+
+<pre><code>---
+layout: post
+title: "your-blog"
+date: 2016-03-19 20:16:57 +0800
+comments: true
+categories: [python] 
+keywords: 
+description: 
+---
+</code></pre>
+
+<p>当然我们可以每次取添加这两个字段，但是更好的方案是在rake new_post后自动生成，这样做我们需要修改octopress根目录下的Rakefile文件，在下面：</p>
+
+<pre><code>  puts "Creating new post: #{filename}"
+  open(filename, 'w') do |post|
+    post.puts "---"
+    post.puts "layout: post"
+    post.puts "title: \"#{title.gsub(/&amp;/,'&amp;amp;')}\""
+    post.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M:%S %z')}"
+    post.puts "comments: true"
+    post.puts "categories: [python] "
+    post.puts "keywords: "
+    post.puts "description: "
+    post.puts "---"
+  end
+</code></pre>
+
+<p>和下面：</p>
+
+<pre><code>   open(file, 'w') do |page|
+      page.puts "---"
+      page.puts "layout: page"
+      page.puts "title: \"#{title}\""
+      page.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M')}"
+      page.puts "comments: true"
+      page.puts "keywords: "
+      page.puts "description: "
+      page.puts "sharing: true"
+      page.puts "footer: true"
+      page.puts "---"
+    end
+</code></pre>
+
+<p>增加相应关键字就ok了。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-03-19T20:21:06+08:00" pubdate data-updated="true">Mar 19th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github/'>github</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/03/19/celery-2/">
+		
+			Celery 概念：分布式、路由队列与工作流</a>
+	</h2>
+	<div class="entry-content">
+		<p>一. 分布式</p>
+
+<p>在Celery基础教程中，我们了解了如何定义task，启动celery worker和client调用。再次回到Celery定义：</p>
+
+<pre><code>Celery is asynchronous task queue/job based on distributed message passing. It is focused on real-time operation, but supports scheduling as well.
+</code></pre>
+
+<p>可见Celery也是一个分布式的消息系统，那么如何利用分布式的方法执行任务呢？</p>
+
+<p>Celery的分布式实际包含两个层次：</p>
+
+<ol>
+<li>Distribute work on a given machine across all CPUs</li>
+<li>Distribute work to many machines</li>
+</ol>
+
+
+<p>先说第一点，默认情况下，Celery在一台机器上启动worker，worker的进程数量和机器的CPU个数一致。但也可以通过concurrency参数控制启动worker的进程数量：</p>
+
+<pre><code>同时启动5个worker进程
+celery -A tasks worker --loglevel=INFO --concurrency=5
+</code></pre>
+
+<p>比如你的机器只有一个CPU，但仍然可以通过上述方法启动5个worker进程，在某些IO密集型的任务中，可以考虑启动worker的数量多于CPU数量，在CPU密集型的任务中，这样的操作可能没有什么好处。</p>
+
+<p>再说第二点，因为Celery只指定了worker的broker，所以只需要在不同机器上启动worker，它们都会从相同的broker中获取任务并处理。</p>
+
+<p>在考虑不同机器上的操作时，涉及远程控制的概念。</p>
+
+<ol>
+<li>celery inspect</li>
+</ol>
+
+
+<p>观察所有运行worker的信息，例如观察当前处于活跃状态的worker和task：</p>
+
+<pre><code>        celery -A tasks inspect active          
+</code></pre>
+
+<ol>
+<li>celery control</li>
+</ol>
+
+
+<p>控制worker的行为，例如向worker中增加对某队列的消费：</p>
+
+<pre><code>    celery control -d w1.e.com add_consumer queue_name
+</code></pre>
+
+<ol>
+<li>celery status</li>
+</ol>
+
+
+<p>观察当前worker状态</p>
+
+<pre><code>celery -A tasks status
+# celery@iZ25d0yvrwwZ: OK
+#
+# 1 node online.
+</code></pre>
+
+<p>二. 路由(Route)与队列(Queue)</p>
+
+<p>如果不特殊指定，Celery将会创建名为celery的默认队列，用于消息传递。但在某些应用场景下，例如不同任务的耗时和优先级不同，不应让耗时低和优先级高的任务等待耗时较高优先级较低的任务执行，毕竟如上面提到的，worker进程的数量是有限的，过多的任务会造成任务等待，此时需要把不同的消息投递到不同的任务队列处理。</p>
+
+<p>这里涉及的Route，Queue和Exchange概念，我的理解是依赖AMQP本身相关概念的，因此相应定义也是一致的。另外由于我研究较浅，虽然Exchange有多重类型(direct, topic&hellip;)，但这里我们只使用默认的Exchange，问题的焦点放在Route, Queue和Task的绑定上。</p>
+
+<p>(1) 绑定Route与Queue：
+    在Celery的配置文件中，设定CELERY_QUEUES变量</p>
+
+<pre><code>CELERY_QUEUES = (
+    Queue('add', routing_key='task.#'),
+    Queue('default', routing_key='default'),
+)
+</code></pre>
+
+<p>   这里多说一句的是，配置文件如何覆盖到Worker上（因为看了网上很多文章，都在配置文件的内容上，但没有写清如何在Worker上生效），可以依赖如下代码：</p>
+
+<pre><code>app = Celery('task_info', broker='redis://localhost', backend='redis://localhost') # for case with backend
+app.conf.CELERY_TASK_SERIALIZER = 'json'
+app.conf.CELERY_QUEUES = CELERY_QUEUES
+</code></pre>
+
+<p>(2) 绑定Queue与task：</p>
+
+<pre><code>@app.task(queue='add')
+def add(x, y):
+    return 2*x + 2*y
+</code></pre>
+
+<p>  指定task处理来自名为add的队列内容</p>
+
+<p>(3) 启动只处理指定队列的worker</p>
+
+<pre><code>celery -A tasks worker -Q add
+</code></pre>
+
+<p>   启动worker，只处理来自名为add的队列消息</p>
+
+<p>(4) 客户端调用</p>
+
+<p>   client调用时可以指定路由：</p>
+
+<pre><code>result = add.apply_async(args=[4,4],     routing_key='task.add')
+</code></pre>
+
+<p> 也可以指定队列：</p>
+
+<pre><code>result = add.apply_async(args=[4,4], queue='default')
+</code></pre>
+
+<p>三. 工作流(canvas)</p>
+
+<p>子任务：也可以视为一种任务，但如果把任务视为函数的话，它可能是填了部分参数的函数。子任务的主要价值在于它可以用于关联运算中，即几个子任务按某种工作流方式的定义执行更为复杂的任务。</p>
+
+<p>Celery工作流包含以下原语：</p>
+
+<ol>
+<li><p>group</p>
+
+<blockquote><p> group并行的执行一系列任务：</p>
+
+<pre><code>from celery import group
+from proj.tasks import add
+
+group(add.s(i, i) for i in xrange(10))().get()
+# [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+</code></pre></blockquote></li>
+<li><p>chain</p>
+
+<blockquote><p>chain串行的执行任务：</p>
+
+<pre><code> from celery import chain
+ from proj.tasks import add, mul
+
+ chain(add.s(4, 4) | mul.s(8))().get()
+ # (4 + 4) * 8
+</code></pre></blockquote></li>
+<li><p>chord</p>
+
+<blockquote><p> chord是包含回调的group操作</p></blockquote></li>
+<li>map</li>
+<li>starmap</li>
+<li>chunks</li>
+</ol>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-03-19T13:21:24+08:00" pubdate data-updated="true">Mar 19th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/celery/'>celery</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+<nav id="pagenavi">
+    
+        <a href="2" class="prev">Prev</a>
+    
+    
+        <a href="4" class="next">Next</a>
+    
+</nav>
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

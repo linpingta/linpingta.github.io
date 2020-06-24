@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: node.js | linpingta's blog]]></title>
+  <link href="http://yoursite.com/blog/categories/node-dot-js/atom.xml" rel="self"/>
+  <link href="http://yoursite.com/"/>
+  <updated>2020-06-24T10:13:34+08:00</updated>
+  <id>http://yoursite.com/</id>
+  <author>
+    <name><![CDATA[linpingta]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[facebook相关项目]]></title>
+    <link href="http://yoursite.com/blog/2016/07/20/facebook-related-project/"/>
+    <updated>2016-07-20T16:12:16+08:00</updated>
+    <id>http://yoursite.com/blog/2016/07/20/facebook-related-project</id>
+    <content type="html"><![CDATA[<p>摘自<a href="https://github.com/linpingta/facebook-related">facebook-related READMD.md</a></p>
+
+<p>1.<a href="https://github.com/linpingta/facebook-related/tree/master/facebook-ads-sdk-example">facebook-ads-sdk-example</a>
+主要是提炼在项目中用到的一些Facebook API调用实例。Facebook API提供了http的封装实现，也提供了Python和PHP的SDK。在日常项目中主要会用到广告相关的API实例，关于Facebook API类型，可以看<a href="http://linpingta.cn/blog/2016/01/15/facebook-api-related/">这里</a>，在此做一个记录。</p>
+
+<p>2.<a href="https://github.com/linpingta/facebook-related/tree/master/facebook-fan-page-fetcher">facebook-fan-page-fetcher</a>
+Facebook主页粉丝的信息抓取，主要依赖CasperJS模拟翻页</p>
+
+<p>3.<a href="https://github.com/linpingta/facebook-related/tree/master/facebook-success-creatives">facebook-success-creatives</a>
+爬取Facebook成功创意的信息</p>
+]]></content>
+  </entry>
+  
+</feed>

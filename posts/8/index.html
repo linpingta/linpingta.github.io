@@ -1,0 +1,713 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="用户认证：采用Djanog内置的authorization. Django.contrib.auth 在urls.py里实现url和view的关联 (r'^login/$','app.views.login_views',name='myLogin'),
+(r'^logout/$','app. &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/02/19/django-auth/">
+		
+			Django Auth</a>
+	</h2>
+	<div class="entry-content">
+		<p>用户认证：采用Djanog内置的authorization. Django.contrib.auth</p>
+
+<p>在urls.py里实现url和view的关联</p>
+
+<pre><code>(r'^login/$','app.views.login_views',name='myLogin'),
+(r'^logout/$','app.views.logout_views',name='myLogout'),
+</code></pre>
+
+<p>在views.py中实现authorization操作</p>
+
+<pre><code>def login_views(request):
+    # user authenticate
+    user = authenticate(user=request.POST['username'],password=request.POST['password'])
+    if user is not None:
+        login(request)
+    else:
+        print '#log fail#'
+
+def logout_views(request):
+    logout(request)
+
+def index(request):
+    if request.user.is_authenticated(): # if user logged in already
+        # success operation
+    else:
+        # failed operation
+</code></pre>
+
+<p>在template中实现url跳转</p>
+
+<pre><code>    &lt;div class="content-head-nav"&gt;
+        &lt;form action={ url 'myLogin' } method='post' class="content-head-form"&gt;
+            { csrf_token }
+            &lt;input name='username' class="input-small" type="text" placeholder="用户名"&gt;
+            &lt;input name='password' class="input-small" type="password" placeholder="密码"&gt;
+            &lt;button class="btn btn-danger" type="submit"&gt;登录&lt;/button&gt;
+        &lt;/form&gt;
+    &lt;/div&gt;
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-02-19T00:16:57+08:00" pubdate data-updated="true">Feb 19th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/django/'>django</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/02/16/sql-optimization-example1/">
+		
+			SQL Optimization Example1</a>
+	</h2>
+	<div class="entry-content">
+		<p>今天在stackoverflow上看到一个问题 <a href="http://stackoverflow.com/questions/21770055/can-i-simplify-the-sql">http://stackoverflow.com/questions/21770055/can-i-simplify-the-sql</a> ，优化：
+     select count(*)  from (select *
+          from T_LOGGINGINFO
+          where to_char(LOGINTIME, &lsquo;YYYY-MM&rsquo;) = &lsquo;2012-05&rsquo;
+          group by USERNAME)
+问题本身并没有太大困难，但是这里涉及到SQL效率的优化，to_char(LOGINTIME,&lsquo;YYYY-MM&rsquo;)=&lsquo;2012-05'是无法使用索引的，因为在上面应用了to_char函数，解决的方法是处理'2012-05&rsquo;
+          where LOGINTIME between to_date(&lsquo;01-MAY-2012 00:00:00&rsquo;, &lsquo;DD-MON-YYYY  HH24:MI:SS&rsquo;)
+                                     and to_date(&lsquo;31-MAY-2012 23:59:59&rsquo;,&lsquo;DD-MON-YYYY HH23:MI:SS&rsquo;)</p>
+
+<p>btw，作者的开场白很有意思：brevity is the soul of wit , but clarity is the soul of code. 果断Approve.</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-02-16T20:18:12+08:00" pubdate data-updated="true">Feb 16th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/stackoverflow/'>stackoverflow</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/02/16/sql-application/">
+		
+			SQL应用</a>
+	</h2>
+	<div class="entry-content">
+		<p>参考
+<a href="http://stackoverflow.com/questions/21770257/querying-sql-server-2005">http://stackoverflow.com/questions/21770257/querying-sql-server-2005</a></p>
+
+<p>需求：
+根据original table : timemilemaker
+    08:00 101.2
+    08:45 109.8
+    09:15 109.8
+    09:30 111.0
+    10:00 114.6
+生成new table 如下
+    08:00-08:45 101.1-109.8
+    08:45-09:15 109.8-109.8
+    09:15-09:30 109.8-111.0
+    09:30-10:00 111.0-114.6
+所以重点是要根据现有列插入新列，方法是用select子句，通常select子句出现在from或where里面作为derived table，但这种情况下可以出现在select里面去选择特殊行</p>
+
+<pre><code>select t1.*, (select t1.time from timemilemaker t2 where t2.time &gt; t1.time order by t1.time) as newtime ...
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-02-16T19:53:32+08:00" pubdate data-updated="true">Feb 16th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/stackoverflow/'>stackoverflow</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/02/15/title/">
+		
+			如何设置Github博客</a>
+	</h2>
+	<div class="entry-content">
+		<p><a href="http://www.ruanyifeng.com/blog/2012/08/blogging_with_jekyll.html">http://www.ruanyifeng.com/blog/2012/08/blogging_with_jekyll.html</a></p>
+
+<p>按照上述博客操作，唯一的问题是在创建origin时
+     git remove rm origin
+     git remote add origin github@github.com:username/project.git
+遇到下面的问题</p>
+
+<p>解决的方法是去：
+     C:\Users\YourUsername\AppData\Local\GitHub\PortableGit_054f2e797ebafd44a30203088cd3d58663c627ef\etc\gitconfig
+里面修改删除[remote &ldquo;origin&rdquo;]以及后面的两行，然后再重新尝试</p>
+
+<p>上面的方法设置好像不行</p>
+
+<p>如果按照下面方法设置
+<a href="http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/">http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/</a></p>
+
+<p>遇到的一个问题是
+<a href="http://stackoverflow.com/questions/15796274/rdiscount-error-failed-to-build-gem-native-extension">http://stackoverflow.com/questions/15796274/rdiscount-error-failed-to-build-gem-native-extension</a></p>
+
+<p>有人说需要安装1.9.3 (我目前用的是1.9.2)，也有如下说法
+参考这里 <a href="http://www.cnblogs.com/puresoul/archive/2011/12/01/2270890.html">http://www.cnblogs.com/puresoul/archive/2011/12/01/2270890.html</a></p>
+
+<p>的确看起来193和192的安装结果不同</p>
+
+<p>结论是193可以支持</p>
+
+<p>按照 <a href="http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/">http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/</a> 设置，在本地可以看到测试页面
+但是在部署到github上面还存在一些问题
+     运行rake setup_github_pages，出现如下错误</p>
+
+<pre><code> 问题的解决主要是在环境变量里添加git.exe的路径，可以参考http://stackoverflow.com/questions/9793806/no-such-file-or-directory-git-ls-files-windows ，另外必须重启ruby和git的控制台
+</code></pre>
+
+<p>最后遇到发布问题
+解决参考此贴：
+<a href="https://teamtreehouse.com/forum/i-got-permission-deniedpublickey-when-i-typed-git-push-origin-master">https://teamtreehouse.com/forum/i-got-permission-deniedpublickey-when-i-typed-git-push-origin-master</a>
+用 <a href="https://github.com/uername/project.git">https://github.com/uername/project.git</a> 而不用 git@github.com:username/project.git 来完成功能</p>
+
+<p>管理文章
+     直接增加或删除.markdown文件，然后更新状态:<a href="http://never.doubting.me/2013/04/18/2013-04-18-setup-octopress-on-github-step-by-step/">http://never.doubting.me/2013/04/18/2013-04-18-setup-octopress-on-github-step-by-step/</a>
+      rake generate
+      rake deploy</p>
+
+<p>这里如果遇到 &ldquo;Gem::RemoteFetcher::FetchError:&rdquo; 的问题，即每次会提示一个ruby模块没有安装，但安装后又继续提醒下一个ruby模块没有安装，实际上是因为下载问题引起的，简单的解决方法是修改octopress目录下的Gemfile文件，将其中的</p>
+
+<pre><code>source "https://rubygems.org"
+</code></pre>
+
+<p>修改为</p>
+
+<pre><code>source "http://rubygems.org"
+</code></pre>
+
+<p>其它解决方法可以参考<a href="http://stackoverflow.com/questions/10246023/bundle-install-fails-with-ssl-certificate-verification-error/10430331#10430331">stackoverflow回答</a></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-02-15T22:57:10+08:00" pubdate data-updated="true">Feb 15th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github/'>github</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/01/29/south/">
+		
+			South</a>
+	</h2>
+	<div class="entry-content">
+		<h1>Django数据迁移</h1>
+
+<p>South组件</p>
+
+<p>在使用Django model模块时，遇到的一个问题是，可能我们开始设计的ORM随着开发和功能变化不再
+符合要求，需要增加，删除或者更新字段，此时如果直接修改models.py的字段是不够的，因为会提示
+column相关的error，South的主要作用就是实现这种model结构变化后的数据库更新。</p>
+
+<p>south托管app的数据库后，再执行manage.py syncdb不会处理该app中的model，migrate命令负责
+对于托管的app进行数据库更新。</p>
+
+<p>south的使用可以分为两大类：</p>
+
+<ol>
+<li><p>models中有定义（或者没有），但数据库中没有相应的表定义</p>
+
+<p> # 初始化，创建migration目录
+ # 此操作会在数据库中创建app的models中定义的表，同时创建south_migrationhistory表
+ # 另外会在app的目录下创建一个migration的目录
+ manage.py shcemamigration appname &ndash;initial</p>
+
+<p> # 如果models发生了变化，进行更新
+ manage.py schemamigration appname &ndash;auto
+ managy.py migrate appname # 实际更新数据库</p></li>
+<li><p>models和数据库中均已有了定义</p>
+
+<p> # 此时不同于1，需要先将有表定义的数据库转为migration托管的状态
+ manage.py syncdb # 在数据库中创建south_migrationhistory
+ managy.py convert_to_south appname # 在app的目录下创建migration的目录创建表</p>
+
+<p> # 如果modesl发生了变化，和1的更新操作一致</p></li>
+</ol>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-01-29T00:57:57+08:00" pubdate data-updated="true">Jan 29th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/django/'>django</a>, <a class='category' href='/blog/categories/south/'>south</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/01/22/django-comments/">
+		
+			Django Comment</a>
+	</h2>
+	<div class="entry-content">
+		<h1>Django Comments</h1>
+
+<p>(下文因为octopress的生成语法，去掉了所有%)</p>
+
+<p>Django自带Comments库，开启操作：</p>
+
+<pre><code>1. 在INSTALLED_APPS中添加 django.contrib.comment 和 django.contrib.site （如果不加后者会出现'site'
+has a relation with model &lt;class 'django.contrib.sites.model.Site'&gt;）
+2. 更新数据库, manage.py syncdb
+3. 加入comments模块 (u'^comment/',include('django.contrib.comments.urls'))
+</code></pre>
+
+<p>在模板中使用comments</p>
+
+<pre><code>load comments
+</code></pre>
+
+<p>查看当前评论 （comment都是基于object存在的）</p>
+
+<pre><code>1. 查看评论数量： 
+ get_comment_count for blog as comment_count 
+&lt;p&gt;Count &lt;/p&gt;
+
+2. 显示评论
+ render_comment_list for blog 
+
+3. 自定义评论
+ get_comment_list for blog as comment_list 
+
+ for i in comment_list 
+ endfor
+
+4. 显示评论提交表单
+ get_comment_form for blog as form 
+
+&lt;form action=" comment_form_target " method="post"&gt;
+     csrf_token 
+
+&lt;/form&gt;
+</code></pre>
+
+<p>comment_form_target 会返回comment系统中的提交对应的url (实际上url对应的views，views中的操作和存储都是在
+comment系统中处理的)</p>
+
+<p>&ldquo;Setting&rdquo; object has no attribute &lsquo;SITE_ID&rsquo;</p>
+
+<pre><code>在调用 get_comment_count 的时候出现以上错误，解决方案是在settings.py里面添加SITE_ID=1
+</code></pre>
+
+<p>Missing content_type or object_pk field</p>
+
+<p><a href="http://blog.csdn.net/bigconvience/article/details/7626437">解决方法</a></p>
+
+<p>在csrf_token下面添加</p>
+
+<pre><code>     csrf_token 
+</code></pre>
+
+<p>关于Django模板配置的原则：因为Django的模板允许继承，我通常用bare_base.html来构建结构，用base.html继承
+bare_base.html来实现模块的通用功能，然后不同模块再继承base.html来实现各自不同的功能。</p>
+
+<p>默认comments提交后，会跳转到comments默认的页面，此时处理方法有两种：</p>
+
+<pre><code>1. 定制跳转页面
+在app目录下template/comment中重建跳转页面
+
+2. 强制跳转到另外一个页面
+默认的url是 /comment/posted/?c=1 所以在url中使其跳转到另外一个页面 （Django在做url
+匹配时，会跳转到第一个符合正则的页面）
+
+url(r'^comments/posted/','blog_redis.views.submit_comment',name='mySubmitComment'),
+
+然后再在submit_comment中实现跳转
+
+def submit_comment(request):
+    return HttpResponseRedirect('/blog/archive')
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-01-22T23:06:03+08:00" pubdate data-updated="true">Jan 22nd, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/django/'>django</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/01/02/django-setting/">
+		
+			Django Setting</a>
+	</h2>
+	<div class="entry-content">
+		<h1>Django配置</h1>
+
+<p>静态文件处理</p>
+
+<p><a href="http://blog.sina.com.cn/s/blog_3fe961ae01016fpk.html">http://blog.sina.com.cn/s/blog_3fe961ae01016fpk.html</a></p>
+
+<p>Django会先在STATICFILES_DIRS配置的目录下查找静态文件，如果不存在，在每个app的static子目录（如果存在）内查找</p>
+
+<pre><code>PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
+
+STATICFILES_DIRS = (
+    os.path.join(PROJECT_ROOT, 'static'),
+)
+</code></pre>
+
+<p>另外STATIC_ROOT是在部署环境下指定静态文件的存储位置</p>
+
+<pre><code>STATIC_ROOT = (
+    os.path.jon(PROJECT_ROOT, 'asset')
+)
+</code></pre>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-01-02T23:04:15+08:00" pubdate data-updated="true">Jan 2nd, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/django/'>django</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2013/12/26/python-pass-by-assignment/">
+		
+			Python: Pass by Assignment</a>
+	</h2>
+	<div class="entry-content">
+		<h3><em>问题缘由</em></h3>
+
+<p>函数传参是一项非常基础的问题，在C++中，我们有两种传参方式，分别是传值(pass-by-value)和传引用(pass-by-reference)，二者可以用引用(&amp;)或者指针(*)区分。</p>
+
+<pre><code>void F(int a); // pass by value
+void F(int* a); // pass by reference
+void F(int&amp; a); // pass by reference
+</code></pre>
+
+<p>在Python中，没有引用和指针符号，那么Python函数的参数在函数内部的修改是否会在外部生效呢？</p>
+
+<h3><em>Python的做法: Pass by assignment</em></h3>
+
+<p>实际上Python采取的做法既不是pass by value也不是pass by reference，我们称呼它为<a href="http://stackoverflow.com/questions/986006/python-how-do-i-pass-a-variable-by-reference">pass by assignment</a>
+简而言之，函数内是否可以修改变量的值取决于变量本身。
+如果变量是immutable类型，比如string，那么函数内的修改不能影响外部，即pass-by-value，而如果变量是mutable类型，比如list，那么函数内部的修改可能会影响到外部，前提是引用修改的是原对象的值，即pass-by-reference.</p>
+
+<p>这里举两个具体的例子说明</p>
+
+<p>string</p>
+
+<pre><code>class Foo:
+    @staticmethod
+    def f(word):
+        word = 'Hello, Var changes'
+
+s1 = 'Hello, Python'
+print s1
+Foo.f()
+print s1
+</code></pre>
+
+<p>输出结果：</p>
+
+<p><img src="/images/2013/12/python_pass_by_assign_1.png" alt="TEST" /></p>
+
+<p>list</p>
+
+<pre><code>class Foo:
+@staticmethod
+def f2(my_list):
+    my_list.append('new')
+
+if __name__ == '__main__':
+    list1 = ['old']
+    print [item1 for item1 in list1]
+    Foo.f2(list1)
+    print [item1 for item1 in list1]
+</code></pre>
+
+<p>输出结果:</p>
+
+<p><img src="/images/2013/12/python_pass_by_assign_2.png" alt="TEST2" /></p>
+
+<p>那么接下来解释下“前提是引用修改的是原对象的值”。Python的所有对象都是引用，引用就会存在一个引用的对象，好比你可以让pointer* A指向objectA，也可以指向objectB (借用下C++的概念)，那么在函数内部，如果引用的对象没有改变，而改变的是引用对象的值，那么这种修改会被反映到外部，反之，如果引用的对象改变了，那么进一步的值改变将不是在原先引用对象上进行的，那么这种改变不会反映到外部。
+举一个具体的例子：</p>
+
+<pre><code>class Foo:
+@staticmethod
+def f2(my_list):
+    #my_list.append('new')
+    # change reference
+    my_ist = ['A','B']
+</code></pre>
+
+<p>此时my_list的新赋值不会影响函数外部的取值，结果如下：</p>
+
+<p><img src="/images/2013/12/python_pass_by_assign_3.png" alt="TEST3" /></p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2013-12-26T16:56:19+08:00" pubdate data-updated="true">Dec 26th, 2013</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+
+
+<nav id="pagenavi">
+    
+        <a href="7" class="prev">Prev</a>
+    
+    
+</nav>
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

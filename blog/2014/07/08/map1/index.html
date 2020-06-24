@@ -1,0 +1,223 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>地图与简单SQL生成  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="租房信息中非常重要的一个因素是地理位置，因此其与地图联系是顺理成章的事情。在地图上
+给用户直观的感受，会比大量数字的描述更为有力。 百度地图提供了一系列开放接口，基于它们我对应用做了一些尝试。 静态图显示 地址与地理坐标转换 关于使用百度地图进行数据展示的可能性 (1) 作为java调用， &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">地图与简单SQL生成</h2>
+	<div class="entry-content"><p>租房信息中非常重要的一个因素是地理位置，因此其与地图联系是顺理成章的事情。在地图上
+给用户直观的感受，会比大量数字的描述更为有力。</p>
+
+<p>百度地图提供了一系列开放接口，基于它们我对应用做了一些尝试。</p>
+
+<p><a href="http://developer.baidu.com/map/static-1.htm#column82">静态图显示</a></p>
+
+<p><a href="http://developer.baidu.com/map/webservice-geocoding.htm">地址与地理坐标转换</a></p>
+
+<p>关于使用百度地图进行数据展示的可能性</p>
+
+<pre><code>(1) 作为java调用，展示静态图
+(2) 采用javascript做动态调用
+</code></pre>
+
+<p>先实现(1) ，包含两个步骤：</p>
+
+<pre><code> 1. 根据地址信息获取经纬度坐标 (不需要此步骤，百度支持根据名称直接读取位置坐标)
+ 2. 传入经纬度信息在静态图中显示
+ 另外需要深入完成的一点就是先根据district获取center信息，然后在该区域内用大图显示每个标点 （否则标点间太容易重合之类）
+</code></pre>
+
+<p><img src="/images/2014/07/map1.png" alt="S1" /></p>
+
+<p>输入相关参数进行展示  <br/>
+后期可以实现关于地图的深入处理： 比如结合地铁站条件搜索，结合与某建筑 （公司地址） 远近 搜索
+考虑用django完成mysql数据库读取和地图展示部分功能</p>
+
+<p><img src="/images/2014/07/map2.png" alt="S2" /></p>
+
+<p>python 连接 mysql : pip install <a href="https://pypi.python.org/pypi/MySQL-python/1.2.4#downloads">MySQL-python</a>
+现在在python下整合的结果，可以把center设置为其它粒度 （考虑百度只允许返回一定长度的url 点标记的数量：20个）</p>
+
+<p><img src="/images/2014/07/map3.png" alt="S3" /></p>
+
+<p><img src="/images/2014/07/map4.png" alt="S4" /></p>
+
+<ol>
+<li>python根据输入读取MySQL中数据，返回查询结果
+  如何根据输入生成join和where部分：
+       一种思路是join部分插入，where部分插入
+       select xxxx from house_rent_info a11 {join mlu_room_type a12 on a11.ddd = a12.ddd}
+       其实这里做的事情很类似SQL Engine，但是非常非常初级的，因为SQL Engine最重要的一件事是把logic concept转换为SQL concept.
+       (这个需求对于非规范化的表不需要考虑，但是对于规范化表而言是十分必要的，如何避免硬编码)</li>
+</ol>
+
+
+<p><img src="/images/2014/07/map5.png" alt="S5" /></p>
+
+<ol>
+<li><p>查询结果组织为url发送给百度地图</p>
+
+<p>  调研关于百度地图动态图的使用</p>
+
+<ol>
+<li>类似（去哪，链家）之类的查询界面
+   经过尝试，发现做一个比较完善的前端界面还是有一定复杂程度的，比如hierarchy之间的显示，根据某选项产生另外一些选项
+   但是前端效果是非常重要的，也是必须添加的</li>
+</ol>
+
+
+<p>  另外对于动态产生SQL的格式也需要研究：
+       SQL最终查询的目标是返回 house_info_detail的house_rent_info_name 和 rent / size 指标
+       其它的都是条件，那么有些条件没有，我认为应该是根据一个SQL模式在其中添加或者删除，比如有district = &lsquo;'则SQL中添加，否则删除</p></li>
+</ol>
+
+
+<p>动态SQL生成算法：</p>
+
+<pre><code> 基础：Table -&gt; child_table_list 以及 join condition for every child_table_list
+      对于input info，找到其mapping的Table class, 
+           先判断该table是否存在于join tree中；如果存在，return (二叉树遍历)
+           否则，找到从该Table到 fact table的路径上该如何join操作；(深度遍历)
+           如果你能找到，对于找到的路径，根据table_list和join condition生成join path tree ，否则丢弃
+      遍历后根据join tree生成 SQL join 部分
+
+ （现在愈发觉得公司的产品还是很NB的，我现在做的只是join，还是直接在physical table上的操作，相比logic table的定义又简单了很多）
+ （实际上我现在在做的就是Penhato的工作，我只需要将数据导入其中即可，所以做展示它肯定好于我，但我要做的是在本应用中支持地图；另外一方面，也是Penhato之类定制化的意义）          
+
+   定义这样结构的意义在于对于多次查询可以自动生成SQL，
+   table &amp; key relationship : 建立一次结构，多次使用
+</code></pre>
+
+<p>记录table间关系的结构</p>
+
+<p><img src="/images/2014/07/map6.png" alt="S6" /></p>
+
+<pre><code>   这里不需要两个key，尽管对于WorkBench生产的key两者不同，但是可以通过src_table + key生成另一个key
+   比如  on mlu_city. CITY_ID = mlu_district.MLU_CITY_DISTRICT_ID ，第2个key
+
+   记录table自身结构，实际上这里的child relationship是有冗余的，但这样做的好处是输入的查询可能是对于非key column的，所以要能够根据输入column name找到相关的table，另外一方面，child_path的查询速度比直接去TableKeyRelationship查询更快因为这样提供了遍历的路径起点
+</code></pre>
+
+<p>实际上在relationship里面不需要放table_name，只需要放sub_table和key_column，其余信息可以通过sub_table和key+column获取</p>
+
+<p><img src="/images/2014/07/map7.png" alt="S7" /></p>
+
+<p>对于基本情况的测试：</p>
+
+<p><img src="/images/2014/07/map8.png" alt="S8" /></p>
+
+<p><img src="/images/2014/07/map9.png" alt="S9" /></p>
+
+<p><img src="/images/2014/07/map10.png" alt="S10" /></p>
+
+<p>针对百度地图API中提供视图center功能 （显示以center为中心，周围一定范围内的内容），必须设法把输入的限制条件作为center的有用信息
+可能输入的限制条件会在多个level上面，(district->local->detail_local，或者pay_type)，也可能和地理无关 (比如只有pay_type)，那么必须要去解析输入，这样的话，实际上输入用 &lt;table,filter> 还是太粗放了，必须将其解析为 &lt;table,operator,filter_answer>然后再把它们组织为string去SQL中查询</p>
+
+<p><img src="/images/2014/07/map11.png" alt="S11" /></p>
+
+<p>最终集成进Django界面后的效果</p>
+
+<p><img src="/images/2014/07/map12.png" alt="S12" /></p>
+
+<p>地铁距离应用</p>
+
+<pre><code>1. 建立静态地铁信息表：（已完成）
+  subway_info { 
+       line_list // record which line the subway station belongs, as there are many crossovers, it may be list
+       name
+       latitude
+       longitude
+  }          
+  存储所有station关于这些的信息
+
+2. 对于用户输入的小区
+  首先进行地理转码
+  利用经纬度进行近似比较 （城区距离），之所以要进行近似比较的主要原因是因为经纬度的计算公式比较费时，我们在这里不需要得到准确结果，只需要知道最接近的对象
+  (根据经纬度计算距离 http://www.cnblogs.com/ycsfwhh/archive/2010/12/20/1911232.html)
+
+3. 对于符合条件的地铁站调用百度API，返回距离
+</code></pre>
+
+<p><img src="/images/2014/07/map13.png" alt="S13" /></p>
+
+<p><img src="/images/2014/07/map14.png" alt="S14" /></p>
+
+<p>现在进一步支持两个小改动：</p>
+
+<pre><code>1. 显示相对于每条线路的最近距离 （因为N多的可选线路对于用户也是一个吸引点）
+2. 只显示一定距离范围内的地铁站 （比如如果5km外有个地铁站，基本可以认为是不存在地铁站的样子）
+</code></pre>
+
+<p>这两条需要对于每条线路均进行系统调用所以消耗会大一些，应该有一个开关设置是否打开它</p>
+
+<p><img src="/images/2014/07/map15.png" alt="S15" /></p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-07-08T21:48:35+08:00" pubdate data-updated="true">Jul 8th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/github-project/'>github project</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

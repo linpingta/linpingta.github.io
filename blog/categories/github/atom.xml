@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: github | linpingta's blog]]></title>
+  <link href="http://yoursite.com/blog/categories/github/atom.xml" rel="self"/>
+  <link href="http://yoursite.com/"/>
+  <updated>2020-06-24T10:13:34+08:00</updated>
+  <id>http://yoursite.com/</id>
+  <author>
+    <name><![CDATA[linpingta]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Github博客--Octopress功能分析]]></title>
+    <link href="http://yoursite.com/blog/2016/05/15/github-4/"/>
+    <updated>2016-05-15T16:44:34+08:00</updated>
+    <id>http://yoursite.com/blog/2016/05/15/github-4</id>
+    <content type="html"><![CDATA[<p>用Octopress搭建技术博客是一个很省事的方案，在完成基本环境的配置外，写新博客只需要几项命令操作：</p>
+
+<pre><code>1. rake new_post['title']  : 创建title名称的新博客
+2. rake generate ：生成博客列表
+3. rake preview ：本地预览博客
+4. rake deploy ：将本地博客部署到remote端
+</code></pre>
+
+<p>的确很简单。。但是再看看Octopress的本地目录：</p>
+
+<pre><code>---octopress
+    ---.theme
+        --classic
+        --other_template
+    ---_deploy
+    ---plugin
+    ---public
+    ---sass
+    ---source
+        --_includes
+            --head.html
+            --header.html
+            --...
+            --asides
+            --custom
+            --post
+        --_layouts
+        --_posts
+            -- new post1
+            -- new post2
+        --archives
+        --assets
+        --blogs
+        --fonts
+        --images
+        --javascript
+        --stylesheets
+        --CNAME
+        --404.markdown
+        --atom.xml
+        --index.html
+        --robot.txt
+    ---Rakefile
+    ---_config.yml
+</code></pre>
+
+<p>好吧，我只是列举了一些比较主要的文件，可以说，Octopress的目录文件又多，深度又深，虽然简单的几个rake命令可以完成博客部署功能，但是。。这些目录究竟是什么意思，rake命令究竟执行了什么操作，希望在这篇博客里能够对Octopress的操作做更多说明：</p>
+
+<p>1.Octopress和Jekyll的区别
+Octopress是基于Jekyll开发的，可以认为是后者的高层定制。</p>
+
+<p>2.Octopress本地目录结构
+(1) _config.yml ：模板语言中模板变量的定义位置</p>
+
+<pre><code>基本配置
+url: http://linpingta.github.io
+title: 褚桐 博客
+subtitle: 谁似临平山上塔，亭亭，迎客西来送客行
+author: 褚桐
+simple_search: http://google.com/search
+description: Python 移动&amp;海外广告
+
+附加配置
+# 定义GA信息
+# Google Analytics
+google_analytics_tracking_id: UA-75323645-1
+
+# 定义Disqus评论信息
+# Disqus Comments
+disqus_short_name: linpingta
+disqus_show_comment_count: true
+</code></pre>
+
+<p>(2) Rakefile：所有rake命令的定义位置，例如常用的rake generate，实际执行的操作是：</p>
+
+<pre><code>desc "Generate jekyll site"
+task :generate do
+  raise "### You haven't set anything up yet. First run `rake install` to set up an Octopress theme." unless File.directory?(source_dir)
+  puts "## Generating Site with Jekyll"
+  system "compass compile --css-dir #{source_dir}/stylesheets"
+  system "jekyll"
+end
+</code></pre>
+
+<p>并没有仔细研究过其中函数的含义，但是在定义keyword和description的时候，可能需要编辑Rakefile。</p>
+
+<p>(3)目录和文件
+.themes：Octopress中定义的主题，默认主题是.themes/classic，其它添加的主题也会放在.themes/xxx中。
+对于每个主题，都包含sass和source两个文件夹，前者定义的是样式(style)，后者定义的是主题(theme)。</p>
+
+<p>_deploy：Octopress编译生成的文件目录，用于push到Github上。</p>
+
+<p>public：Octopress的本地目录，在执行rake deploy的时候，会被public内容复制到_deploy目录，rake deploy：</p>
+
+<pre><code>## Copying public to _deploy
+cp -r public/. _deploy
+cd _deploy
+
+...
+commit
+</code></pre>
+
+<p>sass/source：Octopress的默认目录，前者定义的是样式(style)，后者定义的是主题(theme)。在执行rake generate的时候，会把source和sass的内容拷贝到public目录中。</p>
+
+<p>(4)source和sass目录内部说明
+source/_posts：文章定义位置，在执行rake new_post[&lsquo;&rsquo;]的时候，会在此位置生成文章。
+source/_includes：网站html格式定义</p>
+
+<pre><code>    source/\_includes/xxx.html
+    source/\_includes/custom/xxx.html
+</code></pre>
+
+<p>后者是对前者内容的override，比如navigation.html，
+_include/navigation.html:</p>
+
+<pre><code>    &lt;ul class="subscription" data-subscription="rss"&gt;
+  &lt;li&gt;&lt;a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"&gt;RSS&lt;/a&gt;&lt;/li&gt;
+  
+&lt;/ul&gt;
+  
+&lt;form action="https://www.google.com/search" method="get"&gt;
+  &lt;fieldset role="search"&gt;
+    &lt;input type="hidden" name="q" value="site:yoursite.com" /&gt;
+    &lt;input class="search" type="text" name="q" results="0" placeholder="Search"/&gt;
+  &lt;/fieldset&gt;
+&lt;/form&gt;
+  
+<ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+
+</code></pre>
+
+<p>_include/custom/navigation.html:</p>
+
+<pre><code>&lt;ul class="main-navigation"&gt;
+  &lt;li&gt;&lt;a href="/blog/archives"&gt;博客&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+
+<p>希望通过这篇文章能够对Octopress的工作过程更多说明，这样不会被它繁复的目录结构吓到。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[如何设置Github博客(三) 主题]]></title>
+    <link href="http://yoursite.com/blog/2016/05/14/github-3/"/>
+    <updated>2016-05-14T15:25:55+08:00</updated>
+    <id>http://yoursite.com/blog/2016/05/14/github-3</id>
+    <content type="html"><![CDATA[<p>在建立Github博客后，通过xxx.github.io可以访问相应的博客目录。通过CNAME设置，我们把xxx.github.io绑定到指定的域名，然后我们又为博客添加了搜索引擎优化，数据统计支持，评论支持。。。当我们可以开心访问自己的博客时，未免还有一点小缺憾：博客的主题过于常见（想想大家都在用Octopress的默认主题），那么如何定制自己博客的主题，让自己的博客有所与众不同？</p>
+
+<p>方法一. 添加Octopress<a href="https://github.com/imathis/octopress/wiki/3rd-Party-Octopress-Themes">第三方主题</a></p>
+
+<p>在上述网页中，找到希望的主题，然后按如下方法添加主题：</p>
+
+<pre><code>$ cd octopress
+$ git submodule add GIT_URL .themes/THEME_NAME
+$ rake install['THEME_NAME']
+$ rake generate
+</code></pre>
+
+<p>Octopress默认会创建.theme文件夹，用于存储网站使用的主题。默认主题，即其中的.theme/classic的子文件夹。加载第三方模板，实际上就是把指定的模板拷贝到.theme/NEWTHEME文件夹中。</p>
+
+<p>方法二.配置Octopress<a href="http://octopress.org/docs/theme/">默认主题</a></p>
+
+<p>1.定制主题
+编辑source/_includes/custom中的内容，其中的每个html都可以视为对上层目录对应html文件内容的override编辑。例如_include/navigation.html：</p>
+
+<pre><code>&lt;ul class="subscription" data-subscription="rss"&gt;
+  &lt;li&gt;&lt;a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"&gt;RSS&lt;/a&gt;&lt;/li&gt;
+  
+&lt;/ul&gt;
+  
+&lt;form action="https://www.google.com/search" method="get"&gt;
+  &lt;fieldset role="search"&gt;
+    &lt;input type="hidden" name="q" value="site:yoursite.com" /&gt;
+    &lt;input class="search" type="text" name="q" results="0" placeholder="    "/&gt;
+  &lt;/fieldset&gt;
+&lt;/form&gt;
+  
+<ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+
+</code></pre>
+
+<p>其中最后一句包含custom中的navigation.html，编辑该文件，定义导航栏中只有archives一项：</p>
+
+<pre><code>&lt;ul class="main-navigation"&gt;
+  &lt;li&gt;&lt;a href="/blog/archives"&gt;博客&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+
+<p>2.更改样式
+(1)更改layout布局
+编辑sass/custom/_layout.scss，它继承自sass/base/_layout.scss，其中包含!default的变量都可以在custom中进行override编辑。</p>
+
+<p>(2)更改color颜色
+编辑sass/custom/_colors.scss，其中定义了很多设置变量，比如：</p>
+
+<pre><code>//$header-bg: #263347; 
+</code></pre>
+
+<p>默认状态是注释的，可以取消后观察header背景的变化，也可以定义自己的header-bg，例如：</p>
+
+<pre><code>$header-bg: #004d32
+</code></pre>
+
+<p>将背景色更新为深绿色。</p>
+
+<p>方法一可以认为是一种更深层次的定制，方法二可以认为是如何创建方法一中模板的方法说明，前者的优点在于更大的变化，但问题在于很多模板已经不再维护和更新了，所以后续处理会复杂。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[如何设置Github博客(二)  域名/GA/SEO]]></title>
+    <link href="http://yoursite.com/blog/2016/03/19/github-2/"/>
+    <updated>2016-03-19T20:21:06+08:00</updated>
+    <id>http://yoursite.com/blog/2016/03/19/github-2</id>
+    <content type="html"><![CDATA[<p>虽然本篇的题目是“如何设置Github博客(二)”，但是它距“如何设置Github博客”已经有两年多的时间，所以不能指望它们的文字风格有太多相似性。这篇博客的初衷，主要是经过了这样长的时间和断断续续的写作，我又想给自己的博客添加一些基础的功能，顺手把相关的内容做下记录和总结。</p>
+
+<p>一. 域名
+Github博客默认使用的域名是"xxx.github.io"（比如我的就是<a href="linpingta.github.io">linpingta.github.io</a>，对于访问而言这是足够的（你不用care服务器的设置，管理和安全，这也是Github博客相比WP或者自建博客的一些优点，当然WP仍然是主流哈），但有时候你希望有一些有特色的域名，毕竟xiaozhang.github.io, xiaowang.github.io实在不容易让别人记住你，那么这时候就需要对Github博客做一些域名上的设置了。</p>
+
+<p>设置步骤如下：
+1. 首先你得有个域名。这方面相关的推荐很多，国外似乎比较常用到<a href="https://tw.godaddy.com/offers/default.aspx?tmskey=1dom_03&amp;isc=gofhltw01&amp;countrview=1&amp;currencytype=TWD&amp;mkwid=shlvVob7r_pcrid_101432078566_pkw_godaddy_pmt_e_pdv_c&amp;cvosrc=ppc.google.godaddy&amp;cvo_crid=101432078566&amp;matchtype=e&amp;gclid=CjwKEAjw8bO3BRDp0bP_vL-7_lASJACL_d6wJhQqBcJzWvIivpatDyjppUcTvkNPm9TUCXLQBOll0xoC_2Xw_wcB">godaddy</a>，国内比较常用的是万网。因为我先在阿里云上买了一个云主机，所以就选择了从阿里处（似乎就是万网）购买域名linpingta.cn。
+关于域名怎么选，云服务器用哪家，网上的资料和争论都很多，这方面我比较小白，只是说下我怎么做，重点的是，最终你有了个域名。
+2. 关联域名到Github主页
+如果你的域名是一级域名，比如 linpingta.cn，那么在域名服务商处（即阿里云），增加一条A record，让它指向192.30.252.153或者192.30.252.154 （应该是Github的服务器）
+如果你的域名是二级域名，比如 blog.linpingta.cn，那么在域名服务商处，增加一条CNAME record，让你的域名指向xxx.github.io (我这里就是linpingta.github.io)
+3. octopress中设置
+在source目录下增加一个名为CNAME的文件，里面只有一行，就是你的域名，比如我的内容是linpingta.cn</p>
+
+<p>以上设置完毕后，应该可以通过新域名访问xxx.github.io中的内容</p>
+
+<p>二. SEO与GA
+关于GA的内容，我想这篇<a href="http://812lcl.com/blog/2013/10/29/octopresstian-jia-tong-ji-yu-seo/">博客</a>介绍已经很详细了，这方面我只想补充四个字：亲测可用</p>
+
+<p>关于SEO，同样可以参考上面的文章，我只补充一些操作的说明：</p>
+
+<ol>
+<li>为何要替换source/_includes/head.html内容？</li>
+</ol>
+
+
+<p>由其源码可知，octopress实际使用的是一种模板语言，如果设置了page的keywords，那么就添加keywords关键字用于SEO，否则会默认使用前150个字符作为keywords。</p>
+
+<pre><code>{\% if page.keywords %}&lt;meta name="keywords" content=""&gt;...
+</code></pre>
+
+<p>经过修改后，keywords的设置实际上变成了如果没有设置page.keywords
+(就是下面第2个问题中要填写的内容)，那么就会使用site.keywords，那么site.keywords又在哪里呢？可以通过对_config.yml文件的定义实现：</p>
+
+<pre><code># add site keyword/description
+keywords: python, Facebook Ad, C++, linux
+description: Chutong's Blog for Python and Programming Ads, as well as other related
+</code></pre>
+
+<p>从这个角度看，octopress或者说jekell使用的模板和Django的模板很像，你可以通过向_config.yml中添加site级别的模板定义，也可以通过每个新博客添加page级别的模板定义。</p>
+
+<p>2.如何为新博客增加keyword和description两项默认值？</p>
+
+<p>默认情况下，当运行rake new_post[&lsquo;your-blog&rsquo;]时，会产生包含如下内容的your-blog.markdown文件：</p>
+
+<pre><code>---
+layout: post
+title: "your-blog"
+date: 2016-03-19 13:21:24 +0800
+comments: true
+categories: 
+---
+</code></pre>
+
+<p>我们需要做的是于上述字段类似，添加keywords和description两个字段：</p>
+
+<pre><code>---
+layout: post
+title: "your-blog"
+date: 2016-03-19 20:16:57 +0800
+comments: true
+categories: [python] 
+keywords: 
+description: 
+---
+</code></pre>
+
+<p>当然我们可以每次取添加这两个字段，但是更好的方案是在rake new_post后自动生成，这样做我们需要修改octopress根目录下的Rakefile文件，在下面：</p>
+
+<pre><code>  puts "Creating new post: #{filename}"
+  open(filename, 'w') do |post|
+    post.puts "---"
+    post.puts "layout: post"
+    post.puts "title: \"#{title.gsub(/&amp;/,'&amp;amp;')}\""
+    post.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M:%S %z')}"
+    post.puts "comments: true"
+    post.puts "categories: [python] "
+    post.puts "keywords: "
+    post.puts "description: "
+    post.puts "---"
+  end
+</code></pre>
+
+<p>和下面：</p>
+
+<pre><code>   open(file, 'w') do |page|
+      page.puts "---"
+      page.puts "layout: page"
+      page.puts "title: \"#{title}\""
+      page.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M')}"
+      page.puts "comments: true"
+      page.puts "keywords: "
+      page.puts "description: "
+      page.puts "sharing: true"
+      page.puts "footer: true"
+      page.puts "---"
+    end
+</code></pre>
+
+<p>增加相应关键字就ok了。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[如何设置Github博客]]></title>
+    <link href="http://yoursite.com/blog/2014/02/15/title/"/>
+    <updated>2014-02-15T22:57:10+08:00</updated>
+    <id>http://yoursite.com/blog/2014/02/15/title</id>
+    <content type="html"><![CDATA[<p><a href="http://www.ruanyifeng.com/blog/2012/08/blogging_with_jekyll.html">http://www.ruanyifeng.com/blog/2012/08/blogging_with_jekyll.html</a></p>
+
+<p>按照上述博客操作，唯一的问题是在创建origin时
+     git remove rm origin
+     git remote add origin github@github.com:username/project.git
+遇到下面的问题</p>
+
+<p>解决的方法是去：
+     C:\Users\YourUsername\AppData\Local\GitHub\PortableGit_054f2e797ebafd44a30203088cd3d58663c627ef\etc\gitconfig
+里面修改删除[remote &ldquo;origin&rdquo;]以及后面的两行，然后再重新尝试</p>
+
+<p>上面的方法设置好像不行</p>
+
+<p>如果按照下面方法设置
+<a href="http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/">http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/</a></p>
+
+<p>遇到的一个问题是
+<a href="http://stackoverflow.com/questions/15796274/rdiscount-error-failed-to-build-gem-native-extension">http://stackoverflow.com/questions/15796274/rdiscount-error-failed-to-build-gem-native-extension</a></p>
+
+<p>有人说需要安装1.9.3 (我目前用的是1.9.2)，也有如下说法
+参考这里 <a href="http://www.cnblogs.com/puresoul/archive/2011/12/01/2270890.html">http://www.cnblogs.com/puresoul/archive/2011/12/01/2270890.html</a></p>
+
+<p>的确看起来193和192的安装结果不同</p>
+
+<p>结论是193可以支持</p>
+
+<p>按照 <a href="http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/">http://shanewfx.github.io/blog/2012/02/16/bulid-blog-by-octopress/</a> 设置，在本地可以看到测试页面
+但是在部署到github上面还存在一些问题
+     运行rake setup_github_pages，出现如下错误</p>
+
+<pre><code> 问题的解决主要是在环境变量里添加git.exe的路径，可以参考http://stackoverflow.com/questions/9793806/no-such-file-or-directory-git-ls-files-windows ，另外必须重启ruby和git的控制台
+</code></pre>
+
+<p>最后遇到发布问题
+解决参考此贴：
+<a href="https://teamtreehouse.com/forum/i-got-permission-deniedpublickey-when-i-typed-git-push-origin-master">https://teamtreehouse.com/forum/i-got-permission-deniedpublickey-when-i-typed-git-push-origin-master</a>
+用 <a href="https://github.com/uername/project.git">https://github.com/uername/project.git</a> 而不用 git@github.com:username/project.git 来完成功能</p>
+
+<p>管理文章
+     直接增加或删除.markdown文件，然后更新状态:<a href="http://never.doubting.me/2013/04/18/2013-04-18-setup-octopress-on-github-step-by-step/">http://never.doubting.me/2013/04/18/2013-04-18-setup-octopress-on-github-step-by-step/</a>
+      rake generate
+      rake deploy</p>
+
+<p>这里如果遇到 &ldquo;Gem::RemoteFetcher::FetchError:&rdquo; 的问题，即每次会提示一个ruby模块没有安装，但安装后又继续提醒下一个ruby模块没有安装，实际上是因为下载问题引起的，简单的解决方法是修改octopress目录下的Gemfile文件，将其中的</p>
+
+<pre><code>source "https://rubygems.org"
+</code></pre>
+
+<p>修改为</p>
+
+<pre><code>source "http://rubygems.org"
+</code></pre>
+
+<p>其它解决方法可以参考<a href="http://stackoverflow.com/questions/10246023/bundle-install-fails-with-ssl-certificate-verification-error/10430331#10430331">stackoverflow回答</a></p>
+]]></content>
+  </entry>
+  
+</feed>

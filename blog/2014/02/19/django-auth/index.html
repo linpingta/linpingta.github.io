@@ -1,0 +1,116 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Django Auth  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="用户认证：采用Djanog内置的authorization. Django.contrib.auth 在urls.py里实现url和view的关联 (r'^login/$','app.views.login_views',name='myLogin'),
+(r'^logout/$','app. &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Django Auth</h2>
+	<div class="entry-content"><p>用户认证：采用Djanog内置的authorization. Django.contrib.auth</p>
+
+<p>在urls.py里实现url和view的关联</p>
+
+<pre><code>(r'^login/$','app.views.login_views',name='myLogin'),
+(r'^logout/$','app.views.logout_views',name='myLogout'),
+</code></pre>
+
+<p>在views.py中实现authorization操作</p>
+
+<pre><code>def login_views(request):
+    # user authenticate
+    user = authenticate(user=request.POST['username'],password=request.POST['password'])
+    if user is not None:
+        login(request)
+    else:
+        print '#log fail#'
+
+def logout_views(request):
+    logout(request)
+
+def index(request):
+    if request.user.is_authenticated(): # if user logged in already
+        # success operation
+    else:
+        # failed operation
+</code></pre>
+
+<p>在template中实现url跳转</p>
+
+<pre><code>    &lt;div class="content-head-nav"&gt;
+        &lt;form action={ url 'myLogin' } method='post' class="content-head-form"&gt;
+            { csrf_token }
+            &lt;input name='username' class="input-small" type="text" placeholder="用户名"&gt;
+            &lt;input name='password' class="input-small" type="password" placeholder="密码"&gt;
+            &lt;button class="btn btn-danger" type="submit"&gt;登录&lt;/button&gt;
+        &lt;/form&gt;
+    &lt;/div&gt;
+</code></pre>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-02-19T00:16:57+08:00" pubdate data-updated="true">Feb 19th, 2014</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/django/'>django</a>, <a class='category' href='/blog/categories/python/'>python</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>

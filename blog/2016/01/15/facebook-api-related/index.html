@@ -1,0 +1,99 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>关于Facebook API可以考虑了解的几件事  | linpingta's blog</title>
+
+	<meta name="author" content="linpingta"> 
+	
+	<meta name="description" content="Facebook API分为Graph API，Marketing API和Atlas API三种： Graph API：是否还记得几年前Facebook推出的社交图谱，实际上它就是Graph API对应的逻辑概念。Graph API是另外两种API的基础， &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="linpingta's blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1>linpingta's blog</h1>
+<nav id="main-nav"><ul>
+	<li><a href="/">Blog</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">关于Facebook API可以考虑了解的几件事</h2>
+	<div class="entry-content"><ul>
+<li><p>Facebook API分为Graph API，Marketing API和Atlas API三种：</p>
+
+<ul>
+<li>Graph API：是否还记得几年前Facebook推出的社交图谱，实际上它就是Graph API对应的逻辑概念。Graph API是另外两种API的基础，它实际是最主要也是最全面的Facebook对象获取方式。</li>
+<li>Marketing API：与广告营销相关的API，比如作为FMP（Facebook Marketing Partner，像Domob），或者作为广告主调用</li>
+<li>Altas API：实话说，我在今天之前都不知道这个API系列，看了下它的介绍，好像也是与应用和广告管理有关，但是里面的文档大多数又不可访问了，暂时打算忽略</li>
+</ul>
+</li>
+<li><p>Facebook API开发必备：</p>
+
+<ul>
+<li>如果你是Python/PHP开发者（最近应该又造福了Java），可以在Github上搜索官方提供的SDK，比如<a href="https://github.com/facebook/facebook-python-ads-sdk">Python的</a>。</li>
+<li>如果你用其它语言，那么可能你需要自己手写SDK，就需要涉及到构造Http请求，这时候推荐现在<a href="https://developers.facebook.com/tools/explorer/145634995501895/">Facebook Graph Explorer</a>验证你的请求是否正常（容易的说官方的SDK也是拼接Http请求，基于requests库，但自己做起来还是很麻烦的，感谢官方SDK）</li>
+</ul>
+</li>
+<li><p>Facebook API采用RESTful API格式设计，具体介绍可见我之前的<a href="http://linpingta.cn/blog/2015/11/08/facebook-api-introduction/">博客</a></p></li>
+<li><p>Graph API：每个Graph API包含三个部分：nodes, edges, fields，请求哪个对象（nodes）的哪个关联（edges）的哪个属性（fields），可见edges并不是必须的，完全可以通过nodes/fields=xxx的形式请求nodes本身的属性。举个例子， ad_id/fields=name用于请求ad名称，ad_id/creatives/fields=name用于请求ad下面创意的名称，在<a href="https://developers.facebook.com/docs/graph-api">这里</a></p></li>
+<li><p>Marketing API：实际也是Graph API的一个子集，在<a href="https://developers.facebook.com/docs/marketing-apis">这里</a></p></li>
+<li><p>Facebook API实例：<a href="https://www.facebookmarketingdevelopers.com/samples/">这里</a>，看起来非常完全，不过是基于python的，我很遗憾我刚开始开发的时候没有发现这个东西（也可能是当时还没有），不过以后的开发，参考这里应该非常有帮助</p></li>
+<li><p>Facebook API文档：实际更广泛的说，应该叫Facebook developer文档，它本身服务的对象包括Facebook应用开发者，相关应用（比如Instagram, Oculus,）开发者，广告营销开发者，比如包含很多为移动开发者准备的IOS或则Android SDK，具体见<a href="https://developers.facebook.com/docs">这里</a>。</p></li>
+</ul>
+
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-01-15T15:11:12+08:00" pubdate data-updated="true">Jan 15th, 2016</time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/facebook/'>facebook</a>
+
+</div>
+
+
+</div>
+</article>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2020
+ linpingta 
+<br>
+Powered by Octopress.
+</footer>
+	
+
+</body>
+</html>
